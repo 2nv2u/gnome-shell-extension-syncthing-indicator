@@ -1,0 +1,38 @@
+.system-status-icon.syncthing-icon {
+	background-size: 22px;
+}
+.popup-menu-icon {
+	padding: 2px 8px 2px 4px;
+}
+.popup-menu-item {
+	min-width:280px;
+}
+.syncthing-submenu-icon {
+	margin: 4px 0 4px 0;
+}
+.syncthing-menu-spacing {
+	margin-top: 8px;
+	margin-bottom: 2px;
+	padding: 4px 0 4px 0;
+}
+.syncthing-button-spacing {
+	margin-bottom: 8px;
+}
+.popup-menu-icon.idle {
+	background-image: url(icons/icon-idle.svg);
+}
+.popup-menu-icon.scanning {
+	background-image: url(icons/icon-scanning.svg);
+}
+.popup-menu-icon.syncing {
+	background-image: url(icons/icon-syncing.svg);
+}
+.popup-menu-icon.erroneous {
+	background-image: url(icons/icon-erroneous.svg);
+}
+.popup-menu-icon.paused {
+	background-image: url(icons/icon-paused.svg);
+}
+.popup-menu-icon.disconnected {
+	background-image: url(icons/icon-disconnected.svg);
+}
