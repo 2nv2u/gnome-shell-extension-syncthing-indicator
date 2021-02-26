@@ -432,10 +432,6 @@ class SyncthingIndicator extends PanelMenu.Button {
 }
 SyncthingIndicator = GObject.registerClass({GTypeName: 'SyncthingIndicator'}, SyncthingIndicator)
 
-function init(extension){
-	Gtk.IconTheme.get_default().append_search_path(extension.path + '/icons');
-}
-
 let syncthingManager;
 let syncthingIndicator;
 
