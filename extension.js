@@ -380,19 +380,19 @@ class SyncthingIndicator extends PanelMenu.Button {
 		syncthingManager.connect(Syncthing.Signal.ERROR, Lang.bind(this, function(manager,error){
 			switch(error.type){
 				case Syncthing.Error.DAEMON:
-					Main.notifyError('Syncthing indicator daemon error, '+error.message);
+					Main.notifyError('Syncthing Indicator daemon error:',error.message);
 				break;
 				case Syncthing.Error.SERVICE:
-					Main.notifyError('Syncthing indicator service error, '+error.message);
+					Main.notifyError('Syncthing Indicator service error:',error.message);
 				break;
 				case Syncthing.Error.STREAM:
-					Main.notifyError('Syncthing indicator decoding error, '+error.message);
+					Main.notifyError('Syncthing Indicator decoding error:',error.message);
 				break;
 				case Syncthing.Error.CONNECTION:
-					Main.notifyError('Syncthing indicator connection error, '+error.message);
+					Main.notifyError('Syncthing Indicator connection error:',error.message);
 				break;
 				case Syncthing.Error.CONFIG:
-					Main.notifyError('Syncthing indicator config error, '+error.message);
+					Main.notifyError('Syncthing Indicator config error:',error.message);
 				break;
 			}
 		}));
