@@ -576,7 +576,6 @@ class Manager {
 		if(this._pollSource){
 			this._pollSource.destroy();
 		}
-		this._pollCount++;
 		if(this._isServiceActive() && this._config.found()){
 			if(this._pollCount % this._pollConfigHook == 0){
 				// TODO: this should not be necessary, we should remove old items
@@ -612,6 +611,7 @@ class Manager {
 		this._pollSource.set_priority(GLib.PRIORITY_LOW);
 		this._pollSource.set_callback(Lang.bind(this, this._callState));
 		this._pollSource.attach(null);
+		this._pollCount++;
 	}
 
 	_isServiceActive(){
@@ -633,6 +633,9 @@ class Manager {
 
 	_isServiceEnabled(){
 		let enabled = (this._serviceCommand('is-enabled') == 'enabled');
+
+
+
 		if(enabled != this._serviceEnabled){
 		  this._serviceEnabled = enabled;
 		  this.emit(Signal.SERVICE_CHANGE,(enabled ? ServiceState.ENABLED : ServiceState.DISABLED));
