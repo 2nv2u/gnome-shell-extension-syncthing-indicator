@@ -123,7 +123,7 @@ class FolderMenu extends SectionMenu {
 	_init(){
 		super._init('Folders','system-file-manager-symbolic');
 
-    this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
 		this.rescan = new RescanMenuItem();
 		this.menu.addMenuItem(this.rescan);
@@ -156,13 +156,13 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 			icon = file.query_info('standard::symbolic-icon', 0, null).get_symbolic_icon();
 		} catch(e){
 			if(e instanceof Gio.IOErrorEnum){
-			  if(!file.is_native()){
-				  icon = new Gio.ThemedIcon({ name: 'folder-remote-symbolic' });
-			  } else {
-				  icon = new Gio.ThemedIcon({ name: 'folder-symbolic' });
-			  }
-			} else {e
-			   throw e;
+				if(!file.is_native()){
+					icon = new Gio.ThemedIcon({ name: 'folder-remote-symbolic' });
+				} else {
+					icon = new Gio.ThemedIcon({ name: 'folder-symbolic' });
+				}
+			} else {
+				throw e;
 			}
 		}
 
@@ -204,10 +204,10 @@ class DeviceMenu extends SectionMenu {
 	_init(){
 		super._init('This device','computer-symbolic');
 
-    this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-    this._serviceSwitch = new PopupMenu.PopupSwitchMenuItem("Service", false, null);
-    this._serviceSwitch.connect('activate', function(){
+		this._serviceSwitch = new PopupMenu.PopupSwitchMenuItem("Service", false, null);
+		this._serviceSwitch.connect('activate', function(){
 			return function(actor,event){
 				if(actor.state){
 					syncthingManager.startService();
@@ -218,8 +218,8 @@ class DeviceMenu extends SectionMenu {
 		}());
 		this.menu.addMenuItem(this._serviceSwitch);
 
-    this._autoSwitch = new PopupMenu.PopupSwitchMenuItem("Autostart", false, null)
-    this._autoSwitch.connect('activate', function(){
+		this._autoSwitch = new PopupMenu.PopupSwitchMenuItem("Autostart", false, null)
+		this._autoSwitch.connect('activate', function(){
 			return function(actor,event){
 				if(actor.state){
 					syncthingManager.enableService();
@@ -230,7 +230,7 @@ class DeviceMenu extends SectionMenu {
 		}());
 		this.menu.addMenuItem(this._autoSwitch);
 
-    this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
 		this.config = new ConfigMenuItem();
 		this.menu.addMenuItem(this.config);

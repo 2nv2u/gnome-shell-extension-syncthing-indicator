@@ -74,9 +74,9 @@ var ServiceState = {
 class Item {
 
 	constructor(data,manager){
-	  this._state = State.UNKNOWN,
-	  this._stateEmitted = State.UNKNOWN,
-	  this._stateEmitDelay = 200,
+		this._state = State.UNKNOWN,
+		this._stateEmitted = State.UNKNOWN,
+		this._stateEmitDelay = 200,
 		this.id = data.id;
 		this.name = data.name;
 		this._manager = manager;
@@ -168,9 +168,9 @@ Signals.addSignalMethods(ItemCollection.prototype);
 // Device
 class Device extends Item {
 
-  constructor(data,manager){
+	constructor(data,manager){
 		super(data,manager);
-	  this._determineStateDelay = 600,
+		this._determineStateDelay = 600,
 		this.folders = new ItemCollection();
 		this.folders.connect(Signal.ADD, Lang.bind(this, function(collection,folder){
 			folder.connect(Signal.STATE_CHANGE, Lang.bind(this,this.determineStateDelayed));
@@ -323,7 +323,7 @@ class Config {
 		// (Force) Copy systemd config file to systemd's configuration directory (if it doesn't exist)
 		let systemdConfigPath = GLib.get_user_config_dir()+'/systemd/user';
 		let systemDConfigFileTo = Gio.File.new_for_path(systemdConfigPath+'/'+Service.NAME);
-		if(!systemDConfigFileTo.query_exists(null)){
+		if(force || !systemDConfigFileTo.query_exists(null)){
 			let systemDConfigFileFrom = Gio.File.new_for_path(Me.path+'/'+Service.NAME);
 			let systemdConfigDirectory = Gio.File.new_for_path(systemdConfigPath);
 			if(!systemdConfigDirectory.query_exists(null)){
@@ -517,14 +517,14 @@ class Manager {
 				this.folders.add(folder);
 			}
 			if(config.folders[i].paused){
-			  this.folders.get(config.folders[i].id).setState(State.PAUSED);
-  		} else {
-  			this.openConnection('GET','/rest/db/status?folder='+config.folders[i].id,Lang.bind(this, function(folderID){
-	  			return function(data){
-	  				this.folders.get(folderID).setState(data.state);
-  				}
-	  		}(config.folders[i].id)));
-	  	}
+				this.folders.get(config.folders[i].id).setState(State.PAUSED);
+		} else {
+			this.openConnection('GET','/rest/db/status?folder='+config.folders[i].id,Lang.bind(this, function(folderID){
+				return function(data){
+					this.folders.get(folderID).setState(data.state);
+				}
+			}(config.folders[i].id)));
+		}
 			for(let j=0;j<config.folders[i].devices.length;j++){
 				if(!(config.folders[i].devices[j].deviceID in usedDevices)){
 					usedDevices[config.folders[i].devices[j].deviceID] = [];
@@ -615,7 +615,7 @@ class Manager {
 	}
 
 	_isServiceActive(){
-	  let state = this._serviceCommand('is-active');
+		let state = this._serviceCommand('is-active');
 		let active = (state == 'active');
 		if(state == 'failed'){
 			console.error('Service failed to start ['+Service.NAME+']');
@@ -624,29 +624,26 @@ class Manager {
 				message: 'service failed to start'
 			});
 		} else if(active != this._serviceActive){
-		  this._serviceActive = active;
-		  this.emit(Signal.SERVICE_CHANGE,(active ? ServiceState.ACTIVE : ServiceState.STOPPED));
-		  if(this.host) this.host.setState(active ? State.IDLE : State.DISCONNECTED);
+			this._serviceActive = active;
+			this.emit(Signal.SERVICE_CHANGE,(active ? ServiceState.ACTIVE : ServiceState.STOPPED));
+			if(this.host) this.host.setState(active ? State.IDLE : State.DISCONNECTED);
 		}
 		return active;
 	}
 
 	_isServiceEnabled(){
 		let enabled = (this._serviceCommand('is-enabled') == 'enabled');
-
-
-
 		if(enabled != this._serviceEnabled){
-		  this._serviceEnabled = enabled;
-		  this.emit(Signal.SERVICE_CHANGE,(enabled ? ServiceState.ENABLED : ServiceState.DISABLED));
+			this._serviceEnabled = enabled;
+			this.emit(Signal.SERVICE_CHANGE,(enabled ? ServiceState.ENABLED : ServiceState.DISABLED));
 		}
 		return enabled;
 	}
 
 	_serviceCommand(command){
-    let argv = 'systemctl --user '+command+' '+Service.NAME;
-    let result = GLib.spawn_sync(null, argv.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null)[1];
-    return ByteArray.toString(result).trim();
+		let argv = 'systemctl --user '+command+' '+Service.NAME;
+		let result = GLib.spawn_sync(null, argv.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null)[1];
+		return ByteArray.toString(result).trim();
 	}
 
 	abortConnections(){
@@ -737,7 +734,7 @@ class Manager {
 	}
 
 	enableService(){
-		this._config.setService();
+		this._config.setService(true);
 		this._serviceCommand('enable');
 		this._isServiceEnabled();
 	}
@@ -755,8 +752,8 @@ class Manager {
 	stopService(){
 		this._serviceCommand('stop');
 		if(!this._isServiceActive()){
-		  this.folders.destroy();
-		  this.devices.destroy();
+			this.folders.destroy();
+			this.devices.destroy();
 		}
 	}
 
