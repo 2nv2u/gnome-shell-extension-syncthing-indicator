@@ -2,7 +2,7 @@
 
 ![screenshot](https://extensions.gnome.org/extension-data/screenshots/screenshot_1070_3VzC2d9.png)
 
-Shell indicator for starting, displaying and controlling the Syncthing daemon using SystemD
+Shell indicator for starting, monitoring and controlling the Syncthing daemon using SystemD
 
 ## Installation from gnome extension website
 https://extensions.gnome.org/extension/1070/syncthing-indicator/

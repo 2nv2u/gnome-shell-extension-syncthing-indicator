@@ -1,12 +1,12 @@
 {
-  "description": "Put an indicator on the gnome shell panel, displaying and controlling the Syncthing daemon status using SystemD", 
+  "description": "Shell indicator for starting, monitoring and controlling the Syncthing daemon using SystemD", 
   "name": "Syncthing Indicator", 
   "shell-version": [
     "3.34",
     "3.36",
     "3.38"
   ], 
-  "url": "http://www.2nv2u.com", 
+  "url": "https://github.com/2nv2u/gnome-shell-extension-syncthing-indicator", 
   "uuid": "syncthing@gnome.2nv2u.com", 
-  "version": 14
+  "version": 15
 }
