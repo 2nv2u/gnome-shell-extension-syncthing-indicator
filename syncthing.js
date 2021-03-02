@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingManager 0.13
+	SyncthingManager 0.14
 ================================================================================================================
 
 	GJS syncthing systemd manager
@@ -320,23 +320,23 @@ class Config {
 	}
 
 	setService(force=false){
-	  // (Force) Copy systemd config file to systemd's configuration directory (if it doesn't exist)
-    let systemdConfigPath = GLib.get_user_config_dir()+'/systemd/user';
-    let systemDConfigFileTo = Gio.File.new_for_path(systemdConfigPath+'/'+Service.NAME);
-    if(!systemDConfigFileTo.query_exists(null)){
-      let systemDConfigFileFrom = Gio.File.new_for_path(Me.path+'/'+Service.NAME);
-      let systemdConfigDirectory = Gio.File.new_for_path(systemdConfigPath);
-      if(!systemdConfigDirectory.query_exists(null)){
+		// (Force) Copy systemd config file to systemd's configuration directory (if it doesn't exist)
+		let systemdConfigPath = GLib.get_user_config_dir()+'/systemd/user';
+		let systemDConfigFileTo = Gio.File.new_for_path(systemdConfigPath+'/'+Service.NAME);
+		if(!systemDConfigFileTo.query_exists(null)){
+			let systemDConfigFileFrom = Gio.File.new_for_path(Me.path+'/'+Service.NAME);
+			let systemdConfigDirectory = Gio.File.new_for_path(systemdConfigPath);
+			if(!systemdConfigDirectory.query_exists(null)){
 				systemdConfigDirectory.make_directory_with_parents(null);
 			}
 			let copyFlag = Gio.FileCopyFlags.NONE;
 			if(force) copyFlag = Gio.FileCopyFlags.OVERWRITE;
-      if(systemDConfigFileFrom.copy(systemDConfigFileTo,copyFlag,null,null)){
-        console.info('Systemd configuration file copied to '+systemdConfigPath+'/'+Service.NAME);
-      } else {
-        console.warn('Couldn\'t copy systemd configuration file to '+systemdConfigPath+'/'+Service.NAME);
-      }
-    };
+			if(systemDConfigFileFrom.copy(systemDConfigFileTo,copyFlag,null,null)){
+				console.info('Systemd configuration file copied to '+systemdConfigPath+'/'+Service.NAME);
+			} else {
+				console.warn('Couldn\'t copy systemd configuration file to '+systemdConfigPath+'/'+Service.NAME);
+			}
+		};
 	}
 
 	found(){
@@ -386,6 +386,7 @@ class Manager {
 		this._lastEventID = 1;
 		this._apiKey = '';
 		this._hostID = '';
+		this._lastErrorTime = Date.now()
 
 		this.connect(Signal.SERVICE_CHANGE, Lang.bind(this, function(manager,state){
 			switch(state){
@@ -588,14 +589,19 @@ class Manager {
 				this._callConnections();
 			}
 			this.openConnection('GET','/rest/system/error',Lang.bind(this, function(data){
+				let errorTime;
 				let errors = data.errors;
 				if(errors != null){
 					for(let i=0;i<errors.length;i++){
-						console.error('Syncthing error',errors[i]);
-						this.emit(Signal.ERROR,{
-							type: Error.SERVICE,
-							message: errors[i].message
-						});
+						errorTime = new Date(errors[i].when)
+						if(errorTime > this._lastErrorTime){
+							this._lastErrorTime = errorTime;
+							console.error('Syncthing error',errors[i]);
+							this.emit(Signal.ERROR,{
+								type: Error.SERVICE,
+								message: errors[i].message
+							});
+						}
 					}
 				}
 			}));
@@ -660,7 +666,7 @@ class Manager {
 			this._httpSession.queue_message(msg, Lang.bind(this, function(session,msg){
 				if(msg.status_code == 200){
 					try {
-						if(msg.response_body.data.length>0){
+						if(callback && msg.response_body.data.length>0){
 							console.debug('Callback',msg.method+':'+msg.uri.get_path(),msg.response_body.data);
 							callback(JSON.parse(msg.response_body.data));
 						}
