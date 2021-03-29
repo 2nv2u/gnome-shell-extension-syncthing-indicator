@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.16
+	SyncthingIndicator 0.17
 ================================================================================================================
 
 	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
@@ -123,21 +123,21 @@ class FolderMenu extends SectionMenu {
 	_init(){
 		super._init('Folders','system-file-manager-symbolic');
 
-		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+		// this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-		this.rescan = new RescanMenuItem();
-		this.menu.addMenuItem(this.rescan);
+		// this.rescan = new RescanMenuItem();
+		// this.menu.addMenuItem(this.rescan);
 
-		syncthingManager.connect(Syncthing.Signal.SERVICE_CHANGE, Lang.bind(this, function(manager,state){
-			switch(state){
-				case Syncthing.ServiceState.ACTIVE:
-					this.rescan.setSensitive(true);
-				break;
-				case Syncthing.ServiceState.STOPPED:
-					this.rescan.setSensitive(false);
-				break;
-			}
-		}));
+		// syncthingManager.connect(Syncthing.Signal.SERVICE_CHANGE, Lang.bind(this, function(manager,state){
+		// 	switch(state){
+		// 		case Syncthing.ServiceState.ACTIVE:
+		// 			this.rescan.setSensitive(true);
+		// 		break;
+		// 		case Syncthing.ServiceState.STOPPED:
+		// 			this.rescan.setSensitive(false);
+		// 		break;
+		// 	}
+		// }));
 	}
 
 }
@@ -235,6 +235,9 @@ class DeviceMenu extends SectionMenu {
 		this.config = new ConfigMenuItem();
 		this.menu.addMenuItem(this.config);
 
+		this.rescan = new RescanMenuItem();
+		this.menu.addMenuItem(this.rescan);
+
 		syncthingManager.connect(Syncthing.Signal.SERVICE_CHANGE, Lang.bind(this, function(manager,state){
 			switch(state){
 				case Syncthing.ServiceState.ACTIVE:
@@ -258,6 +261,17 @@ class DeviceMenu extends SectionMenu {
 			switch(error.type){
 				case Syncthing.Error.DAEMON:
 					this._serviceSwitch.setToggleState(false);
+				break;
+			}
+		}));
+
+		syncthingManager.connect(Syncthing.Signal.SERVICE_CHANGE, Lang.bind(this, function(manager,state){
+			switch(state){
+				case Syncthing.ServiceState.ACTIVE:
+					this.rescan.setSensitive(true);
+				break;
+				case Syncthing.ServiceState.STOPPED:
+					this.rescan.setSensitive(false);
 				break;
 			}
 		}));
