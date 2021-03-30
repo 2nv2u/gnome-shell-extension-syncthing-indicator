@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.17
+	SyncthingIndicator 0.18
 ================================================================================================================
 
 	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
@@ -75,33 +75,6 @@ class SyncthingPanelIcon {
 	}
 
 }
-
-// Syncthing indicator rescan menu item
-class RescanMenuItem extends PopupMenu.PopupBaseMenuItem {
-
-	_init(){
-		super._init();
-		this.setSensitive(false);
-		this.actor.add_child(
-			new St.Icon({
-				gicon: new Gio.ThemedIcon({ name: 'emblem-synchronizing-symbolic' }),
-				style_class: 'popup-menu-icon'
-			})
-		);
-
-		this._label = new St.Label({ text: 'Rescan All Folders' });
-		this.actor.add_child(this._label);
-		this.actor.label_actor = this._label;
-	}
-
-	activate(event){
-		syncthingIndicator.folderMenu.menu.open(true)
-		syncthingManager.rescan();
-
-	}
-
-}
-RescanMenuItem = GObject.registerClass({GTypeName: 'RescanMenuItem'}, RescanMenuItem)
 
 // Syncthing indicator section menu
 class SectionMenu extends PopupMenu.PopupSubMenuMenuItem {
@@ -305,6 +278,32 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 }
 DeviceMenuItem = GObject.registerClass({GTypeName: 'DeviceMenuItem'}, DeviceMenuItem)
+
+// Syncthing indicator rescan menu item
+class RescanMenuItem extends PopupMenu.PopupBaseMenuItem {
+
+	_init(){
+		super._init();
+		this.setSensitive(false);
+		this.actor.add_child(
+			new St.Icon({
+				gicon: new Gio.ThemedIcon({ name: 'emblem-synchronizing-symbolic' }),
+				style_class: 'popup-menu-icon'
+			})
+		);
+
+		this._label = new St.Label({ text: 'Rescan All Folders' });
+		this.actor.add_child(this._label);
+		this.actor.label_actor = this._label;
+	}
+
+	activate(event){
+		syncthingIndicator.folderMenu.menu.open(true)
+		syncthingManager.rescan();
+	}
+
+}
+RescanMenuItem = GObject.registerClass({GTypeName: 'RescanMenuItem'}, RescanMenuItem)
 
 // Syncthing indicator config menu item
 class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
