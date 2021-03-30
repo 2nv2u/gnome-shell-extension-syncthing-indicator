@@ -92,10 +92,10 @@ class RescanMenuItem extends PopupMenu.PopupBaseMenuItem {
 		this._label = new St.Label({ text: 'Rescan All Folders' });
 		this.actor.add_child(this._label);
 		this.actor.label_actor = this._label;
-		this.actor.add_style_class_name('syncthing-button-spacing');
 	}
 
 	activate(event){
+		syncthingIndicator.folderMenu.menu.open()
 		syncthingManager.rescan();
 	}
 
@@ -122,22 +122,6 @@ class FolderMenu extends SectionMenu {
 
 	_init(){
 		super._init('Folders','system-file-manager-symbolic');
-
-		// this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-
-		// this.rescan = new RescanMenuItem();
-		// this.menu.addMenuItem(this.rescan);
-
-		// syncthingManager.connect(Syncthing.Signal.SERVICE_CHANGE, Lang.bind(this, function(manager,state){
-		// 	switch(state){
-		// 		case Syncthing.ServiceState.ACTIVE:
-		// 			this.rescan.setSensitive(true);
-		// 		break;
-		// 		case Syncthing.ServiceState.STOPPED:
-		// 			this.rescan.setSensitive(false);
-		// 		break;
-		// 	}
-		// }));
 	}
 
 }
@@ -206,28 +190,10 @@ class DeviceMenu extends SectionMenu {
 
 		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-		this._serviceSwitch = new PopupMenu.PopupSwitchMenuItem("Service", false, null);
-		this._serviceSwitch.connect('activate', function(){
-			return function(actor,event){
-				if(actor.state){
-					syncthingManager.startService();
-				} else {
-					syncthingManager.stopService();
-				}
-			}
-		}());
+		this._serviceSwitch = new ServiceSwitchMenuItem();
 		this.menu.addMenuItem(this._serviceSwitch);
 
-		this._autoSwitch = new PopupMenu.PopupSwitchMenuItem("Autostart", false, null)
-		this._autoSwitch.connect('activate', function(){
-			return function(actor,event){
-				if(actor.state){
-					syncthingManager.enableService();
-				} else {
-					syncthingManager.disableService();
-				}
-			}
-		}());
+		this._autoSwitch = new AutoSwitchMenuItem();
 		this.menu.addMenuItem(this._autoSwitch);
 
 		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
@@ -326,13 +292,14 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 			this.destroy();
 		}));
 
-		this.connect('activate', Lang.bind(this, function(actor){
-			if(actor.state){
-				this._device.resume();
-			} else {
-				this._device.pause();
-			}
-		}));
+	}
+
+	activate(event){
+		if(this.actor.state){
+			this._device.resume();
+		} else {
+			this._device.pause();
+		}
 	}
 
 }
@@ -344,18 +311,16 @@ class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
 	_init(){
 		super._init();
 		this.setSensitive(false);
-
 		this.actor.add_child(
 			new St.Icon({
 				gicon: new Gio.ThemedIcon({ name: 'preferences-system-symbolic' }),
 				style_class: 'popup-menu-icon'
 			})
 		);
-		this.actor.add_child(
-			new St.Label({ text: 'Open Web Interface' })
-		);
 
-		this.actor.add_style_class_name('syncthing-button-spacing');
+		this._label = new St.Label({ text: 'Open Web Interface' });
+		this.actor.add_child(this._label);
+		this.actor.label_actor = this._label;
 	}
 
 	activate(event){
@@ -365,10 +330,51 @@ class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
 		} catch(e){
 			Main.notifyError('Failed to launch URI: '+uri, e.message);
 		}
+		super.activate(event);
 	}
 
 }
 ConfigMenuItem = GObject.registerClass({GTypeName: 'ConfigMenuItem'}, ConfigMenuItem)
+
+// Syncthing service switch menu item
+class ServiceSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
+
+	_init(){
+		super._init("Service", false);
+	}
+
+	activate(event){
+		if (this._switch.mapped)
+			this.toggle();
+		if(this.actor.state){
+			syncthingManager.startService();
+		} else {
+			syncthingManager.stopService();
+		}
+	}
+
+}
+ServiceSwitchMenuItem = GObject.registerClass({GTypeName: 'ServiceSwitchMenuItem'}, ServiceSwitchMenuItem)
+
+// Syncthing service switch menu item
+class AutoSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
+
+	_init(){
+		super._init("Autostart", false);
+	}
+
+	activate(event){
+		if (this._switch.mapped)
+			this.toggle();
+		if(this.actor.state){
+			syncthingManager.enableService();
+		} else {
+			syncthingManager.disableService();
+		}
+	}
+
+}
+AutoSwitchMenuItem = GObject.registerClass({GTypeName: 'AutoSwitchMenuItem'}, AutoSwitchMenuItem)
 
 // Syncthing indicator controller
 class SyncthingIndicator extends PanelMenu.Button {
