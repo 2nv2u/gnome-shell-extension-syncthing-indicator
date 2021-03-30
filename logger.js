@@ -18,7 +18,7 @@ var Level = {
 class Service {
 
 	constructor(level,prefix){
-    this._levels = [];	
+	this._levels = [];
 		this._level = level;
 		this._prefix = prefix;
 		let i = 0;
