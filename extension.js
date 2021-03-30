@@ -95,8 +95,9 @@ class RescanMenuItem extends PopupMenu.PopupBaseMenuItem {
 	}
 
 	activate(event){
-		syncthingIndicator.folderMenu.menu.open()
+		syncthingIndicator.folderMenu.menu.open(true)
 		syncthingManager.rescan();
+
 	}
 
 }
@@ -394,7 +395,7 @@ class SyncthingIndicator extends PanelMenu.Button {
 		this.defaultMenu = this.deviceMenu;
 
 		this.menu.connect('open-state-changed', Lang.bind(this, function(menu,state){
-			if(state) this.defaultMenu.menu.open();
+			if(state) this.defaultMenu.menu.open(false);
 		}));
 
 		syncthingManager.connect(Syncthing.Signal.ERROR, Lang.bind(this, function(manager,error){
