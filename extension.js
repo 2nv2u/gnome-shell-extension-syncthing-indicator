@@ -383,7 +383,7 @@ class SyncthingIndicator extends PanelMenu.Button {
 		super._init(0.0, "SyncthingIndicator");
 
 		this.icon = new SyncthingPanelIcon();
-		this.actor.add_actor(this.icon.actor);
+		this.add_actor(this.icon.actor);
 
 		this.deviceMenu = new DeviceMenu();
 		this.menu.addMenuItem(this.deviceMenu);
