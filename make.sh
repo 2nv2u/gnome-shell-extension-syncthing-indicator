@@ -10,4 +10,4 @@ CUR_PATH=$(pwd)
 
 EXT_NAME="syncthing@gnome.2nv2u.com"
 
-( cd $SCRIPT_PATH && zip -r $CUR_PATH/$EXT_NAME.zip * --exclude=.git/\* --exclude=*.sh --exclude=*.md)
+(cd $SCRIPT_PATH && zip -r $CUR_PATH/$EXT_NAME.zip * --exclude=.git/\* --exclude=*.sh --exclude=*.md)
