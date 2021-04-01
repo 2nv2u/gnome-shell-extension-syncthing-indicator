@@ -96,6 +96,7 @@ class FolderMenu extends SectionMenu {
 
 	_init(){
 		super._init('Folders','system-file-manager-symbolic');
+		this.setSensitive(false);
 	}
 
 }
@@ -183,10 +184,12 @@ class DeviceMenu extends SectionMenu {
 				case Syncthing.ServiceState.ACTIVE:
 					this._serviceSwitch.setToggleState(true);
 					this.config.setSensitive(true);
+					this.rescan.setSensitive(true);
 				break;
 				case Syncthing.ServiceState.STOPPED:
 					this._serviceSwitch.setToggleState(false);
 					this.config.setSensitive(false);
+					this.rescan.setSensitive(false);
 				break;
 				case Syncthing.ServiceState.ENABLED:
 					this._autoSwitch.setToggleState(true);
@@ -201,17 +204,6 @@ class DeviceMenu extends SectionMenu {
 			switch(error.type){
 				case Syncthing.Error.DAEMON:
 					this._serviceSwitch.setToggleState(false);
-				break;
-			}
-		}));
-
-		syncthingManager.connect(Syncthing.Signal.SERVICE_CHANGE, Lang.bind(this, function(manager,state){
-			switch(state){
-				case Syncthing.ServiceState.ACTIVE:
-					this.rescan.setSensitive(true);
-				break;
-				case Syncthing.ServiceState.STOPPED:
-					this.rescan.setSensitive(false);
 				break;
 			}
 		}));
@@ -426,9 +418,11 @@ class SyncthingIndicator extends PanelMenu.Button {
 			switch(state){
 				case Syncthing.ServiceState.ACTIVE:
 					this.defaultMenu = this.folderMenu;
+					this.folderMenu.setSensitive(true)
 				break;
 				case Syncthing.ServiceState.STOPPED:
 					this.defaultMenu = this.deviceMenu;
+					this.folderMenu.setSensitive(false)
 				break;
 			}
 		}));
