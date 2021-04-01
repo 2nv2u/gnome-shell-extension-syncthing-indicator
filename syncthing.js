@@ -67,7 +67,8 @@ var ServiceState = {
 	ACTIVE: "active",
 	STOPPED: "stopped",
 	ENABLED: "enabled",
-	DISABLED: "disabled"
+	DISABLED: "disabled",
+	ERROR: "error"
 };
 
 // Abstract item used for folders and devices
@@ -715,6 +716,7 @@ class Manager {
 			this._config.load();
 		} catch(error){
 			console.error('Could not open / find config',error);
+			this.emit(Signal.SERVICE_CHANGE,ServiceState.ERROR);
 			this.emit(Signal.ERROR,{
 				type: Error.CONFIG,
 				message: 'Could not open / find config, Syncthing might not be installed!'

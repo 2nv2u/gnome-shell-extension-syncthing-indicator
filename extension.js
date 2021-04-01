@@ -173,29 +173,37 @@ class DeviceMenu extends SectionMenu {
 
 		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-		this.config = new ConfigMenuItem();
-		this.menu.addMenuItem(this.config);
+		this._configItem = new ConfigMenuItem();
+		this.menu.addMenuItem(this._configItem);
 
-		this.rescan = new RescanMenuItem();
-		this.menu.addMenuItem(this.rescan);
+		this._rescanItem = new RescanMenuItem();
+		this.menu.addMenuItem(this._rescanItem);
 
 		syncthingManager.connect(Syncthing.Signal.SERVICE_CHANGE, Lang.bind(this, function(manager,state){
 			switch(state){
 				case Syncthing.ServiceState.ACTIVE:
+					this._serviceSwitch.setSensitive(true);
 					this._serviceSwitch.setToggleState(true);
-					this.config.setSensitive(true);
-					this.rescan.setSensitive(true);
+					this._configItem.setSensitive(true);
+					this._rescanItem.setSensitive(true);
 				break;
 				case Syncthing.ServiceState.STOPPED:
+					this._serviceSwitch.setSensitive(true);
 					this._serviceSwitch.setToggleState(false);
-					this.config.setSensitive(false);
-					this.rescan.setSensitive(false);
+					this._configItem.setSensitive(false);
+					this._rescanItem.setSensitive(false);
 				break;
 				case Syncthing.ServiceState.ENABLED:
-					this._autoSwitch.setToggleState(true);
+					this._autoSwitch.setSensitive(true);
+				this._autoSwitch.setToggleState(true);
 				break;
 				case Syncthing.ServiceState.DISABLED:
+					this._autoSwitch.setSensitive(true);
 					this._autoSwitch.setToggleState(false);
+				break;
+				case Syncthing.ServiceState.ERROR:
+					this._serviceSwitch.setSensitive(false);
+					this._autoSwitch.setSensitive(false);
 				break;
 			}
 		}));
