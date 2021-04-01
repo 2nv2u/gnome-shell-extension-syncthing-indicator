@@ -621,7 +621,7 @@ class Manager {
 			console.error('Service failed to start ['+Service.NAME+']');
 			this.emit(Signal.ERROR,{
 				type: Error.DAEMON,
-				message: 'service failed to start'
+				message: 'Service failed to start'
 			});
 		} else if(active != this._serviceActive){
 			this._serviceActive = active;
@@ -674,7 +674,7 @@ class Manager {
 						console.error('Stream / parsing error',msg.method+':'+msg.uri.get_path(),error.message,msg.response_body.data);
 						this.emit(Signal.ERROR,{
 							type: Error.STREAM,
-							message: 'stream / parsing error: '+msg.method+':'+msg.uri.get_path()
+							message: 'Stream / parsing error: '+msg.method+':'+msg.uri.get_path()
 						});
 					}
 				} else if(!this._httpAborting){
@@ -717,7 +717,7 @@ class Manager {
 			console.error('Could not open / find config',error);
 			this.emit(Signal.ERROR,{
 				type: Error.CONFIG,
-				message: 'could not open / find config: '+error
+				message: 'Could not open / find config, Syncthing might not be installed!'
 			});
 		}
 		return this._callState();
