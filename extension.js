@@ -388,13 +388,13 @@ class SyncthingIndicator extends PanelMenu.Button {
 		this.deviceMenu = new DeviceMenu();
 		this.menu.addMenuItem(this.deviceMenu);
 		this.deviceMenu.menu.connect('open-state-changed', Lang.bind(this, function(menu,open){
-			if(!open) this.folderMenu.menu.open(true);
+			if(this.menu.isOpen && !open) this.folderMenu.menu.open(true);
 		}));
 
 		this.folderMenu = new FolderMenu();
 		this.menu.addMenuItem(this.folderMenu);
 		this.folderMenu.menu.connect('open-state-changed', Lang.bind(this, function(menu,open){
-			if(!open) this.deviceMenu.menu.open(true);
+			if(this.menu.isOpen && !open) this.deviceMenu.menu.open(true);
 		}));
 
 		this.defaultMenu = this.deviceMenu;
