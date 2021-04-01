@@ -195,7 +195,7 @@ class DeviceMenu extends SectionMenu {
 				break;
 				case Syncthing.ServiceState.ENABLED:
 					this._autoSwitch.setSensitive(true);
-				this._autoSwitch.setToggleState(true);
+					this._autoSwitch.setToggleState(true);
 				break;
 				case Syncthing.ServiceState.DISABLED:
 					this._autoSwitch.setSensitive(true);
