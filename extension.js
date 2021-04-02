@@ -58,7 +58,7 @@ class SyncthingPanelIcon {
 		switch(state){
 			case Syncthing.State.SYNCING:
 			case Syncthing.State.SCANNING:
-				this.actor.set_child(this._workingIcon.actor);
+				this.actor.set_child(this._workingIcon);
 				this._workingIcon.play();
 			break
 			case Syncthing.State.PAUSED:
