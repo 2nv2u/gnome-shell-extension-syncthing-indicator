@@ -269,7 +269,7 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 	}
 
 	activate(event){
-		if(this.actor.state){
+		if(!this.actor.state){
 			this._device.resume();
 		} else {
 			this._device.pause();
