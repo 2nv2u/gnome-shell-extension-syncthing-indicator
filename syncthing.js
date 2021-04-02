@@ -680,7 +680,7 @@ class Manager {
 					}
 				} else if(!this._httpAborting){
 					if(msg.status_code < 100){
-						console.warn(msg.reason_phrase,'will retry',msg.method+':'+msg.uri.get_path(),msg.status_code);
+						console.info(msg.reason_phrase,'will retry',msg.method+':'+msg.uri.get_path(),msg.status_code);
 						// Retry this connection attempt
 						let source = GLib.timeout_source_new(1000);
 						source.set_priority(GLib.PRIORITY_LOW);
