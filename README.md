@@ -4,6 +4,8 @@
 
 Shell indicator for starting, monitoring and controlling the Syncthing daemon using SystemD
 
+What is Syncthing? https://syncthing.net/
+
 ## Installation from gnome extension website
 https://extensions.gnome.org/extension/1070/syncthing-indicator/
 
