@@ -382,6 +382,8 @@ class SyncthingIndicator extends PanelMenu.Button {
 	_init(){
 		super._init(0.0, "SyncthingIndicator");
 
+		this.menu.box.add_style_class_name('syncthing-indicator');
+
 		this.icon = new SyncthingPanelIcon();
 		this.add_actor(this.icon.actor);
 

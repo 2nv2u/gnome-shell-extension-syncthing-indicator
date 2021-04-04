@@ -1,35 +1,35 @@
 .system-status-icon.syncthing-icon {
 	background-size: 22px;
 }
-.popup-menu-icon {
+.syncthing-indicator .popup-menu-icon {
 	padding: 2px 12px 2px 8px;
 }
-.popup-menu-item {
+.syncthing-indicator .popup-menu-item {
 	min-width:280px;
 }
-.syncthing-submenu-icon {
+.syncthing-indicator .syncthing-submenu-icon {
 	margin: 4px 0 4px 0;
 }
-.syncthing-menu-spacing {
+.syncthing-indicator .syncthing-menu-spacing {
 	margin-top: 6px;
 	margin-bottom: 6px;
 	padding: 4px 0 4px 0;
 }
-.popup-menu-icon.idle {
+.syncthing-indicator .popup-menu-icon.idle {
 	background-image: url(icons/icon-idle.svg);
 }
-.popup-menu-icon.scanning {
+.syncthing-indicator .popup-menu-icon.scanning {
 	background-image: url(icons/icon-scanning.svg);
 }
-.popup-menu-icon.syncing {
+.syncthing-indicator .popup-menu-icon.syncing {
 	background-image: url(icons/icon-syncing.svg);
 }
-.popup-menu-icon.erroneous {
+.syncthing-indicator .popup-menu-icon.erroneous {
 	background-image: url(icons/icon-erroneous.svg);
 }
-.popup-menu-icon.paused {
+.syncthing-indicator .popup-menu-icon.paused {
 	background-image: url(icons/icon-paused.svg);
 }
-.popup-menu-icon.disconnected {
+.syncthing-indicator .popup-menu-icon.disconnected {
 	background-image: url(icons/icon-disconnected.svg);
 }
