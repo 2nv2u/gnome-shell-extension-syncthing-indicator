@@ -1,6 +1,6 @@
-# ![image](https://raw.githubusercontent.com/2nv2u/gnome-shell-extension-syncthing-indicator/master/syncthing.png) Gnome Shell - Syncthing Indicator 
+# ![image](icon.png) Gnome Shell - Syncthing Indicator 
 
-![screenshot](https://extensions.gnome.org/extension-data/screenshots/screenshot_1070_3VzC2d9.png)
+![screenshot](screenshot.png)
 
 Shell indicator for starting, monitoring and controlling the Syncthing daemon using SystemD
 
