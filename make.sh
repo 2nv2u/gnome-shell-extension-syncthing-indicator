@@ -11,4 +11,4 @@ CUR_PATH=$(pwd)
 EXT_NAME="syncthing@gnome.2nv2u.com"
 
 (cd $SCRIPT_PATH/src && zip -r $CUR_PATH/$EXT_NAME.zip *)
-zip -r $CUR_PATH/$EXT_NAME.zip $SCRIPT_PATH/LICENSE
+zip -r $CUR_PATH/$EXT_NAME.zip -j $SCRIPT_PATH/LICENSE
