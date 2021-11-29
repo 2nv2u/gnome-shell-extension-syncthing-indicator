@@ -494,7 +494,9 @@ class SyncthingIndicatorExtension {
 	// Syncthing indicator disabler
 	disable(){
 		this.indicator.destroy();
+		this.indicator = null;
 		this.manager.destroy();
+		this.manager = null;
 	}
 
 }
