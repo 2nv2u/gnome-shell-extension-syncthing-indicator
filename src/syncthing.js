@@ -518,11 +518,11 @@ class Manager {
 			if(config.folders[i].paused){
 				this.folders.get(config.folders[i].id).setState(State.PAUSED);
 			} else {
-				this.openConnection('GET','/rest/db/status?folder='+config.folders[i].id,function(folderID){
+				this.openConnection('GET','/rest/db/status?folder='+config.folders[i].id,function(folder){
 					return (data) => {
-						this.folders.get(folderID).setState(data.state);
+						folder.setState(data.state);
 					}
-				}(config.folders[i].id));
+				}(this.folders.get(config.folders[i].id)));
 			}
 			for(let j=0;j<config.folders[i].devices.length;j++){
 				if(!(config.folders[i].devices[j].deviceID in usedDevices)){
@@ -735,6 +735,7 @@ class Manager {
 
 	enableService(){
 		this._config.setService(true);
+		this._config.load();
 		this._serviceCommand('enable');
 		this._isServiceEnabled();
 	}
@@ -747,6 +748,7 @@ class Manager {
 	startService(){
 		this._config.setService();
 		this._serviceCommand('start');
+		if(!this._config.found()) this._config.load();
 	}
 
 	stopService(){
