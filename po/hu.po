@@ -1,0 +1,61 @@
+# Gellert Gyuris <bubu@ujevangelizacio.hu>, 2021.
+msgid ""
+msgstr ""
+"Last-Translator: Gellert Gyuris <bubu@ujevangelizacio.hu>\n"
+"Language-Team: Hungarian <kde-l10n-hu@kde.org>\n"
+"Language: hu_HU\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2021-11-29 22:43+0100\n"
+"Project-Id-Version: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Lokalize 21.08.1\n"
+
+#: extension.js:101
+msgid "folders"
+msgstr "Mappák"
+
+#: extension.js:155 extension.js:334
+msgid "failed-URI"
+msgstr "Nem sikerült elindítani az URI-t"
+
+#: extension.js:167
+msgid "this-device"
+msgstr "Ez az eszköz"
+
+#: extension.js:298
+msgid "rescan"
+msgstr "Minden mappa átnézése"
+
+#: extension.js:324
+msgid "web-interface"
+msgstr "Webes felület megnyitása"
+
+#: extension.js:346
+msgid "service"
+msgstr "Szolgáltatás"
+
+#: extension.js:366
+msgid "autostart"
+msgstr "Automatikus indítás"
+
+#: extension.js:413
+msgid "daemon-error"
+msgstr "Syncthing Indicator démon hiba"
+
+#: extension.js:416
+msgid "service-error"
+msgstr "Syncthing Indicator szolgáltatási hiba"
+
+#: extension.js:419
+msgid "decoding-error"
+msgstr "Syncthing Indicator dekódolási hiba"
+
+#: extension.js:422
+msgid "connection-error"
+msgstr "Syncthing Indicator kapcsolati hiba"
+
+#: extension.js:425
+msgid "config-error"
+msgstr "Syncthing Indicator beállítási hiba"
