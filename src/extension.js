@@ -29,7 +29,6 @@ const Domain = Gettext.domain(Me.metadata.uuid);
 const _ = Domain.gettext;
 
 const Logger = Me.imports.logger;
-const console = new Logger.Service(Logger.Level.WARN,'syncthing-indicator-ui');
 
 const Syncthing = Me.imports.syncthing;
 
