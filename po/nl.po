@@ -1,0 +1,56 @@
+msgid ""
+msgstr ""
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: Dutch\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: extension.js:101
+msgid "folders"
+msgstr "Mappen"
+
+#: extension.js:155 extension.js:334
+msgid "failed-URI"
+msgstr "URI openen mislukt"
+
+#: extension.js:167
+msgid "this-device"
+msgstr "Dit Apparaat"
+
+#: extension.js:298
+msgid "rescan"
+msgstr "Alle Mappen Scannen"
+
+#: extension.js:324
+msgid "web-interface"
+msgstr "Open Web Beheer"
+
+#: extension.js:346
+msgid "service"
+msgstr "Service"
+
+#: extension.js:366
+msgid "autostart"
+msgstr "Autostart"
+
+#: extension.js:413
+msgid "daemon-error"
+msgstr "Syncthing Indicator daemon fout"
+
+#: extension.js:416
+msgid "service-error"
+msgstr "Syncthing Indicator service fout"
+
+#: extension.js:419
+msgid "decoding-error"
+msgstr "Syncthing Indicator decoding fout"
+
+#: extension.js:422
+msgid "connection-error"
+msgstr "Syncthing Indicator connection fout"
+
+#: extension.js:425
+msgid "config-error"
+msgstr "Syncthing Indicator config fout"

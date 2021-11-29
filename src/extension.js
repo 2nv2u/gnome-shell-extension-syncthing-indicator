@@ -20,9 +20,13 @@ const Animation = imports.ui.animation;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
 const StatusSystem = imports.ui.status.system;
+const Gettext = imports.gettext;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
+
+const Domain = Gettext.domain(Me.metadata.uuid);
+const _ = Domain.gettext;
 
 const Logger = Me.imports.logger;
 const console = new Logger.Service(Logger.Level.WARN,'syncthing-indicator-ui');
@@ -94,7 +98,7 @@ SectionMenu = GObject.registerClass({GTypeName: 'SectionMenu'}, SectionMenu)
 class FolderMenu extends SectionMenu {
 
 	_init(){
-		super._init('Folders','system-file-manager-symbolic');
+		super._init(_('folders'),'system-file-manager-symbolic');
 		this.setSensitive(false);
 	}
 
@@ -148,7 +152,7 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 			let launchContext = global.create_app_launch_context(event.get_time(), -1);
 			Gio.AppInfo.launch_default_for_uri(this.path, launchContext);
 		} catch(e){
-			Main.notifyError('Failed to launch URI: '+uri, e.message);
+			Main.notifyError(_('failed-URI')+': '+uri, e.message);
 		}
 		super.activate(event);
 	}
@@ -160,7 +164,7 @@ FolderMenuItem = GObject.registerClass({GTypeName: 'FolderMenuItem'}, FolderMenu
 class DeviceMenu extends SectionMenu {
 
 	_init(){
-		super._init('This device','computer-symbolic');
+		super._init(_('this-device'),'computer-symbolic');
 
 		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
@@ -291,7 +295,7 @@ class RescanMenuItem extends PopupMenu.PopupBaseMenuItem {
 			})
 		);
 
-		this._label = new St.Label({ text: 'Rescan All Folders' });
+		this._label = new St.Label({ text: _('rescan') });
 		this.actor.add_child(this._label);
 		this.actor.label_actor = this._label;
 	}
@@ -317,7 +321,7 @@ class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
 			})
 		);
 
-		this._label = new St.Label({ text: 'Open Web Interface' });
+		this._label = new St.Label({ text: _('web-interface') });
 		this.actor.add_child(this._label);
 		this.actor.label_actor = this._label;
 	}
@@ -327,7 +331,7 @@ class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
 		try {
 			Gio.AppInfo.launch_default_for_uri(syncthingManager.getConfig().getURI(), launchContext);
 		} catch(e){
-			Main.notifyError('Failed to launch URI: '+uri, e.message);
+			Main.notifyError(_('failed-URI')+': '+uri, e.message);
 		}
 		super.activate(event);
 	}
@@ -339,7 +343,7 @@ ConfigMenuItem = GObject.registerClass({GTypeName: 'ConfigMenuItem'}, ConfigMenu
 class ServiceSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 	_init(){
-		super._init("Service", false);
+		super._init(_("service"), false);
 	}
 
 	activate(event){
@@ -359,7 +363,7 @@ ServiceSwitchMenuItem = GObject.registerClass({GTypeName: 'ServiceSwitchMenuItem
 class AutoSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 	_init(){
-		super._init("Autostart", false);
+		super._init(_("autostart"), false);
 	}
 
 	activate(event){
@@ -406,19 +410,19 @@ class SyncthingIndicator extends PanelMenu.Button {
 		syncthingManager.connect(Syncthing.Signal.ERROR, (manager,error) => {
 			switch(error.type){
 				case Syncthing.Error.DAEMON:
-					Main.notifyError('Syncthing Indicator daemon error:',error.message);
+					Main.notifyError(_('daemon-error'),error.message);
 				break;
 				case Syncthing.Error.SERVICE:
-					Main.notifyError('Syncthing Indicator service error:',error.message);
+					Main.notifyError(_('service-error'),error.message);
 				break;
 				case Syncthing.Error.STREAM:
-					Main.notifyError('Syncthing Indicator decoding error:',error.message);
+					Main.notifyError(_('decoding-error'),error.message);
 				break;
 				case Syncthing.Error.CONNECTION:
-					Main.notifyError('Syncthing Indicator connection error:',error.message);
+					Main.notifyError(_('connection-error'),error.message);
 				break;
 				case Syncthing.Error.CONFIG:
-					Main.notifyError('Syncthing Indicator config error:',error.message);
+					Main.notifyError(_('config-error'),error.message);
 				break;
 			}
 		});
@@ -463,7 +467,12 @@ SyncthingIndicator = GObject.registerClass({GTypeName: 'SyncthingIndicator'}, Sy
 let syncthingManager;
 let syncthingIndicator;
 
-// Syncthing indicator main / initiator
+// Syncthing indicator initiator
+function init(){
+	ExtensionUtils.initTranslations(Me.metadata.uuid);
+}
+
+// Syncthing indicator enabler
 function enable(){
 	syncthingManager = new Syncthing.Manager();
 	syncthingIndicator = new SyncthingIndicator();
@@ -471,7 +480,7 @@ function enable(){
 	syncthingManager.attach();
 }
 
-// Syncthing indicator main remove function
+// Syncthing indicator disabler
 function disable(){
 	syncthingIndicator.destroy();
 	syncthingManager.destroy();

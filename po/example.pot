@@ -1,0 +1,56 @@
+msgid ""
+msgstr ""
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: extension.js:101
+msgid "folders"
+msgstr ""
+
+#: extension.js:155 extension.js:334
+msgid "failed-URI"
+msgstr ""
+
+#: extension.js:167
+msgid "this-device"
+msgstr ""
+
+#: extension.js:298
+msgid "rescan"
+msgstr ""
+
+#: extension.js:324
+msgid "web-interface"
+msgstr ""
+
+#: extension.js:346
+msgid "service"
+msgstr ""
+
+#: extension.js:366
+msgid "autostart"
+msgstr ""
+
+#: extension.js:413
+msgid "daemon-error"
+msgstr ""
+
+#: extension.js:416
+msgid "service-error"
+msgstr ""
+
+#: extension.js:419
+msgid "decoding-error"
+msgstr ""
+
+#: extension.js:422
+msgid "connection-error"
+msgstr ""
+
+#: extension.js:425
+msgid "config-error"
+msgstr ""
