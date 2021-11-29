@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingManager 0.19
+	SyncthingManager 0.22
 ================================================================================================================
 
 	GJS syncthing systemd manager
@@ -8,7 +8,6 @@
 	This work is distributed under GPLv3, see LICENSE for more information.
 ============================================================================================================= */
 
-const Lang = imports.lang;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const Soup = imports.gi.Soup;
@@ -97,13 +96,13 @@ class Item {
 			// Stop items from excessive state changes by only emitting 1 state per stateDelay
 			this._stateSource = GLib.timeout_source_new(this._stateEmitDelay);
 			this._stateSource.set_priority(GLib.PRIORITY_DEFAULT);
-			this._stateSource.set_callback(Lang.bind(this, function(){
+			this._stateSource.set_callback(() => {
 				if(this._stateEmitted != this._state){
 					console.info('Emit state change',this.name,this._state);
 					this._stateEmitted = this._state;
 					this.emit(Signal.STATE_CHANGE,this._state);
 				}
-			}));
+			});
 			this._stateSource.attach(null);
 		}
 	}
@@ -129,9 +128,9 @@ class ItemCollection {
 	add(item){
 		if(item instanceof Item){
 			this._collection[item.id] = item;
-			item.connect(Signal.DESTROY, Lang.bind(this, function(_item){
+			item.connect(Signal.DESTROY, (_item) => {
 				delete this._collection[_item.id];
-			}));
+			});
 			this.emit(Signal.ADD,item);
 		}
 	}
@@ -143,9 +142,9 @@ class ItemCollection {
 			item.destroy();
 			this.emit(Signal.DESTROY,item);
 		} else {
-			this.foreach(Lang.bind(this, function(_item){
+			this.foreach((_item) => {
 				this.destroy(_item.id);
-			}));
+			});
 		}
 	}
 
@@ -173,9 +172,9 @@ class Device extends Item {
 		super(data,manager);
 		this._determineStateDelay = 600,
 		this.folders = new ItemCollection();
-		this.folders.connect(Signal.ADD, Lang.bind(this, function(collection,folder){
-			folder.connect(Signal.STATE_CHANGE, Lang.bind(this,this.determineStateDelayed));
-		}));
+		this.folders.connect(Signal.ADD, (collection,folder) => {
+			folder.connect(Signal.STATE_CHANGE, this.determineStateDelayed.bind(this));
+		});
 	}
 
 	isOnline(){
@@ -189,19 +188,19 @@ class Device extends Item {
 		// Stop items from excessive state change calculations by only emitting 1 state per stateDelay
 		this._determineSource = GLib.timeout_source_new(this._determineStateDelay);
 		this._determineSource.set_priority(GLib.PRIORITY_DEFAULT);
-		this._determineSource.set_callback(Lang.bind(this,this.determineState));
+		this._determineSource.set_callback(this.determineState.bind(this));
 		this._determineSource.attach(null);
 	}
 
 	determineState(){
 		if(this.isOnline()){
 			this.setState(State.PAUSED);
-			this.folders.foreach(Lang.bind(this, function(folder){
+			this.folders.foreach((folder) => {
 				if(!this.isBusy()){
 					console.info('Determine device state',this.name,folder.name,folder.getState());
 					this.setState(folder.getState());
 				}
-			}));
+			});
 		}
 	}
 
@@ -221,23 +220,23 @@ class HostDevice extends Device {
 
 	constructor(data,manager){
 		super(data,manager);
-		this._manager.connect(Signal.DEVICE_ADD, Lang.bind(this, function(manager,device){
-			device.connect(Signal.STATE_CHANGE, Lang.bind(this,this.determineStateDelayed));
-		}));
-		this._manager.devices.foreach(Lang.bind(this, function(device){
-			device.connect(Signal.STATE_CHANGE, Lang.bind(this,this.determineStateDelayed));
-		}));
+		this._manager.connect(Signal.DEVICE_ADD, (manager,device) => {
+			device.connect(Signal.STATE_CHANGE, this.determineStateDelayed.bind(this));
+		});
+		this._manager.devices.foreach((device) => {
+			device.connect(Signal.STATE_CHANGE, this.determineStateDelayed.bind(this));
+		});
 		this.determineState();
 	}
 
 	determineState(){
 		this.setState(State.PAUSED);
-		this._manager.devices.foreach(Lang.bind(this, function(device){
+		this._manager.devices.foreach((device) => {
 			if(this != device && !this.isBusy() && device.isOnline()){
 				console.info('Determine host device state',this.name,device.name,device.getState());
 				this.setState(device.getState());
 			}
-		}));
+		});
 		if(!this.isBusy()){
 			super.determineState();
 		}
@@ -361,18 +360,18 @@ class Manager {
 		this.folders = new ItemCollection();
 		this.devices = new ItemCollection();
 
-		this.folders.connect(Signal.ADD, Lang.bind(this, function(collection,folder){
+		this.folders.connect(Signal.ADD, (collection,folder) => {
 			this.emit(Signal.FOLDER_ADD,folder);
-		}));
+		});
 
-		this.devices.connect(Signal.ADD, Lang.bind(this, function(collection,device){
+		this.devices.connect(Signal.ADD, (collection,device) => {
 			if(device instanceof HostDevice){
 				this.host = device;
 				this.emit(Signal.HOST_ADD,this.host);
 			} else {
 				this.emit(Signal.DEVICE_ADD,device);
 			}
-		}));
+		});
 
 		this._httpSession = new Soup.Session();
 		this._httpSession.ssl_strict = false; // Accept self signed certificates for now
@@ -389,30 +388,29 @@ class Manager {
 		this._hostID = '';
 		this._lastErrorTime = Date.now()
 
-		this.connect(Signal.SERVICE_CHANGE, Lang.bind(this, function(manager,state){
+		this.connect(Signal.SERVICE_CHANGE, (manager,state) => {
 			switch(state){
 				case ServiceState.ACTIVE:
-					this.openConnection('GET','/rest/system/status',Lang.bind(this, function(status){
+					this.openConnection('GET','/rest/system/status',(status) => {
 						this._hostID = status.myID;
-						this._callConfig(Lang.bind(this, function(config){
+						this._callConfig((config) => {
 							this._callEvents('limit=1');
-						}));
-					}));
+						});
+					});
 				break;
 			}
-		}));
-
+		});
 	}
 
 	_callConfig(handler){
-		this.openConnection('GET','/rest/system/config',Lang.bind(this, function(config){
+		this.openConnection('GET','/rest/system/config',(config) => {
 			this._processConfig(config);
 			if(handler) handler(config);
-		}));
+		});
 	}
 
 	_callEvents(options){
-		this.openConnection('GET','/rest/events?'+options,Lang.bind(this, function(events){
+		this.openConnection('GET','/rest/events?'+options,(events) => {
 			for(let i=0;i<events.length;i++){
 				console.debug('Processing event',events[i].type,events[i].data);
 				try {
@@ -479,15 +477,15 @@ class Manager {
 			// Reschedule this event stream
 			let source = GLib.timeout_source_new(50);
 			source.set_priority(GLib.PRIORITY_LOW);
-			source.set_callback(Lang.bind(this, function(){
+			source.set_callback(() => {
 				this._callEvents('since='+this._lastEventID);
-			}));
+			});
 			source.attach(null);
-		}));
+		});
 	}
 
 	_callConnections(){
-		this.openConnection('GET','/rest/system/connections',Lang.bind(this, function(data){
+		this.openConnection('GET','/rest/system/connections',(data) => {
 			let devices = data.connections;
 			for(let deviceID in devices){
 				if(this.devices.exists(deviceID) && deviceID != this._hostID){
@@ -500,7 +498,7 @@ class Manager {
 					}
 				}
 			}
-		}));
+		});
 	}
 
 	_processConfig(config){
@@ -519,13 +517,13 @@ class Manager {
 			}
 			if(config.folders[i].paused){
 				this.folders.get(config.folders[i].id).setState(State.PAUSED);
-		} else {
-			this.openConnection('GET','/rest/db/status?folder='+config.folders[i].id,Lang.bind(this, function(folderID){
-				return function(data){
-					this.folders.get(folderID).setState(data.state);
-				}
-			}(config.folders[i].id)));
-		}
+			} else {
+				this.openConnection('GET','/rest/db/status?folder='+config.folders[i].id,function(folderID){
+					return (data) => {
+						this.folders.get(folderID).setState(data.state);
+					}
+				}(config.folders[i].id));
+			}
 			for(let j=0;j<config.folders[i].devices.length;j++){
 				if(!(config.folders[i].devices[j].deviceID in usedDevices)){
 					usedDevices[config.folders[i].devices[j].deviceID] = [];
@@ -559,11 +557,11 @@ class Manager {
 							device: device
 						});
 						this.openConnection('GET','/rest/db/completion?folder='+folder.id+'&device='+device.id,
-							Lang.bind(this, function(proxy){
-								return function(data){
+							function(proxy){
+								return (data) => {
 									proxy.setCompletion(data.completion);
 								}
-							}(folder))
+							}(folder)
 						);
 					}
 					device.folders.add(folder);
@@ -588,7 +586,7 @@ class Manager {
 				this._isServiceEnabled();
 				this._callConnections();
 			}
-			this.openConnection('GET','/rest/system/error',Lang.bind(this, function(data){
+			this.openConnection('GET','/rest/system/error',(data) => {
 				let errorTime;
 				let errors = data.errors;
 				if(errors != null){
@@ -604,13 +602,13 @@ class Manager {
 						}
 					}
 				}
-			}));
+			});
 		} else {
 			this._isServiceEnabled();
 		}
 		this._pollSource = GLib.timeout_source_new(this._pollTime);
 		this._pollSource.set_priority(GLib.PRIORITY_LOW);
-		this._pollSource.set_callback(Lang.bind(this, this._callState));
+		this._pollSource.set_callback(this._callState.bind(this));
 		this._pollSource.attach(null);
 		this._pollCount++;
 	}
@@ -664,7 +662,7 @@ class Manager {
 		if(this._serviceActive && this._config.found()){
 			console.debug('Opening connection',msg.method+':'+msg.uri.get_path());
 			this._httpAborting = false;
-			this._httpSession.queue_message(msg, Lang.bind(this, function(session,msg){
+			this._httpSession.queue_message(msg, (session,msg) => {
 				if(msg.status_code == 200){
 					try {
 						if(callback && msg.response_body.data.length>0){
@@ -684,9 +682,9 @@ class Manager {
 						// Retry this connection attempt
 						let source = GLib.timeout_source_new(1000);
 						source.set_priority(GLib.PRIORITY_LOW);
-						source.set_callback(Lang.bind(this, function(){
+						source.set_callback(() => {
 								this.openConnectionMessage(msg,callback);
-						}));
+						});
 						source.attach(null);
 					} else {
 						console.error(msg.reason_phrase,msg.method+':'+msg.uri.get_path(),msg.status_code,msg.response_body.data);
@@ -696,7 +694,7 @@ class Manager {
 						});
 					}
 				}
-			}));
+			});
 		}
 	}
 
@@ -730,9 +728,9 @@ class Manager {
 		this.destroy();
 		this._lastEventID = 1;
 		this._pollCount = 0;
-		this._callConfig(Lang.bind(this, function(config){
+		this._callConfig((config) => {
 			this._callEvents('limit=1');
-		}));
+		});
 	}
 
 	enableService(){

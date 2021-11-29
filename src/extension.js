@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.21
+	SyncthingIndicator 0.22
 ================================================================================================================
 
 	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
@@ -10,7 +10,6 @@
 	This work is distributed under GPLv3, see LICENSE for more information.
 ============================================================================================================= */
 
-const Lang = imports.lang;
 const Gio = imports.gi.Gio;
 const GObject = imports.gi.GObject;
 const Gtk = imports.gi.Gtk;
@@ -134,13 +133,13 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 
 		this.path = file.get_uri();
 
-		this._folder.connect(Syncthing.Signal.STATE_CHANGE, Lang.bind(this, function(folder,state){
+		this._folder.connect(Syncthing.Signal.STATE_CHANGE, (folder,state) => {
 			this.icon.style_class = 'popup-menu-icon '+state;
-		}));
+		});
 
-		this._folder.connect(Syncthing.Signal.DESTROY, Lang.bind(this, function(folder){
+		this._folder.connect(Syncthing.Signal.DESTROY, (folder) => {
 			this.destroy();
-		}));
+		});
 
 	}
 
@@ -179,7 +178,7 @@ class DeviceMenu extends SectionMenu {
 		this._rescanItem = new RescanMenuItem();
 		this.menu.addMenuItem(this._rescanItem);
 
-		syncthingManager.connect(Syncthing.Signal.SERVICE_CHANGE, Lang.bind(this, function(manager,state){
+		syncthingManager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager,state) => {
 			switch(state){
 				case Syncthing.ServiceState.ACTIVE:
 					this._serviceSwitch.setSensitive(true);
@@ -206,24 +205,24 @@ class DeviceMenu extends SectionMenu {
 					this._autoSwitch.setSensitive(false);
 				break;
 			}
-		}));
+		});
 
-		syncthingManager.connect(Syncthing.Signal.ERROR, Lang.bind(this, function(manager,error){
+		syncthingManager.connect(Syncthing.Signal.ERROR, (manager,error) => {
 			switch(error.type){
 				case Syncthing.Error.DAEMON:
 					this._serviceSwitch.setToggleState(false);
 				break;
 			}
-		}));
+		});
 
 	}
 
 	setDevice(device){
 		this.device = device;
 		this.label.text = device.name;
-		this.device.connect(Syncthing.Signal.STATE_CHANGE, Lang.bind(this, function(device,state){
+		this.device.connect(Syncthing.Signal.STATE_CHANGE, (device,state) => {
 			this.icon.style_class = 'popup-menu-icon syncthing-submenu-icon '+state;
-		}));
+		});
 	}
 
 }
@@ -243,7 +242,7 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 		this.setSensitive(false);
 
-		this._device.connect(Syncthing.Signal.STATE_CHANGE, Lang.bind(this, function(device){
+		this._device.connect(Syncthing.Signal.STATE_CHANGE, (device) => {
 			let state = device.getState()
 			switch(state){
 				case Syncthing.State.DISCONNECTED:
@@ -260,11 +259,11 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 				break
 			}
 			this.icon.style_class = 'popup-menu-icon '+state;
-		}));
+		});
 
-		this._device.connect(Syncthing.Signal.DESTROY, Lang.bind(this, function(){
+		this._device.connect(Syncthing.Signal.DESTROY, () => {
 			this.destroy();
-		}));
+		});
 
 	}
 
@@ -389,22 +388,22 @@ class SyncthingIndicator extends PanelMenu.Button {
 
 		this.deviceMenu = new DeviceMenu();
 		this.menu.addMenuItem(this.deviceMenu);
-		this.deviceMenu.menu.connect('open-state-changed', Lang.bind(this, function(menu,open){
+		this.deviceMenu.menu.connect('open-state-changed', (menu,open) => {
 			if(this.menu.isOpen && !open) this.folderMenu.menu.open(true);
-		}));
+		});
 
 		this.folderMenu = new FolderMenu();
 		this.menu.addMenuItem(this.folderMenu);
-		this.folderMenu.menu.connect('open-state-changed', Lang.bind(this, function(menu,open){
+		this.folderMenu.menu.connect('open-state-changed', (menu,open) => {
 			if(this.menu.isOpen && !open) this.deviceMenu.menu.open(true);
-		}));
+		});
 
 		this.defaultMenu = this.deviceMenu;
-		this.menu.connect('open-state-changed', Lang.bind(this, function(menu,open){
+		this.menu.connect('open-state-changed', (menu,open) => {
 			if(open) this.defaultMenu.menu.open(false);
-		}));
+		});
 
-		syncthingManager.connect(Syncthing.Signal.ERROR, Lang.bind(this, function(manager,error){
+		syncthingManager.connect(Syncthing.Signal.ERROR, (manager,error) => {
 			switch(error.type){
 				case Syncthing.Error.DAEMON:
 					Main.notifyError('Syncthing Indicator daemon error:',error.message);
@@ -422,9 +421,9 @@ class SyncthingIndicator extends PanelMenu.Button {
 					Main.notifyError('Syncthing Indicator config error:',error.message);
 				break;
 			}
-		}));
+		});
 
-		syncthingManager.connect(Syncthing.Signal.SERVICE_CHANGE, Lang.bind(this, function(manager,state){
+		syncthingManager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager,state) => {
 			switch(state){
 				case Syncthing.ServiceState.ACTIVE:
 					this.defaultMenu = this.folderMenu;
@@ -435,27 +434,27 @@ class SyncthingIndicator extends PanelMenu.Button {
 					this.folderMenu.setSensitive(false)
 				break;
 			}
-		}));
+		});
 
-		syncthingManager.connect(Syncthing.Signal.FOLDER_ADD, Lang.bind(this, function(manager,folder){
+		syncthingManager.connect(Syncthing.Signal.FOLDER_ADD, (manager,folder) => {
 			this.folderMenu.setSensitive(true);
 			this.folderMenu.section.addMenuItem(
 				new FolderMenuItem(folder)
 			);
-		}));
+		});
 
-		syncthingManager.connect(Syncthing.Signal.DEVICE_ADD, Lang.bind(this, function(manager,device){
+		syncthingManager.connect(Syncthing.Signal.DEVICE_ADD, (manager,device) => {
 			this.deviceMenu.section.addMenuItem(
 				new DeviceMenuItem(device)
 			);
-		}));
+		});
 
-		syncthingManager.connect(Syncthing.Signal.HOST_ADD, Lang.bind(this, function(manager,device){
+		syncthingManager.connect(Syncthing.Signal.HOST_ADD, (manager,device) => {
 			this.deviceMenu.setDevice(device);
-			device.connect(Syncthing.Signal.STATE_CHANGE, Lang.bind(this, function(device,state){
+			device.connect(Syncthing.Signal.STATE_CHANGE, (device,state) => {
 				this.icon.setState(state);
-			}));
-		}));
+			});
+		});
 	}
 
 }
