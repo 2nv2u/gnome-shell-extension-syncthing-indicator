@@ -19,5 +19,6 @@ for LANG_FILE in $SCRIPT_PATH/po/*.po; do
 done
 
 # Zip extensions files
+[ -f $CUR_PATH/$EXT_NAME.zip ] && rm -f $CUR_PATH/$EXT_NAME.zip
 (cd $SCRIPT_PATH/src && zip -r $CUR_PATH/$EXT_NAME.zip *)
 zip -r $CUR_PATH/$EXT_NAME.zip -j $SCRIPT_PATH/LICENSE
