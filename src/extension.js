@@ -435,7 +435,6 @@ class SyncthingIndicator extends PanelMenu.Button {
 		});
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager,state) => {
-
 			switch(state){
 				case Syncthing.ServiceState.STOPPED:
 					this._folderMenu.setSensitive(false)
