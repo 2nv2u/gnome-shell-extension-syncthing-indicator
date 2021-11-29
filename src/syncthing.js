@@ -734,8 +734,7 @@ class Manager {
 	}
 
 	enableService(){
-		this._config.setService(true);
-		this._config.load();
+		this._config.setService();
 		this._serviceCommand('enable');
 		this._isServiceEnabled();
 	}
@@ -748,6 +747,10 @@ class Manager {
 	startService(){
 		this._config.setService();
 		this._serviceCommand('start');
+	}
+
+	installService(){
+		this._config.setService(true);
 		if(!this._config.found()) this._config.load();
 	}
 
