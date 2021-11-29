@@ -205,8 +205,10 @@ class DeviceMenu extends SectionMenu {
 					this._autoSwitch.setToggleState(false);
 				break;
 				case Syncthing.ServiceState.ERROR:
-					this._serviceSwitch.setSensitive(false);
+					this._serviceSwitch.setSensitive(true);
 					this._autoSwitch.setSensitive(false);
+					this._configItem.setSensitive(false);
+					this._rescanItem.setSensitive(false);
 				break;
 			}
 		});
@@ -302,7 +304,7 @@ class RescanMenuItem extends PopupMenu.PopupBaseMenuItem {
 	}
 
 	activate(event){
-		this.extension.indicator.folderMenu.menu.open(true)
+		this.extension.indicator.open(true)
 		this.extension.manager.rescan();
 	}
 
@@ -350,6 +352,7 @@ class ServiceSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 	}
 
 	activate(event){
+		this.setSensitive(false);
 		if (this._switch.mapped)
 			this.toggle();
 		if(this.actor.state){
@@ -371,6 +374,7 @@ class AutoSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 	}
 
 	activate(event){
+		this.setSensitive(false);
 		if (this._switch.mapped)
 			this.toggle();
 		if(this.actor.state){
@@ -394,21 +398,21 @@ class SyncthingIndicator extends PanelMenu.Button {
 		this.icon = new SyncthingPanelIcon();
 		this.add_actor(this.icon.actor);
 
-		this.deviceMenu = new DeviceMenu(extension);
-		this.menu.addMenuItem(this.deviceMenu);
-		this.deviceMenu.menu.connect('open-state-changed', (menu,open) => {
-			if(this.menu.isOpen && !open) this.folderMenu.menu.open(true);
+		this._deviceMenu = new DeviceMenu(extension);
+		this.menu.addMenuItem(this._deviceMenu);
+		this._deviceMenu.menu.connect('open-state-changed', (menu,open) => {
+			if(this.menu.isOpen && !open) this._folderMenu.menu.open(true);
 		});
 
-		this.folderMenu = new FolderMenu(extension);
-		this.menu.addMenuItem(this.folderMenu);
-		this.folderMenu.menu.connect('open-state-changed', (menu,open) => {
-			if(this.menu.isOpen && !open) this.deviceMenu.menu.open(true);
+		this._folderMenu = new FolderMenu(extension);
+		this.menu.addMenuItem(this._folderMenu);
+		this._folderMenu.menu.connect('open-state-changed', (menu,open) => {
+			if(this.menu.isOpen && !open) this._deviceMenu.menu.open(true);
 		});
 
-		this.defaultMenu = this.deviceMenu;
+
 		this.menu.connect('open-state-changed', (menu,open) => {
-			if(open) this.defaultMenu.menu.open(false);
+			if(open) this.open(false);
 		});
 
 		extension.manager.connect(Syncthing.Signal.ERROR, (manager,error) => {
@@ -432,37 +436,41 @@ class SyncthingIndicator extends PanelMenu.Button {
 		});
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager,state) => {
+
 			switch(state){
-				case Syncthing.ServiceState.ACTIVE:
-					this.defaultMenu = this.folderMenu;
-					this.folderMenu.setSensitive(true)
-				break;
 				case Syncthing.ServiceState.STOPPED:
-					this.defaultMenu = this.deviceMenu;
-					this.folderMenu.setSensitive(false)
+					this._folderMenu.setSensitive(false)
 				break;
 			}
 		});
 
 		extension.manager.connect(Syncthing.Signal.FOLDER_ADD, (manager,folder) => {
-			this.folderMenu.setSensitive(true);
-			this.folderMenu.section.addMenuItem(
+			this._folderMenu.setSensitive(true);
+			this._folderMenu.section.addMenuItem(
 				new FolderMenuItem(folder)
 			);
 		});
 
 		extension.manager.connect(Syncthing.Signal.DEVICE_ADD, (manager,device) => {
-			this.deviceMenu.section.addMenuItem(
+			this._deviceMenu.section.addMenuItem(
 				new DeviceMenuItem(device)
 			);
 		});
 
 		extension.manager.connect(Syncthing.Signal.HOST_ADD, (manager,device) => {
-			this.deviceMenu.setDevice(device);
+			this._deviceMenu.setDevice(device);
 			device.connect(Syncthing.Signal.STATE_CHANGE, (device,state) => {
 				this.icon.setState(state);
 			});
 		});
+	}
+
+	open(animate){
+		if(this._folderMenu.getSensitive()){
+			this._folderMenu.menu.open(animate);
+		} else {
+			this._deviceMenu.menu.open(animate);
+		}
 	}
 
 }
