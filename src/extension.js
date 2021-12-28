@@ -81,8 +81,8 @@ class SyncthingPanelIcon {
 // Syncthing indicator section menu
 class SectionMenu extends PopupMenu.PopupSubMenuMenuItem {
 
-	_init(title,icon){
-		super._init(title,true);
+	_init(title, icon){
+		super._init(title, true);
 		this.icon.icon_name = icon;
 		this.icon.add_style_class_name('syncthing-submenu-icon');
 		this.section = new PopupMenu.PopupMenuSection();
@@ -136,7 +136,7 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 
 		this.path = file.get_uri();
 
-		this._folder.connect(Syncthing.Signal.STATE_CHANGE, (folder,state) => {
+		this._folder.connect(Syncthing.Signal.STATE_CHANGE, (folder, state) => {
 			this.icon.style_class = 'popup-menu-icon '+state;
 		});
 
@@ -181,7 +181,7 @@ class DeviceMenu extends SectionMenu {
 		this._rescanItem = new RescanMenuItem(extension);
 		this.menu.addMenuItem(this._rescanItem);
 
-		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager,state) => {
+		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
 			switch(state){
 				case Syncthing.ServiceState.ACTIVE:
 					this._serviceSwitch.setSensitive(true);
@@ -212,7 +212,7 @@ class DeviceMenu extends SectionMenu {
 			}
 		});
 
-		extension.manager.connect(Syncthing.Signal.ERROR, (manager,error) => {
+		extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
 			switch(error.type){
 				case Syncthing.Error.DAEMON:
 					this._serviceSwitch.setToggleState(false);
@@ -225,7 +225,7 @@ class DeviceMenu extends SectionMenu {
 	setDevice(device){
 		this.device = device;
 		this.label.text = device.name;
-		this.device.connect(Syncthing.Signal.STATE_CHANGE, (device,state) => {
+		this.device.connect(Syncthing.Signal.STATE_CHANGE, (device, state) => {
 			this.icon.style_class = 'popup-menu-icon syncthing-submenu-icon '+state;
 		});
 	}
@@ -243,7 +243,7 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 		let icon = new Gio.ThemedIcon({ name: 'network-server-symbolic' });
 		this.icon = new St.Icon({ gicon: icon, style_class: 'popup-menu-icon' });
-		this.actor.insert_child_at_index(this.icon,1);
+		this.actor.insert_child_at_index(this.icon, 1);
 
 		this.setSensitive(false);
 
@@ -399,42 +399,42 @@ class SyncthingIndicator extends PanelMenu.Button {
 
 		this._deviceMenu = new DeviceMenu(extension);
 		this.menu.addMenuItem(this._deviceMenu);
-		this._deviceMenu.menu.connect('open-state-changed', (menu,open) => {
+		this._deviceMenu.menu.connect('open-state-changed', (menu, open) => {
 			if(this.menu.isOpen && !open) this._folderMenu.menu.open(true);
 		});
 
 		this._folderMenu = new FolderMenu(extension);
 		this.menu.addMenuItem(this._folderMenu);
-		this._folderMenu.menu.connect('open-state-changed', (menu,open) => {
+		this._folderMenu.menu.connect('open-state-changed', (menu, open) => {
 			if(this.menu.isOpen && !open) this._deviceMenu.menu.open(true);
 		});
 
 
-		this.menu.connect('open-state-changed', (menu,open) => {
+		this.menu.connect('open-state-changed', (menu, open) => {
 			if(open) this.open(false);
 		});
 
-		extension.manager.connect(Syncthing.Signal.ERROR, (manager,error) => {
+		extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
 			switch(error.type){
 				case Syncthing.Error.DAEMON:
-					Main.notifyError(_('daemon-error'),error.message);
+					Main.notifyError(_('daemon-error'), error.message);
 				break;
 				case Syncthing.Error.SERVICE:
-					Main.notifyError(_('service-error'),error.message);
+					Main.notifyError(_('service-error'), error.message);
 				break;
 				case Syncthing.Error.STREAM:
-					Main.notifyError(_('decoding-error'),error.message);
+					Main.notifyError(_('decoding-error'), error.message);
 				break;
 				case Syncthing.Error.CONNECTION:
-					Main.notifyError(_('connection-error'),error.message);
+					Main.notifyError(_('connection-error'), error.message);
 				break;
 				case Syncthing.Error.CONFIG:
-					Main.notifyError(_('config-error'),error.message);
+					Main.notifyError(_('config-error'), error.message);
 				break;
 			}
 		});
 
-		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager,state) => {
+		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
 			switch(state){
 				case Syncthing.ServiceState.STOPPED:
 					this._folderMenu.setSensitive(false)
@@ -442,22 +442,22 @@ class SyncthingIndicator extends PanelMenu.Button {
 			}
 		});
 
-		extension.manager.connect(Syncthing.Signal.FOLDER_ADD, (manager,folder) => {
+		extension.manager.connect(Syncthing.Signal.FOLDER_ADD, (manager, folder) => {
 			this._folderMenu.setSensitive(true);
 			this._folderMenu.section.addMenuItem(
 				new FolderMenuItem(folder)
 			);
 		});
 
-		extension.manager.connect(Syncthing.Signal.DEVICE_ADD, (manager,device) => {
+		extension.manager.connect(Syncthing.Signal.DEVICE_ADD, (manager, device) => {
 			this._deviceMenu.section.addMenuItem(
 				new DeviceMenuItem(device)
 			);
 		});
 
-		extension.manager.connect(Syncthing.Signal.HOST_ADD, (manager,device) => {
+		extension.manager.connect(Syncthing.Signal.HOST_ADD, (manager, device) => {
 			this._deviceMenu.setDevice(device);
-			device.connect(Syncthing.Signal.STATE_CHANGE, (device,state) => {
+			device.connect(Syncthing.Signal.STATE_CHANGE, (device, state) => {
 				this.icon.setState(state);
 			});
 		});

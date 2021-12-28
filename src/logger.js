@@ -17,7 +17,7 @@ var Level = {
 
 class Service {
 
-	constructor(level,prefix){
+	constructor(level, prefix){
 	this._levels = [];
 		this._level = level;
 		this._prefix = prefix;
@@ -28,11 +28,11 @@ class Service {
 		}
 	}
 
-	logCollection(level,collection){
+	logCollection(level, collection){
 		if(level >= this._level){
 			let args = Array.prototype.slice.call(collection);
 			args.unshift(level);
-			this.log.apply(this,args);
+			this.log.apply(this, args);
 		}
 	}
 
@@ -46,24 +46,24 @@ class Service {
 					args[i] = JSON.stringify(args[i]);
 				}
 			}
-			log.apply(this,args);
+			log.apply(this, args);
 		}
 	}
 
 	debug(){
-		this.logCollection(Level.DEBUG,arguments);
+		this.logCollection(Level.DEBUG, arguments);
 	}
 
 	info(){
-		this.logCollection(Level.INFO,arguments);
+		this.logCollection(Level.INFO, arguments);
 	}
 
 	warn(){
-		this.logCollection(Level.WARN,arguments);
+		this.logCollection(Level.WARN, arguments);
 	}
 
 	error(){
-		this.logCollection(Level.ERROR,arguments);
+		this.logCollection(Level.ERROR, arguments);
 	}
 
 }
