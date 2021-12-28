@@ -18,10 +18,11 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 
 const Logger = Me.imports.logger;
-const console = new Logger.Service(Logger.Level.WARN,'syncthing-indicator-manager');
+const console = new Logger.Service(Logger.Level.WARN, 'syncthing-indicator-manager');
 
 // Error constants
 var Error = {
+	LOGIN: "login",
 	DAEMON: "daemon",
 	SERVICE: "service",
 	STREAM: "stream",
@@ -36,6 +37,7 @@ var Service = {
 
 // Signal constants
 var Signal = {
+	LOGIN: "login",
 	ADD: "add",
 	DESTROY: "destroy",
 	SERVICE_CHANGE: "serviceChange",
@@ -70,10 +72,44 @@ var ServiceState = {
 	ERROR: "error"
 };
 
+// Signal constants
+var EventType = {
+    CONFIG_SAVED: "ConfigSaved",
+    DEVICE_CONNECTED: "DeviceConnected",
+    DEVICE_DISCONNECTED: "DeviceDisconnected",
+    DEVICE_DISCOVERED: "DeviceDiscovered",
+    DEVICE_PAUSED: "DevicePaused",
+    DEVICE_REJECTED: "DeviceRejected",
+    DEVICE_RESUMED: "DeviceResumed",
+    DOWNLOAD_PROGRESS: "DownloadProgress",
+    FAILURE: "Failure",
+    FOLDER_COMPLETION: "FolderCompletion",
+    FOLDER_ERRORS: "FolderErrors",
+    FOLDER_PAUSED: "FolderPaused",
+    FOLDER_REJECTED: "FolderRejected",
+    FOLDER_RESUMED: "FolderResumed",
+    FOLDER_SCAN_PROGRESS: "FolderScanProgress",
+    FOLDER_SUMMARY: "FolderSummary",
+    ITEM_FINISHED: "ItemFinished",
+    ITEM_STARTED: "ItemStarted",
+    LISTEN_ADDRESSES_CHANGED: "ListenAddressesChanged",
+    LOCAL_CHANGE_DETECTED: "LocalChangeDetected",
+    LOCAL_INDEX_UPDATED: "LocalIndexUpdated",
+    LOGIN_ATTEMPT: "LoginAttempt",
+    PENDING_DEVICES_CHANGED: "PendingDevicesChanged",
+    PENDING_FOLDERS_CHANGED: "PendingFoldersChanged",
+    REMOTE_CHANGE_DETECTED: "RemoteChangeDetected",
+    REMOTE_DOWNLOAD_PROGRESS: "RemoteDownloadProgress",
+    REMOTE_INDEX_UPDATED: "RemoteIndexUpdated",
+    STARTING: "Starting",
+    STARTUP_COMPLETE: "StartupComplete",
+    STATE_CHANGED: "StateChanged"
+};
+
 // Abstract item used for folders and devices
 class Item {
 
-	constructor(data,manager){
+	constructor(data, manager){
 		this._state = State.UNKNOWN,
 		this._stateEmitted = State.UNKNOWN,
 		this._stateEmitDelay = 200,
@@ -91,16 +127,16 @@ class Item {
 			if(this._stateSource){
 				this._stateSource.destroy();
 			}
-			console.info('State change',this.name,state);
+			console.info('State change', this.name, state);
 			this._state = state;
 			// Stop items from excessive state changes by only emitting 1 state per stateDelay
 			this._stateSource = GLib.timeout_source_new(this._stateEmitDelay);
 			this._stateSource.set_priority(GLib.PRIORITY_DEFAULT);
 			this._stateSource.set_callback(() => {
 				if(this._stateEmitted != this._state){
-					console.info('Emit state change',this.name,this._state);
+					console.info('Emit state change', this.name, this._state);
 					this._stateEmitted = this._state;
-					this.emit(Signal.STATE_CHANGE,this._state);
+					this.emit(Signal.STATE_CHANGE, this._state);
 				}
 			});
 			this._stateSource.attach(null);
@@ -131,7 +167,7 @@ class ItemCollection {
 			item.connect(Signal.DESTROY, (_item) => {
 				delete this._collection[_item.id];
 			});
-			this.emit(Signal.ADD,item);
+			this.emit(Signal.ADD, item);
 		}
 	}
 
@@ -140,7 +176,7 @@ class ItemCollection {
 			let item = this._collection[id];
 			delete this._collection[id];
 			item.destroy();
-			this.emit(Signal.DESTROY,item);
+			this.emit(Signal.DESTROY, item);
 		} else {
 			this.foreach((_item) => {
 				this.destroy(_item.id);
@@ -168,11 +204,11 @@ Signals.addSignalMethods(ItemCollection.prototype);
 // Device
 class Device extends Item {
 
-	constructor(data,manager){
-		super(data,manager);
+	constructor(data, manager){
+		super(data, manager);
 		this._determineStateDelay = 600,
 		this.folders = new ItemCollection();
-		this.folders.connect(Signal.ADD, (collection,folder) => {
+		this.folders.connect(Signal.ADD, (collection, folder) => {
 			folder.connect(Signal.STATE_CHANGE, this.determineStateDelayed.bind(this));
 		});
 	}
@@ -197,7 +233,7 @@ class Device extends Item {
 			this.setState(State.PAUSED);
 			this.folders.foreach((folder) => {
 				if(!this.isBusy()){
-					console.info('Determine device state',this.name,folder.name,folder.getState());
+					console.info('Determine device state', this.name, folder.name, folder.getState());
 					this.setState(folder.getState());
 				}
 			});
@@ -218,9 +254,9 @@ Signals.addSignalMethods(Device.prototype);
 // Device host
 class HostDevice extends Device {
 
-	constructor(data,manager){
-		super(data,manager);
-		this._manager.connect(Signal.DEVICE_ADD, (manager,device) => {
+	constructor(data, manager){
+		super(data, manager);
+		this._manager.connect(Signal.DEVICE_ADD, (manager, device) => {
 			device.connect(Signal.STATE_CHANGE, this.determineStateDelayed.bind(this));
 		});
 		this._manager.devices.foreach((device) => {
@@ -233,7 +269,7 @@ class HostDevice extends Device {
 		this.setState(State.PAUSED);
 		this._manager.devices.foreach((device) => {
 			if(this != device && !this.isBusy() && device.isOnline()){
-				console.info('Determine host device state',this.name,device.name,device.getState());
+				console.info('Determine host device state', this.name, device.name, device.getState());
 				this.setState(device.getState());
 			}
 		});
@@ -248,8 +284,8 @@ Signals.addSignalMethods(HostDevice.prototype);
 // Folder
 class Folder extends Item {
 
-	constructor(data,manager){
-		super(data,manager);
+	constructor(data, manager){
+		super(data, manager);
 		this.path = data.path;
 		this.devices = new ItemCollection();
 	}
@@ -307,13 +343,13 @@ class Config {
 			GLib.RegexCompileFlags.DOTALL,
 			0
 		);
-		let reMatch = regExp.match(config,0);
+		let reMatch = regExp.match(config, 0);
 		if(reMatch[0]){
 			this._address = reMatch[1].fetch(2);
 			this._apikey = reMatch[1].fetch(3);
 			this._uri = 'http'+((reMatch[1].fetch(1)=='true')?'s':'')+'://'+this._address;
 			this._found = true;
-			console.info('Found config',this._address,this._apikey,this._uri);
+			console.info('Found config', this._address, this._apikey, this._uri);
 		} else {
 			throw('Can\'t find gui xml node in config');
 		}
@@ -331,7 +367,7 @@ class Config {
 			}
 			let copyFlag = Gio.FileCopyFlags.NONE;
 			if(force) copyFlag = Gio.FileCopyFlags.OVERWRITE;
-			if(systemDConfigFileFrom.copy(systemDConfigFileTo,copyFlag,null,null)){
+			if(systemDConfigFileFrom.copy(systemDConfigFileTo, copyFlag, null, null)){
 				console.info('Systemd configuration file copied to '+systemdConfigPath+'/'+Service.NAME);
 			} else {
 				console.warn('Couldn\'t copy systemd configuration file to '+systemdConfigPath+'/'+Service.NAME);
@@ -360,16 +396,16 @@ class Manager {
 		this.folders = new ItemCollection();
 		this.devices = new ItemCollection();
 
-		this.folders.connect(Signal.ADD, (collection,folder) => {
-			this.emit(Signal.FOLDER_ADD,folder);
+		this.folders.connect(Signal.ADD, (collection, folder) => {
+			this.emit(Signal.FOLDER_ADD, folder);
 		});
 
-		this.devices.connect(Signal.ADD, (collection,device) => {
+		this.devices.connect(Signal.ADD, (collection, device) => {
 			if(device instanceof HostDevice){
 				this.host = device;
-				this.emit(Signal.HOST_ADD,this.host);
+				this.emit(Signal.HOST_ADD, this.host);
 			} else {
-				this.emit(Signal.DEVICE_ADD,device);
+				this.emit(Signal.DEVICE_ADD, device);
 			}
 		});
 
@@ -388,7 +424,7 @@ class Manager {
 		this._hostID = '';
 		this._lastErrorTime = Date.now()
 
-		this.connect(Signal.SERVICE_CHANGE, (manager,state) => {
+		this.connect(Signal.SERVICE_CHANGE, (manager, state) => {
 			switch(state){
 				case ServiceState.ACTIVE:
 					this.openConnection('GET','/rest/system/status',(status) => {
@@ -412,19 +448,29 @@ class Manager {
 	_callEvents(options){
 		this.openConnection('GET','/rest/events?'+options,(events) => {
 			for(let i=0;i<events.length;i++){
-				console.debug('Processing event',events[i].type,events[i].data);
+				console.debug('Processing event', events[i].type, events[i].data);
 				try {
 					switch(events[i].type){
-						case "ConfigSaved":
+						case EventType.STARTUP_COMPLETE:
+							this._callConfig();
+						break;
+						case EventType.CONFIG_SAVED:
 							this._config.load();
 							this._processConfig(events[i].data);
 						break;
-						case "FolderErrors":
+						case EventType.LOGIN_ATTEMPT:
+							if(events[i].data.success){
+								this.emit(Signal.LOGIN, events[i].data.username);
+							} else {
+								this.emit(Error.LOGIN, events[i].data.username);
+							}
+						break;
+						case EventType.FOLDER_ERRORS:
 							if(this.folders.exists(events[i].data.folder)){
 								this.folders.get(events[i].data.folder).setState(State.ERRONEOUS);
 							}
 						break;
-						case "FolderCompletion":
+						case EventType.FOLDER_COMPLETION:
 							if(this.folders.exists(events[i].data.folder) && this.devices.exists(events[i].data.device)){
 								let device = this.devices.get(events[i].data.device);
 								if(device.folders.exists(events[i].data.folder)){
@@ -433,45 +479,53 @@ class Manager {
 								}
 							}
 						break;
-						case "FolderSummary":
+						case EventType.FOLDER_SUMMARY:
 							if(this.folders.exists(events[i].data.folder)){
 								this.folders.get(events[i].data.folder).setState(events[i].data.summary.state);
 							}
 						break;
-						case "FolderPaused":
+						case EventType.FOLDER_PAUSED:
 							if(this.folders.exists(events[i].data.id)){
 								this.folders.get(events[i].data.id).setState(State.PAUSED);
 							}
 						break;
-						case "StateChanged":
+						case EventType.PENDING_FOLDERS_CHANGED:
+							this.folders.destroy();
+							this._callConfig();
+						break;
+						case EventType.STATE_CHANGED:
 							if(this.folders.exists(events[i].data.folder)){
 								this.folders.get(events[i].data.folder).setState(events[i].data.to);
 							}
 						break;
-						case "DeviceResumed":
+						case EventType.DEVICE_RESUMED:
 							if(this.devices.exists(events[i].data.device)){
 								this.devices.get(events[i].data.device).setState(State.DISCONNECTED);
 							}
 						break;
-						case "DevicePaused":
+						case EventType.DEVICE_PAUSED:
 							if(this.devices.exists(events[i].data.device)){
 								this.devices.get(events[i].data.device).setState(State.PAUSED);
 							}
 						break;
-						case "DeviceConnected":
+						case EventType.DEVICE_CONNECTED:
 							if(this.devices.exists(events[i].data.id)){
 								this.devices.get(events[i].data.id).setState(State.IDLE);
 							}
 						break;
-						case "DeviceDisconnected":
+						case EventType.DEVICE_DISCONNECTED:
 							if(this.devices.exists(events[i].data.id)){
 								this.devices.get(events[i].data.id).setState(State.DISCONNECTED);
 							}
 						break;
+						case EventType.PENDING_DEVICES_CHANGED:
+							this.devices.destroy();
+							this._callConfig();
+						break;
 					}
 					this._lastEventID = events[i].id;
 				} catch(error){
-					console.warn('Event processing failed',error.message);
+					console.warn('Event processing failed', error.message);
 				}
 			}
 			// Reschedule this event stream
@@ -512,13 +566,13 @@ class Manager {
 					id: config.folders[i].id,
 					name: name,
 					path: config.folders[i].path
-				},this);
+				}, this);
 				this.folders.add(folder);
 			}
 			if(config.folders[i].paused){
 				this.folders.get(config.folders[i].id).setState(State.PAUSED);
 			} else {
-				this.openConnection('GET','/rest/db/status?folder='+config.folders[i].id,function(folder){
+				this.openConnection('GET','/rest/db/status?folder='+config.folders[i].id, function(folder){
 					return (data) => {
 						folder.setState(data.state);
 					}
@@ -541,12 +595,12 @@ class Manager {
 					device = new HostDevice({
 						id: config.devices[i].deviceID,
 						name: config.devices[i].name
-					},this);
+					}, this);
 				} else {
 					device = new Device({
 						id: config.devices[i].deviceID,
 						name: config.devices[i].name
-					},this);
+					}, this);
 				}
 				this.devices.add(device);
 				for(let j=0;j<usedDevices[config.devices[i].deviceID].length;j++){
@@ -594,7 +648,7 @@ class Manager {
 						errorTime = new Date(errors[i].when)
 						if(errorTime > this._lastErrorTime){
 							this._lastErrorTime = errorTime;
-							console.error('Syncthing error',errors[i]);
+							console.error('Syncthing error', errors[i]);
 							this.emit(Signal.ERROR,{
 								type: Error.SERVICE,
 								message: errors[i].message
@@ -650,27 +704,29 @@ class Manager {
 		this._httpSession.abort();
 	}
 
-	openConnection(method,uri,callback){
+	openConnection(method, uri, callback){
 		if(this._config.found()){
-			let msg = Soup.Message.new(method,this._config.getURI()+uri);
-			msg.request_headers.append('X-API-Key',this._config.getAPIKey());
-			this.openConnectionMessage(msg,callback);
+			let msg = Soup.Message.new(method, this._config.getURI()+uri);
+			msg.request_headers.append('X-API-Key', this._config.getAPIKey());
+			this.openConnectionMessage(msg, callback);
+		} else {
+			this._config.load()
 		}
 	}
 
-	openConnectionMessage(msg,callback){
+	openConnectionMessage(msg, callback){
 		if(this._serviceActive && this._config.found()){
-			console.debug('Opening connection',msg.method+':'+msg.uri.get_path());
+			console.debug('Opening connection', msg.method+':'+msg.uri.get_path());
 			this._httpAborting = false;
-			this._httpSession.queue_message(msg, (session,msg) => {
+			this._httpSession.queue_message(msg, (session, msg) => {
 				if(msg.status_code == 200){
 					try {
 						if(callback && msg.response_body.data.length>0){
-							console.debug('Callback',msg.method+':'+msg.uri.get_path(),msg.response_body.data);
+							console.debug('Callback', msg.method+':'+msg.uri.get_path(), msg.response_body.data);
 							callback(JSON.parse(msg.response_body.data));
 						}
 					} catch(error){
-						console.error('Stream / parsing error',msg.method+':'+msg.uri.get_path(),error.message,msg.response_body.data);
+						console.error('Stream / parsing error', msg.method+':'+msg.uri.get_path(), error.message, msg.response_body.data);
 						this.emit(Signal.ERROR,{
 							type: Error.STREAM,
 							message: 'Stream / parsing error: '+msg.method+':'+msg.uri.get_path()
@@ -678,16 +734,16 @@ class Manager {
 					}
 				} else if(!this._httpAborting){
 					if(msg.status_code < 100){
-						console.info(msg.reason_phrase,'will retry',msg.method+':'+msg.uri.get_path(),msg.status_code);
+						console.info(msg.reason_phrase,'will retry', msg.method+':'+msg.uri.get_path(), msg.status_code);
 						// Retry this connection attempt
 						let source = GLib.timeout_source_new(1000);
 						source.set_priority(GLib.PRIORITY_LOW);
 						source.set_callback(() => {
-								this.openConnectionMessage(msg,callback);
+								this.openConnectionMessage(msg, callback);
 						});
 						source.attach(null);
 					} else {
-						console.error(msg.reason_phrase,msg.method+':'+msg.uri.get_path(),msg.status_code,msg.response_body.data);
+						console.error(msg.reason_phrase, msg.method+':'+msg.uri.get_path(), msg.status_code, msg.response_body.data);
 						this.emit(Signal.ERROR,{
 							type: Error.CONNECTION,
 							message: msg.reason_phrase+' - '+msg.method+':'+msg.uri.get_path()
@@ -713,9 +769,9 @@ class Manager {
 		try {
 			this._config.load();
 		} catch(error){
-			console.error('Could not open / find config',error);
-			this.emit(Signal.SERVICE_CHANGE,ServiceState.ERROR);
-			this.emit(Signal.ERROR,{
+			console.error('Could not open / find config', error);
+			this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
+			this.emit(Signal.ERROR, {
 				type: Error.CONFIG,
 				message: 'Could not open / find config, Syncthing might not be installed!'
 			});
