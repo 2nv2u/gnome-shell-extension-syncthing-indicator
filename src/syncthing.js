@@ -334,24 +334,26 @@ class Config {
 
 		// Extract syncthing configuration from the default config file
 		let configFile = Gio.File.new_for_path(GLib.get_user_config_dir()+'/syncthing/config.xml');
-		let configInputStream = configFile.read(null);
-		let configDataInputStream = Gio.DataInputStream.new(configInputStream);
-		let config = configDataInputStream.read_until("", null).toString();
-		configInputStream.close(null);
-		let regExp = new GLib.Regex(
-			'<gui.*?tls="(true|false)".*?>.*?<address>(.*?)</address>.*?<apikey>(.*?)</apikey>.*?</gui>',
-			GLib.RegexCompileFlags.DOTALL,
-			0
-		);
-		let reMatch = regExp.match(config, 0);
-		if(reMatch[0]){
-			this._address = reMatch[1].fetch(2);
-			this._apikey = reMatch[1].fetch(3);
-			this._uri = 'http'+((reMatch[1].fetch(1)=='true')?'s':'')+'://'+this._address;
-			this._found = true;
-			console.info('Found config', this._address, this._apikey, this._uri);
-		} else {
-			throw('Can\'t find gui xml node in config');
+		if(configFile.query_exists(null)){
+			let configInputStream = configFile.read(null);
+			let configDataInputStream = Gio.DataInputStream.new(configInputStream);
+			let config = configDataInputStream.read_until("", null).toString();
+			configInputStream.close(null);
+			let regExp = new GLib.Regex(
+				'<gui.*?tls="(true|false)".*?>.*?<address>(.*?)</address>.*?<apikey>(.*?)</apikey>.*?</gui>',
+				GLib.RegexCompileFlags.DOTALL,
+				0
+			);
+			let reMatch = regExp.match(config, 0);
+			if(reMatch[0]){
+				this._address = reMatch[1].fetch(2);
+				this._apikey = reMatch[1].fetch(3);
+				this._uri = 'http'+((reMatch[1].fetch(1)=='true')?'s':'')+'://'+this._address;
+				this._found = true;
+				console.info('Found config', this._address, this._apikey, this._uri);
+			} else {
+				throw('Can\'t find gui xml node in config');
+			}
 		}
 	}
 
@@ -376,6 +378,7 @@ class Config {
 	}
 
 	found(){
+		if(!this._found) this.load();
 		return this._found;
 	}
 
@@ -455,7 +458,6 @@ class Manager {
 							this._callConfig();
 						break;
 						case EventType.CONFIG_SAVED:
-							this._config.load();
 							this._processConfig(events[i].data);
 						break;
 						case EventType.LOGIN_ATTEMPT:
@@ -709,8 +711,6 @@ class Manager {
 			let msg = Soup.Message.new(method, this._config.getURI()+uri);
 			msg.request_headers.append('X-API-Key', this._config.getAPIKey());
 			this.openConnectionMessage(msg, callback);
-		} else {
-			this._config.load()
 		}
 	}
 
@@ -766,14 +766,12 @@ class Manager {
 	}
 
 	attach(){
-		try {
-			this._config.load();
-		} catch(error){
-			console.error('Could not open / find config', error);
+		if(!this._config.found()){
+			console.error('Could not open / find config');
 			this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
 			this.emit(Signal.ERROR, {
 				type: Error.CONFIG,
-				message: 'Could not open / find config, Syncthing might not be installed!'
+				message: 'Could not open / find config'
 			});
 		}
 		return this._callState();
@@ -807,7 +805,6 @@ class Manager {
 
 	installService(){
 		this._config.setService(true);
-		if(!this._config.found()) this._config.load();
 	}
 
 	stopService(){
