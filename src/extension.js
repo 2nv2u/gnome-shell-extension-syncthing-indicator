@@ -181,45 +181,6 @@ class DeviceMenu extends SectionMenu {
 		this._rescanItem = new RescanMenuItem(extension);
 		this.menu.addMenuItem(this._rescanItem);
 
-		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
-			switch(state){
-				case Syncthing.ServiceState.ACTIVE:
-					this._serviceSwitch.setSensitive(true);
-					this._serviceSwitch.setToggleState(true);
-					this._configItem.setSensitive(true);
-					this._rescanItem.setSensitive(true);
-				break;
-				case Syncthing.ServiceState.STOPPED:
-					this._serviceSwitch.setSensitive(true);
-					this._serviceSwitch.setToggleState(false);
-					this._configItem.setSensitive(false);
-					this._rescanItem.setSensitive(false);
-				break;
-				case Syncthing.ServiceState.ENABLED:
-					this._autoSwitch.setSensitive(true);
-					this._autoSwitch.setToggleState(true);
-				break;
-				case Syncthing.ServiceState.DISABLED:
-					this._autoSwitch.setSensitive(true);
-					this._autoSwitch.setToggleState(false);
-				break;
-				case Syncthing.ServiceState.ERROR:
-					this._serviceSwitch.setSensitive(true);
-					this._autoSwitch.setSensitive(false);
-					this._configItem.setSensitive(false);
-					this._rescanItem.setSensitive(false);
-				break;
-			}
-		});
-
-		extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
-			switch(error.type){
-				case Syncthing.Error.DAEMON:
-					this._serviceSwitch.setToggleState(false);
-				break;
-			}
-		});
-
 	}
 
 	setDevice(device){
@@ -231,7 +192,7 @@ class DeviceMenu extends SectionMenu {
 	}
 
 }
-DeviceMenu = GObject.registerClass({GTypeName: 'DeviceMenu'}, DeviceMenu)
+DeviceMenu = GObject.registerClass({ GTypeName: 'DeviceMenu' }, DeviceMenu)
 
 // Syncthing indicator device menu item
 class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
@@ -300,6 +261,21 @@ class RescanMenuItem extends PopupMenu.PopupBaseMenuItem {
 		this.actor.add_child(this._label);
 		this.actor.label_actor = this._label;
 		this.extension = extension
+
+		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
+			switch(state){
+				case Syncthing.ServiceState.ACTIVE:
+					this.setSensitive(true);
+				break;
+				case Syncthing.ServiceState.STOPPED:
+					this.setSensitive(false);
+				break;
+				case Syncthing.ServiceState.ERROR:
+					this.setSensitive(false);
+				break;
+			}
+		});
+
 	}
 
 	activate(event){
@@ -327,6 +303,21 @@ class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
 		this.actor.add_child(this._label);
 		this.actor.label_actor = this._label;
 		this.extension = extension
+
+		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
+			switch(state){
+				case Syncthing.ServiceState.ACTIVE:
+					this.setSensitive(true);
+				break;
+				case Syncthing.ServiceState.STOPPED:
+					this.setSensitive(false);
+				break;
+				case Syncthing.ServiceState.ERROR:
+					this.setSensitive(false);
+				break;
+			}
+		});
+
 	}
 
 	activate(event){
@@ -348,6 +339,32 @@ class ServiceSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 	_init(extension){
 		super._init(_("service"), false);
 		this.extension = extension
+
+		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
+			switch(state){
+				case Syncthing.ServiceState.ACTIVE:
+					this.setSensitive(true);
+					this.setToggleState(true);
+				break;
+				case Syncthing.ServiceState.STOPPED:
+					this.setSensitive(true);
+					this.setToggleState(false);
+				break;
+				case Syncthing.ServiceState.ERROR:
+					this.setSensitive(true);
+				break;
+			}
+		});
+
+		extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
+			switch(error.type){
+				case Syncthing.Error.DAEMON:
+					this.setSensitive(true);
+					this.setToggleState(false);
+				break;
+			}
+		});
+
 	}
 
 	activate(event){
@@ -370,6 +387,23 @@ class AutoSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 	_init(extension){
 		super._init(_("autostart"), false);
 		this.extension = extension
+
+		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
+			switch(state){
+				case Syncthing.ServiceState.ENABLED:
+					this.setSensitive(true);
+					this.setToggleState(true);
+				break;
+				case Syncthing.ServiceState.DISABLED:
+					this.setSensitive(true);
+					this.setToggleState(false);
+				break;
+				case Syncthing.ServiceState.ERROR:
+					this.setSensitive(false);
+				break;
+			}
+		});
+
 	}
 
 	activate(event){
@@ -417,19 +451,19 @@ class SyncthingIndicator extends PanelMenu.Button {
 		extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
 			switch(error.type){
 				case Syncthing.Error.DAEMON:
-					Main.notifyError(_('daemon-error'), error.message);
+					Main.notifyError('Syncthing Indicator', _('daemon-error'));
 				break;
 				case Syncthing.Error.SERVICE:
-					Main.notifyError(_('service-error'), error.message);
+					Main.notifyError('Syncthing Indicator', _('service-error'));
 				break;
 				case Syncthing.Error.STREAM:
-					Main.notifyError(_('decoding-error'), error.message);
+					Main.notifyError('Syncthing Indicator', _('decoding-error'));
 				break;
 				case Syncthing.Error.CONNECTION:
-					Main.notifyError(_('connection-error'), error.message);
+					Main.notifyError('Syncthing Indicator', _('connection-error'));
 				break;
 				case Syncthing.Error.CONFIG:
-					Main.notifyError(_('config-error'), error.message);
+					Main.notifyError('Syncthing Indicator', _('config-error'));
 				break;
 			}
 		});
