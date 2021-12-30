@@ -22,12 +22,12 @@ const console = new Logger.Service(Logger.Level.WARN, 'syncthing-indicator-manag
 
 // Error constants
 var Error = {
-	LOGIN: "login",
-	DAEMON: "daemon",
-	SERVICE: "service",
-	STREAM: "stream",
-	CONNECTION: "connection",
-	CONFIG: "config"
+	LOGIN: "Login attempt failed",
+	DAEMON: "Service failed to start",
+	SERVICE: "Service reported error",
+	STREAM: "Stream parsing error",
+	CONNECTION: "Connection status error",
+	CONFIG: "Config not found"
 };
 
 // Service constants
@@ -322,6 +322,14 @@ Signals.addSignalMethods(FolderCompletionProxy.prototype);
 class Config {
 
 	constructor(){
+		this.clear()
+	}
+
+	destroy(){
+		this.clear()
+	}
+
+	clear(){
 		this._uri = '';
 		this._address = '';
 		this._apikey = '';
@@ -331,7 +339,6 @@ class Config {
 
 	load(){
 		this._found = false;
-
 		// Extract syncthing configuration from the default config file
 		let configFile = Gio.File.new_for_path(GLib.get_user_config_dir()+'/syncthing/config.xml');
 		if(configFile.query_exists(null)){
@@ -359,20 +366,20 @@ class Config {
 
 	setService(force=false){
 		// (Force) Copy systemd config file to systemd's configuration directory (if it doesn't exist)
-		let systemdConfigPath = GLib.get_user_config_dir()+'/systemd/user';
-		let systemDConfigFileTo = Gio.File.new_for_path(systemdConfigPath+'/'+Service.NAME);
+		let systemDConfigPath = GLib.get_user_config_dir()+'/systemd/user';
+		let systemDConfigFileTo = Gio.File.new_for_path(systemDConfigPath+'/'+Service.NAME);
 		if(force || !systemDConfigFileTo.query_exists(null)){
 			let systemDConfigFileFrom = Gio.File.new_for_path(Me.path+'/'+Service.NAME);
-			let systemdConfigDirectory = Gio.File.new_for_path(systemdConfigPath);
+			let systemdConfigDirectory = Gio.File.new_for_path(systemDConfigPath);
 			if(!systemdConfigDirectory.query_exists(null)){
 				systemdConfigDirectory.make_directory_with_parents(null);
 			}
 			let copyFlag = Gio.FileCopyFlags.NONE;
 			if(force) copyFlag = Gio.FileCopyFlags.OVERWRITE;
 			if(systemDConfigFileFrom.copy(systemDConfigFileTo, copyFlag, null, null)){
-				console.info('Systemd configuration file copied to '+systemdConfigPath+'/'+Service.NAME);
+				console.info('Systemd configuration file copied to '+systemDConfigPath+'/'+Service.NAME);
 			} else {
-				console.warn('Couldn\'t copy systemd configuration file to '+systemdConfigPath+'/'+Service.NAME);
+				console.warn('Couldn\'t copy systemd configuration file to '+systemDConfigPath+'/'+Service.NAME);
 			}
 		};
 	}
@@ -412,30 +419,36 @@ class Manager {
 			}
 		});
 
+		this.config = new Config();
+
 		this._httpSession = new Soup.Session();
 		this._httpSession.ssl_strict = false; // Accept self signed certificates for now
 		this._httpAborting = false;
+		this._serviceFailed = false;
 		this._serviceActive = false;
 		this._serviceEnabled = false;
-		this._config = new Config();
 		this._pollTime = 20000;
 		this._pollCount = 0;
 		this._pollConnectionHook = 6; // Every 2 minutes
 		this._pollConfigHook = 45; // Every 15 minutes
 		this._lastEventID = 1;
-		this._apiKey = '';
 		this._hostID = '';
 		this._lastErrorTime = Date.now()
 
 		this.connect(Signal.SERVICE_CHANGE, (manager, state) => {
 			switch(state){
 				case ServiceState.ACTIVE:
+					this._pollState();
 					this.openConnection('GET','/rest/system/status',(status) => {
 						this._hostID = status.myID;
 						this._callConfig((config) => {
 							this._callEvents('limit=1');
 						});
 					});
+				break;
+				case ServiceState.STOPPED:
+					this.destroy();
+					this._lastEventID = 1;
 				break;
 			}
 		});
@@ -627,11 +640,11 @@ class Manager {
 		this._callConnections();
 	}
 
-	_callState(){
+	_pollState(){
 		if(this._pollSource){
 			this._pollSource.destroy();
 		}
-		if(this._isServiceActive() && this._config.found()){
+		if(this._isServiceActive() && this.config.found()){
 			if(this._pollCount % this._pollConfigHook == 0){
 				// TODO: this should not be necessary, we should remove old items
 				this.folders.destroy();
@@ -650,11 +663,8 @@ class Manager {
 						errorTime = new Date(errors[i].when)
 						if(errorTime > this._lastErrorTime){
 							this._lastErrorTime = errorTime;
-							console.error('Syncthing error', errors[i]);
-							this.emit(Signal.ERROR,{
-								type: Error.SERVICE,
-								message: errors[i].message
-							});
+							console.error(Error.SERVICE, errors[i]);
+							this.emit(Signal.ERROR,{ type: Error.SERVICE, message: errors[i].message });
 						}
 					}
 				}
@@ -664,7 +674,7 @@ class Manager {
 		}
 		this._pollSource = GLib.timeout_source_new(this._pollTime);
 		this._pollSource.set_priority(GLib.PRIORITY_LOW);
-		this._pollSource.set_callback(this._callState.bind(this));
+		this._pollSource.set_callback(this._pollState.bind(this));
 		this._pollSource.attach(null);
 		this._pollCount++;
 	}
@@ -672,13 +682,15 @@ class Manager {
 	_isServiceActive(){
 		let state = this._serviceCommand('is-active');
 		let active = (state == 'active');
-		if(state == 'failed'){
-			console.error('Service failed to start ['+Service.NAME+']');
-			this.emit(Signal.ERROR,{
-				type: Error.DAEMON,
-				message: 'Service failed to start'
-			});
-		} else if(active != this._serviceActive){
+		let failed = (state == 'failed')
+		if(failed != this._serviceFailed){
+			this._serviceActive = failed;
+			if(failed){
+				console.error(Error.DAEMON, Service.NAME);
+				this.emit(Signal.ERROR,{ type: Error.DAEMON });
+			}
+		}
+		if(active != this._serviceActive){
 			this._serviceActive = active;
 			this.emit(Signal.SERVICE_CHANGE,(active ? ServiceState.ACTIVE : ServiceState.STOPPED));
 			if(this.host) this.host.setState(active ? State.IDLE : State.DISCONNECTED);
@@ -707,15 +719,15 @@ class Manager {
 	}
 
 	openConnection(method, uri, callback){
-		if(this._config.found()){
-			let msg = Soup.Message.new(method, this._config.getURI()+uri);
-			msg.request_headers.append('X-API-Key', this._config.getAPIKey());
+		if(this.config.found()){
+			let msg = Soup.Message.new(method, this.config.getURI()+uri);
+			msg.request_headers.append('X-API-Key', this.config.getAPIKey());
 			this.openConnectionMessage(msg, callback);
 		}
 	}
 
 	openConnectionMessage(msg, callback){
-		if(this._serviceActive && this._config.found()){
+		if(this._serviceActive && this.config.found()){
 			console.debug('Opening connection', msg.method+':'+msg.uri.get_path());
 			this._httpAborting = false;
 			this._httpSession.queue_message(msg, (session, msg) => {
@@ -726,15 +738,12 @@ class Manager {
 							callback(JSON.parse(msg.response_body.data));
 						}
 					} catch(error){
-						console.error('Stream / parsing error', msg.method+':'+msg.uri.get_path(), error.message, msg.response_body.data);
-						this.emit(Signal.ERROR,{
-							type: Error.STREAM,
-							message: 'Stream / parsing error: '+msg.method+':'+msg.uri.get_path()
-						});
+						console.error(Error.STREAM, msg.method+':'+msg.uri.get_path(), error.message, msg.response_body.data);
+						this.emit(Signal.ERROR,{ type: Error.STREAM, message: msg.method+':'+msg.uri.get_path() });
 					}
 				} else if(!this._httpAborting){
 					if(msg.status_code < 100){
-						console.info(msg.reason_phrase,'will retry', msg.method+':'+msg.uri.get_path(), msg.status_code);
+						console.info(msg.reason_phrase, 'will retry', msg.method+':'+msg.uri.get_path(), msg.status_code);
 						// Retry this connection attempt
 						let source = GLib.timeout_source_new(1000);
 						source.set_priority(GLib.PRIORITY_LOW);
@@ -743,11 +752,8 @@ class Manager {
 						});
 						source.attach(null);
 					} else {
-						console.error(msg.reason_phrase, msg.method+':'+msg.uri.get_path(), msg.status_code, msg.response_body.data);
-						this.emit(Signal.ERROR,{
-							type: Error.CONNECTION,
-							message: msg.reason_phrase+' - '+msg.method+':'+msg.uri.get_path()
-						});
+						console.error(Error.CONNECTION, msg.reason_phrase, msg.method+':'+msg.uri.get_path(), msg.status_code, msg.response_body.data);
+						this.emit(Signal.ERROR,{ type: Error.CONNECTION, message: msg.reason_phrase+' - '+msg.method+':'+msg.uri.get_path() });
 					}
 				}
 			});
@@ -763,32 +769,20 @@ class Manager {
 		}
 		this.folders.destroy();
 		this.devices.destroy();
+		this.config.destroy();
 	}
 
 	attach(){
-		if(!this._config.found()){
-			console.error('Could not open / find config');
+		if(!this.config.found()){
+			console.error(Error.CONFIG);
 			this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
-			this.emit(Signal.ERROR, {
-				type: Error.CONFIG,
-				message: 'Could not open / find config'
-			});
+			this.emit(Signal.ERROR, { type: Error.CONFIG });
 		}
-		return this._callState();
-	}
-
-	reset(){
-		this.abortConnections();
-		this.destroy();
-		this._lastEventID = 1;
-		this._pollCount = 0;
-		this._callConfig((config) => {
-			this._callEvents('limit=1');
-		});
+		this._pollState();
 	}
 
 	enableService(){
-		this._config.setService();
+		this.config.setService(true);
 		this._serviceCommand('enable');
 		this._isServiceEnabled();
 	}
@@ -799,20 +793,13 @@ class Manager {
 	}
 
 	startService(){
-		this._config.setService();
+		this.config.setService();
 		this._serviceCommand('start');
-	}
-
-	installService(){
-		this._config.setService(true);
+		this._serviceFailed = false
 	}
 
 	stopService(){
 		this._serviceCommand('stop');
-		if(!this._isServiceActive()){
-			this.folders.destroy();
-			this.devices.destroy();
-		}
 	}
 
 	rescan(folder){
@@ -833,10 +820,6 @@ class Manager {
 		if(device){
 			this.openConnection('POST','/rest/system/pause?device='+device.id);
 		}
-	}
-
-	getConfig(){
-		return this._config;
 	}
 
 }
