@@ -438,13 +438,13 @@ class Manager {
 		this.connect(Signal.SERVICE_CHANGE, (manager, state) => {
 			switch(state){
 				case ServiceState.ACTIVE:
-					this._pollState();
 					this.openConnection('GET','/rest/system/status',(status) => {
 						this._hostID = status.myID;
 						this._callConfig((config) => {
 							this._callEvents('limit=1');
 						});
 					});
+					this._pollState();
 				break;
 				case ServiceState.STOPPED:
 					this.destroy();
