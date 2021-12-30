@@ -37,20 +37,20 @@ msgstr "Autostart"
 
 #: extension.js:413
 msgid "daemon-error"
-msgstr "Syncthing Indicator daemon fout"
+msgstr "Syncthing daemon kon niet gestart worden, controleer log voor meer details"
 
 #: extension.js:416
 msgid "service-error"
-msgstr "Syncthing Indicator service fout"
+msgstr "Syncthing service heeft een fout gerapporteerd, controleer log voor meer details"
 
 #: extension.js:419
 msgid "decoding-error"
-msgstr "Syncthing Indicator decoding fout"
+msgstr "Syncthing connectie decodeer fout, controleer log voor meer details"
 
 #: extension.js:422
 msgid "connection-error"
-msgstr "Syncthing Indicator connection fout"
+msgstr "Syncthing connectie status fout, controleer log voor meer details"
 
 #: extension.js:425
 msgid "config-error"
-msgstr "Syncthing Indicator config fout"
+msgstr "Kan Syncthing config niet vinden, syncthing is mogelijk niet geinstalleerd, controleer log voor meer details"
