@@ -9,6 +9,6 @@ SCRIPT_PATH=$(dirname "$SCRIPT")
 
 source "$SCRIPT_PATH/make.sh"
 
-gnome-extensions install $CUR_PATH/$EXT_NAME.zip
+gnome-extensions install $CUR_PATH/$EXT_NAME.zip --force
 gnome-extensions enable $EXT_NAME
 rm -f $CUR_PATH/$EXT_NAME.zip
