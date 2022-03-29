@@ -127,7 +127,7 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 		this.icon = new St.Icon({ gicon: icon, style_class: 'popup-menu-icon syncthing-state-icon' });
 		this.actor.add_child(this.icon);
 
-		this.label = new St.Label({ text: folder.name });
+		this.label = new St.Label({ text: folder.name, style_class: 'syncthing-state-label' });
 		this.actor.add_child(this.label);
 		this.actor.label_actor = this.label;
 
@@ -161,6 +161,8 @@ class DeviceMenu extends SectionMenu {
 
 	_init(extension) {
 		super._init(_('this-device'), 'computer-symbolic');
+
+		this.label.style_class = 'syncthing-state-label';
 
 		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
@@ -202,6 +204,8 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 		let icon = new Gio.ThemedIcon({ name: 'network-server-symbolic' });
 		this.icon = new St.Icon({ gicon: icon, style_class: 'popup-menu-icon syncthing-state-icon' });
 		this.actor.insert_child_at_index(this.icon, 1);
+
+		this.label.style_class = 'syncthing-state-label';
 
 		this.setSensitive(false);
 

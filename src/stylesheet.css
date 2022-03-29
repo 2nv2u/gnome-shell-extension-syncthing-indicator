@@ -4,8 +4,11 @@
 .syncthing-indicator {
 	min-width: 306px;
 }
-.syncthing-indicator .syncthing-state-icon.popup-menu-icon {
-	padding: 0 12px 0 6px;
+.syncthing-indicator .syncthing-state-icon {
+	padding-right: 6px;
+}
+.syncthing-indicator .syncthing-state-label {
+	padding-left: 6px;
 }
 .syncthing-indicator .syncthing-state-icon.idle {
 	background-image: url(icons/icon-idle.svg);
