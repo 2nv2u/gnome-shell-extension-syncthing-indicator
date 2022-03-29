@@ -1,8 +1,8 @@
 .system-status-icon.syncthing-icon {
 	background-size: 22px;
 }
-.syncthing-indicator .popup-menu-item {
-	min-width: 300px;
+.syncthing-indicator {
+	min-width: 306px;
 }
 .syncthing-indicator .syncthing-state-icon.popup-menu-icon {
 	padding: 0 12px 0 6px;
