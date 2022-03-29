@@ -625,13 +625,17 @@ class Manager {
 							folder: folder,
 							device: device
 						});
-						this.openConnection('GET','/rest/db/completion?folder='+folder.id+'&device='+device.id,
-							function(proxy){
-								return (data) => {
-									proxy.setCompletion(data.completion);
-								}
-							}(folder)
-						);
+						if (this.folders.get(folder.id).getState() == 'paused'){
+						  console.info('Ignoring paused folder completion: '+folder.name);
+						} else {
+						  this.openConnection('GET','/rest/db/completion?folder='+folder.id+'&device='+device.id,
+							  function(proxy){
+								  return (data) => {
+									  proxy.setCompletion(data.completion);
+								  }
+							  }(folder)
+						  );
+						}
 					}
 					device.folders.add(folder);
 				}
