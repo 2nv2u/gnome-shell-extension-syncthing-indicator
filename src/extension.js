@@ -323,7 +323,7 @@ class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
 	activate(event){
 		let launchContext = global.create_app_launch_context(event.get_time(), -1);
 		try {
-			Gio.AppInfo.launch_default_for_uri(this.extension.manager.getConfig().getURI(), launchContext);
+			Gio.AppInfo.launch_default_for_uri(this.extension.manager.config.getURI(), launchContext);
 		} catch(e){
 			Main.notifyError(_('failed-URI')+': '+uri, e.message);
 		}
