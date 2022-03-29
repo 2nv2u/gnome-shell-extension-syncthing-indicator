@@ -83,9 +83,7 @@ class SectionMenu extends PopupMenu.PopupSubMenuMenuItem {
 	_init(title, icon) {
 		super._init(title, true);
 		this.icon.icon_name = icon;
-		this.icon.add_style_class_name('syncthing-submenu-icon');
 		this.section = new PopupMenu.PopupMenuSection();
-		this.section.actor.add_style_class_name('syncthing-menu-spacing');
 		this.menu.addMenuItem(this.section);
 	}
 
@@ -126,7 +124,7 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 			}
 		}
 
-		this.icon = new St.Icon({ gicon: icon, style_class: 'popup-menu-icon' });
+		this.icon = new St.Icon({ gicon: icon, style_class: 'popup-menu-icon syncthing-state-icon' });
 		this.actor.add_child(this.icon);
 
 		this.label = new St.Label({ text: folder.name });
@@ -136,7 +134,7 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 		this.path = file.get_uri();
 
 		this._folder.connect(Syncthing.Signal.STATE_CHANGE, (folder, state) => {
-			this.icon.style_class = 'popup-menu-icon ' + state;
+			this.icon.style_class = 'popup-menu-icon syncthing-state-icon ' + state;
 		});
 
 		this._folder.connect(Syncthing.Signal.DESTROY, (folder) => {
@@ -186,7 +184,7 @@ class DeviceMenu extends SectionMenu {
 		this.device = device;
 		this.label.text = device.name;
 		this.device.connect(Syncthing.Signal.STATE_CHANGE, (device, state) => {
-			this.icon.style_class = 'popup-menu-icon syncthing-submenu-icon ' + state;
+			this.icon.style_class = 'popup-menu-icon syncthing-state-icon ' + state;
 		});
 	}
 
@@ -202,7 +200,7 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 		this._device = device;
 
 		let icon = new Gio.ThemedIcon({ name: 'network-server-symbolic' });
-		this.icon = new St.Icon({ gicon: icon, style_class: 'popup-menu-icon' });
+		this.icon = new St.Icon({ gicon: icon, style_class: 'popup-menu-icon syncthing-state-icon' });
 		this.actor.insert_child_at_index(this.icon, 1);
 
 		this.setSensitive(false);
@@ -223,7 +221,7 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 					this.setToggleState(true);
 					break
 			}
-			this.icon.style_class = 'popup-menu-icon ' + state;
+			this.icon.style_class = 'popup-menu-icon syncthing-state-icon ' + state;
 		});
 
 		this._device.connect(Syncthing.Signal.DESTROY, () => {
