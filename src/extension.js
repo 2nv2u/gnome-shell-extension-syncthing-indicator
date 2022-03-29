@@ -29,50 +29,49 @@ const Domain = Gettext.domain(Me.metadata.uuid);
 const _ = Domain.gettext;
 
 const Logger = Me.imports.logger;
-
 const Syncthing = Me.imports.syncthing;
 
 // Syncthing indicator panel icon
 class SyncthingPanelIcon {
 
-	constructor(){
+	constructor() {
 		this._workingIcon = new Animation.Animation(
-			Gio.File.new_for_path(Me.path+'/icons/syncthing-working.svg'), 20, 20, 80
+			Gio.File.new_for_path(Me.path + '/icons/syncthing-working.svg'), 20, 20, 80
 		);
 		this._idleIcon = new St.Icon({
-			gicon: Gio.icon_new_for_string(Me.path+'/icons/syncthing-idle.svg'),
+			gicon: Gio.icon_new_for_string(Me.path + '/icons/syncthing-idle.svg'),
 			icon_size: 20
 		});
 		this._pausedIcon = new St.Icon({
-			gicon: Gio.icon_new_for_string(Me.path+'/icons/syncthing-paused.svg'),
+			gicon: Gio.icon_new_for_string(Me.path + '/icons/syncthing-paused.svg'),
 			icon_size: 20
 		});
 		this._disconnectedIcon = new St.Icon({
-			gicon: Gio.icon_new_for_string(Me.path+'/icons/syncthing-disconnected.svg'),
+			gicon: Gio.icon_new_for_string(Me.path + '/icons/syncthing-disconnected.svg'),
 			icon_size: 20
 		});
 		this.actor = new St.Bin();
 		this.actor.set_child(this._disconnectedIcon);
 	}
 
-	setState(state){
+	setState(state) {
 		this._workingIcon.stop();
-		switch(state){
+		switch (state) {
 			case Syncthing.State.SYNCING:
 			case Syncthing.State.SCANNING:
 				this.actor.set_child(this._workingIcon);
 				this._workingIcon.play();
-			break
+				break
 			case Syncthing.State.PAUSED:
 				this.actor.set_child(this._pausedIcon);
-			break;
+				break;
 			case Syncthing.State.UNKNOWN:
 			case Syncthing.State.DISCONNECTED:
 				this.actor.set_child(this._disconnectedIcon);
-			break;
+				break;
 			default:
 				this.actor.set_child(this._idleIcon);
-			break
+				break
 		}
 	}
 
@@ -81,7 +80,7 @@ class SyncthingPanelIcon {
 // Syncthing indicator section menu
 class SectionMenu extends PopupMenu.PopupSubMenuMenuItem {
 
-	_init(title, icon){
+	_init(title, icon) {
 		super._init(title, true);
 		this.icon.icon_name = icon;
 		this.icon.add_style_class_name('syncthing-submenu-icon');
@@ -91,23 +90,23 @@ class SectionMenu extends PopupMenu.PopupSubMenuMenuItem {
 	}
 
 }
-SectionMenu = GObject.registerClass({GTypeName: 'SectionMenu'}, SectionMenu)
+SectionMenu = GObject.registerClass({ GTypeName: 'SectionMenu' }, SectionMenu)
 
 // Syncthing indicator fodler menu
 class FolderMenu extends SectionMenu {
 
-	_init(){
-		super._init(_('folders'),'system-file-manager-symbolic');
+	_init() {
+		super._init(_('folders'), 'system-file-manager-symbolic');
 		this.setSensitive(false);
 	}
 
 }
-FolderMenu = GObject.registerClass({GTypeName: 'FolderMenu'}, FolderMenu)
+FolderMenu = GObject.registerClass({ GTypeName: 'FolderMenu' }, FolderMenu)
 
 // Syncthing indicator fodler menu item
 class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 
-	_init(folder){
+	_init(folder) {
 		super._init();
 		this._folder = folder;
 
@@ -115,9 +114,9 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 		let file = Gio.File.new_for_path(this._folder.path);
 		try {
 			icon = file.query_info('standard::symbolic-icon', 0, null).get_symbolic_icon();
-		} catch(e){
-			if(e instanceof Gio.IOErrorEnum){
-				if(!file.is_native()){
+		} catch (e) {
+			if (e instanceof Gio.IOErrorEnum) {
+				if (!file.is_native()) {
 					icon = new Gio.ThemedIcon({ name: 'folder-remote-symbolic' });
 				} else {
 					icon = new Gio.ThemedIcon({ name: 'folder-symbolic' });
@@ -137,7 +136,7 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 		this.path = file.get_uri();
 
 		this._folder.connect(Syncthing.Signal.STATE_CHANGE, (folder, state) => {
-			this.icon.style_class = 'popup-menu-icon '+state;
+			this.icon.style_class = 'popup-menu-icon ' + state;
 		});
 
 		this._folder.connect(Syncthing.Signal.DESTROY, (folder) => {
@@ -146,24 +145,24 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 
 	}
 
-	activate(event){
+	activate(event) {
 		try {
 			let launchContext = global.create_app_launch_context(event.get_time(), -1);
 			Gio.AppInfo.launch_default_for_uri(this.path, launchContext);
-		} catch(e){
-			Main.notifyError(_('failed-URI')+': '+uri, e.message);
+		} catch (e) {
+			Main.notifyError(_('failed-URI') + ': ' + uri, e.message);
 		}
 		super.activate(event);
 	}
 
 }
-FolderMenuItem = GObject.registerClass({GTypeName: 'FolderMenuItem'}, FolderMenuItem)
+FolderMenuItem = GObject.registerClass({ GTypeName: 'FolderMenuItem' }, FolderMenuItem)
 
 // Syncthing indicator device menu
 class DeviceMenu extends SectionMenu {
 
-	_init(extension){
-		super._init(_('this-device'),'computer-symbolic');
+	_init(extension) {
+		super._init(_('this-device'), 'computer-symbolic');
 
 		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
@@ -183,11 +182,11 @@ class DeviceMenu extends SectionMenu {
 
 	}
 
-	setDevice(device){
+	setDevice(device) {
 		this.device = device;
 		this.label.text = device.name;
 		this.device.connect(Syncthing.Signal.STATE_CHANGE, (device, state) => {
-			this.icon.style_class = 'popup-menu-icon syncthing-submenu-icon '+state;
+			this.icon.style_class = 'popup-menu-icon syncthing-submenu-icon ' + state;
 		});
 	}
 
@@ -197,7 +196,7 @@ DeviceMenu = GObject.registerClass({ GTypeName: 'DeviceMenu' }, DeviceMenu)
 // Syncthing indicator device menu item
 class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
-	_init(device){
+	_init(device) {
 		super._init(device.name, false, null);
 
 		this._device = device;
@@ -210,21 +209,21 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 		this._device.connect(Syncthing.Signal.STATE_CHANGE, (device) => {
 			let state = device.getState()
-			switch(state){
+			switch (state) {
 				case Syncthing.State.DISCONNECTED:
 					this.setSensitive(false);
 					this.setToggleState(false);
-				break;
+					break;
 				case Syncthing.State.PAUSED:
 					this.setSensitive(true);
 					this.setToggleState(false);
-				break;
+					break;
 				default:
 					this.setSensitive(true);
 					this.setToggleState(true);
-				break
+					break
 			}
-			this.icon.style_class = 'popup-menu-icon '+state;
+			this.icon.style_class = 'popup-menu-icon ' + state;
 		});
 
 		this._device.connect(Syncthing.Signal.DESTROY, () => {
@@ -233,8 +232,8 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 	}
 
-	activate(event){
-		if(!this.actor.state){
+	activate(event) {
+		if (!this.actor.state) {
 			this._device.resume();
 		} else {
 			this._device.pause();
@@ -242,12 +241,12 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 	}
 
 }
-DeviceMenuItem = GObject.registerClass({GTypeName: 'DeviceMenuItem'}, DeviceMenuItem)
+DeviceMenuItem = GObject.registerClass({ GTypeName: 'DeviceMenuItem' }, DeviceMenuItem)
 
 // Syncthing indicator rescan menu item
 class RescanMenuItem extends PopupMenu.PopupBaseMenuItem {
 
-	_init(extension){
+	_init(extension) {
 		super._init();
 		this.setSensitive(false);
 		this.actor.add_child(
@@ -263,33 +262,33 @@ class RescanMenuItem extends PopupMenu.PopupBaseMenuItem {
 		this.extension = extension
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
-			switch(state){
+			switch (state) {
 				case Syncthing.ServiceState.ACTIVE:
 					this.setSensitive(true);
-				break;
+					break;
 				case Syncthing.ServiceState.STOPPED:
 					this.setSensitive(false);
-				break;
+					break;
 				case Syncthing.ServiceState.ERROR:
 					this.setSensitive(false);
-				break;
+					break;
 			}
 		});
 
 	}
 
-	activate(event){
+	activate(event) {
 		this.extension.indicator.open(true)
 		this.extension.manager.rescan();
 	}
 
 }
-RescanMenuItem = GObject.registerClass({GTypeName: 'RescanMenuItem'}, RescanMenuItem)
+RescanMenuItem = GObject.registerClass({ GTypeName: 'RescanMenuItem' }, RescanMenuItem)
 
 // Syncthing indicator config menu item
 class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
 
-	_init(extension){
+	_init(extension) {
 		super._init();
 		this.setSensitive(false);
 		this.actor.add_child(
@@ -305,73 +304,73 @@ class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
 		this.extension = extension
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
-			switch(state){
+			switch (state) {
 				case Syncthing.ServiceState.ACTIVE:
 					this.setSensitive(true);
-				break;
+					break;
 				case Syncthing.ServiceState.STOPPED:
 					this.setSensitive(false);
-				break;
+					break;
 				case Syncthing.ServiceState.ERROR:
 					this.setSensitive(false);
-				break;
+					break;
 			}
 		});
 
 	}
 
-	activate(event){
+	activate(event) {
 		let launchContext = global.create_app_launch_context(event.get_time(), -1);
 		try {
 			Gio.AppInfo.launch_default_for_uri(this.extension.manager.getConfig().getURI(), launchContext);
-		} catch(e){
-			Main.notifyError(_('failed-URI')+': '+uri, e.message);
+		} catch (e) {
+			Main.notifyError(_('failed-URI') + ': ' + uri, e.message);
 		}
 		super.activate(event);
 	}
 
 }
-ConfigMenuItem = GObject.registerClass({GTypeName: 'ConfigMenuItem'}, ConfigMenuItem)
+ConfigMenuItem = GObject.registerClass({ GTypeName: 'ConfigMenuItem' }, ConfigMenuItem)
 
 // Syncthing service switch menu item
 class ServiceSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
-	_init(extension){
+	_init(extension) {
 		super._init(_("service"), false);
 		this.extension = extension
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
-			switch(state){
+			switch (state) {
 				case Syncthing.ServiceState.ACTIVE:
 					this.setSensitive(true);
 					this.setToggleState(true);
-				break;
+					break;
 				case Syncthing.ServiceState.STOPPED:
 					this.setSensitive(true);
 					this.setToggleState(false);
-				break;
+					break;
 				case Syncthing.ServiceState.ERROR:
 					this.setSensitive(true);
-				break;
+					break;
 			}
 		});
 
 		extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
-			switch(error.type){
+			switch (error.type) {
 				case Syncthing.Error.DAEMON:
 					this.setSensitive(true);
 					this.setToggleState(false);
-				break;
+					break;
 			}
 		});
 
 	}
 
-	activate(event){
+	activate(event) {
 		this.setSensitive(false);
 		if (this._switch.mapped)
 			this.toggle();
-		if(this.actor.state){
+		if (this.actor.state) {
 			this.extension.manager.startService();
 		} else {
 			this.extension.manager.stopService();
@@ -379,38 +378,38 @@ class ServiceSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 	}
 
 }
-ServiceSwitchMenuItem = GObject.registerClass({GTypeName: 'ServiceSwitchMenuItem'}, ServiceSwitchMenuItem)
+ServiceSwitchMenuItem = GObject.registerClass({ GTypeName: 'ServiceSwitchMenuItem' }, ServiceSwitchMenuItem)
 
 // Syncthing service switch menu item
 class AutoSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
-	_init(extension){
+	_init(extension) {
 		super._init(_("autostart"), false);
 		this.extension = extension
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
-			switch(state){
+			switch (state) {
 				case Syncthing.ServiceState.ENABLED:
 					this.setSensitive(true);
 					this.setToggleState(true);
-				break;
+					break;
 				case Syncthing.ServiceState.DISABLED:
 					this.setSensitive(true);
 					this.setToggleState(false);
-				break;
+					break;
 				case Syncthing.ServiceState.ERROR:
 					this.setSensitive(false);
-				break;
+					break;
 			}
 		});
 
 	}
 
-	activate(event){
+	activate(event) {
 		this.setSensitive(false);
 		if (this._switch.mapped)
 			this.toggle();
-		if(this.actor.state){
+		if (this.actor.state) {
 			this.extension.manager.enableService();
 		} else {
 			this.extension.manager.disableService();
@@ -418,12 +417,12 @@ class AutoSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 	}
 
 }
-AutoSwitchMenuItem = GObject.registerClass({GTypeName: 'AutoSwitchMenuItem'}, AutoSwitchMenuItem)
+AutoSwitchMenuItem = GObject.registerClass({ GTypeName: 'AutoSwitchMenuItem' }, AutoSwitchMenuItem)
 
 // Syncthing indicator controller
 class SyncthingIndicator extends PanelMenu.Button {
 
-	_init(extension){
+	_init(extension) {
 		super._init(0.0, "SyncthingIndicator");
 
 		this.menu.box.add_style_class_name('syncthing-indicator');
@@ -434,45 +433,45 @@ class SyncthingIndicator extends PanelMenu.Button {
 		this._deviceMenu = new DeviceMenu(extension);
 		this.menu.addMenuItem(this._deviceMenu);
 		this._deviceMenu.menu.connect('open-state-changed', (menu, open) => {
-			if(this.menu.isOpen && !open) this._folderMenu.menu.open(true);
+			if (this.menu.isOpen && !open) this._folderMenu.menu.open(true);
 		});
 
 		this._folderMenu = new FolderMenu(extension);
 		this.menu.addMenuItem(this._folderMenu);
 		this._folderMenu.menu.connect('open-state-changed', (menu, open) => {
-			if(this.menu.isOpen && !open) this._deviceMenu.menu.open(true);
+			if (this.menu.isOpen && !open) this._deviceMenu.menu.open(true);
 		});
 
 
 		this.menu.connect('open-state-changed', (menu, open) => {
-			if(open) this.open(false);
+			if (open) this.open(false);
 		});
 
 		extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
-			switch(error.type){
+			switch (error.type) {
 				case Syncthing.Error.DAEMON:
 					Main.notifyError('Syncthing Indicator', _('daemon-error'));
-				break;
+					break;
 				case Syncthing.Error.SERVICE:
 					Main.notifyError('Syncthing Indicator', _('service-error'));
-				break;
+					break;
 				case Syncthing.Error.STREAM:
 					Main.notifyError('Syncthing Indicator', _('decoding-error'));
-				break;
+					break;
 				case Syncthing.Error.CONNECTION:
 					Main.notifyError('Syncthing Indicator', _('connection-error'));
-				break;
+					break;
 				case Syncthing.Error.CONFIG:
 					Main.notifyError('Syncthing Indicator', _('config-error'));
-				break;
+					break;
 			}
 		});
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
-			switch(state){
+			switch (state) {
 				case Syncthing.ServiceState.STOPPED:
 					this._folderMenu.setSensitive(false)
-				break;
+					break;
 			}
 		});
 
@@ -497,8 +496,8 @@ class SyncthingIndicator extends PanelMenu.Button {
 		});
 	}
 
-	open(animate){
-		if(this._folderMenu.getSensitive()){
+	open(animate) {
+		if (this._folderMenu.getSensitive()) {
 			this._folderMenu.menu.open(animate);
 		} else {
 			this._deviceMenu.menu.open(animate);
@@ -506,18 +505,18 @@ class SyncthingIndicator extends PanelMenu.Button {
 	}
 
 }
-SyncthingIndicator = GObject.registerClass({GTypeName: 'SyncthingIndicator'}, SyncthingIndicator)
+SyncthingIndicator = GObject.registerClass({ GTypeName: 'SyncthingIndicator' }, SyncthingIndicator)
 
 // Syncthing indicator extension
 class SyncthingIndicatorExtension {
 
-	constructor(){
+	constructor() {
 		this.manager;
 		this.indicator;
 	}
 
 	// Syncthing indicator enabler
-	enable(){
+	enable() {
 		this.manager = new Syncthing.Manager();
 		this.indicator = new SyncthingIndicator(this);
 		Main.panel.addToStatusArea('syncthingIndicator', this.indicator);
@@ -525,7 +524,7 @@ class SyncthingIndicatorExtension {
 	}
 
 	// Syncthing indicator disabler
-	disable(){
+	disable() {
 		this.indicator.destroy();
 		this.indicator = null;
 		this.manager.destroy();
@@ -535,7 +534,7 @@ class SyncthingIndicatorExtension {
 }
 
 // Syncthing indicator extension initiator
-function init(){
+function init() {
 	ExtensionUtils.initTranslations(Me.metadata.uuid);
 	return new SyncthingIndicatorExtension()
 }

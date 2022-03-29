@@ -15,34 +15,34 @@ var Level = {
 	ERROR: 3
 };
 
-class Service {
+var Service = class Service {
 
-	constructor(level, prefix){
-	this._levels = [];
+	constructor(level, prefix) {
+		this._levels = [];
 		this._level = level;
 		this._prefix = prefix;
 		let i = 0;
-		for(let name in Level){
+		for (let name in Level) {
 			this._levels[i] = name;
 			i++;
 		}
 	}
 
-	logCollection(level, collection){
-		if(level >= this._level){
+	logCollection(level, collection) {
+		if (level >= this._level) {
 			let args = Array.prototype.slice.call(collection);
 			args.unshift(level);
 			this.log.apply(this, args);
 		}
 	}
 
-	log(level){
-		if(level >= this._level){
+	log(level) {
+		if (level >= this._level) {
 			let args = Array.prototype.slice.call(arguments);
-			for(let i=0;i<args.length;i++){
-				if(i == 0){
-					args[i] = '['+this._prefix+':'+this._levels[level]+']';
-				} else if(typeof args[i] != 'string'){
+			for (let i = 0; i < args.length; i++) {
+				if (i == 0) {
+					args[i] = '[' + this._prefix + ':' + this._levels[level] + ']';
+				} else if (typeof args[i] != 'string') {
 					args[i] = JSON.stringify(args[i]);
 				}
 			}
@@ -50,19 +50,19 @@ class Service {
 		}
 	}
 
-	debug(){
+	debug() {
 		this.logCollection(Level.DEBUG, arguments);
 	}
 
-	info(){
+	info() {
 		this.logCollection(Level.INFO, arguments);
 	}
 
-	warn(){
+	warn() {
 		this.logCollection(Level.WARN, arguments);
 	}
 
-	error(){
+	error() {
 		this.logCollection(Level.ERROR, arguments);
 	}
 

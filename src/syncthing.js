@@ -74,57 +74,57 @@ var ServiceState = {
 
 // Signal constants
 var EventType = {
-    CONFIG_SAVED: "ConfigSaved",
-    DEVICE_CONNECTED: "DeviceConnected",
-    DEVICE_DISCONNECTED: "DeviceDisconnected",
-    DEVICE_DISCOVERED: "DeviceDiscovered",
-    DEVICE_PAUSED: "DevicePaused",
-    DEVICE_REJECTED: "DeviceRejected",
-    DEVICE_RESUMED: "DeviceResumed",
-    DOWNLOAD_PROGRESS: "DownloadProgress",
-    FAILURE: "Failure",
-    FOLDER_COMPLETION: "FolderCompletion",
-    FOLDER_ERRORS: "FolderErrors",
-    FOLDER_PAUSED: "FolderPaused",
-    FOLDER_REJECTED: "FolderRejected",
-    FOLDER_RESUMED: "FolderResumed",
-    FOLDER_SCAN_PROGRESS: "FolderScanProgress",
-    FOLDER_SUMMARY: "FolderSummary",
-    ITEM_FINISHED: "ItemFinished",
-    ITEM_STARTED: "ItemStarted",
-    LISTEN_ADDRESSES_CHANGED: "ListenAddressesChanged",
-    LOCAL_CHANGE_DETECTED: "LocalChangeDetected",
-    LOCAL_INDEX_UPDATED: "LocalIndexUpdated",
-    LOGIN_ATTEMPT: "LoginAttempt",
-    PENDING_DEVICES_CHANGED: "PendingDevicesChanged",
-    PENDING_FOLDERS_CHANGED: "PendingFoldersChanged",
-    REMOTE_CHANGE_DETECTED: "RemoteChangeDetected",
-    REMOTE_DOWNLOAD_PROGRESS: "RemoteDownloadProgress",
-    REMOTE_INDEX_UPDATED: "RemoteIndexUpdated",
-    STARTING: "Starting",
-    STARTUP_COMPLETE: "StartupComplete",
-    STATE_CHANGED: "StateChanged"
+	CONFIG_SAVED: "ConfigSaved",
+	DEVICE_CONNECTED: "DeviceConnected",
+	DEVICE_DISCONNECTED: "DeviceDisconnected",
+	DEVICE_DISCOVERED: "DeviceDiscovered",
+	DEVICE_PAUSED: "DevicePaused",
+	DEVICE_REJECTED: "DeviceRejected",
+	DEVICE_RESUMED: "DeviceResumed",
+	DOWNLOAD_PROGRESS: "DownloadProgress",
+	FAILURE: "Failure",
+	FOLDER_COMPLETION: "FolderCompletion",
+	FOLDER_ERRORS: "FolderErrors",
+	FOLDER_PAUSED: "FolderPaused",
+	FOLDER_REJECTED: "FolderRejected",
+	FOLDER_RESUMED: "FolderResumed",
+	FOLDER_SCAN_PROGRESS: "FolderScanProgress",
+	FOLDER_SUMMARY: "FolderSummary",
+	ITEM_FINISHED: "ItemFinished",
+	ITEM_STARTED: "ItemStarted",
+	LISTEN_ADDRESSES_CHANGED: "ListenAddressesChanged",
+	LOCAL_CHANGE_DETECTED: "LocalChangeDetected",
+	LOCAL_INDEX_UPDATED: "LocalIndexUpdated",
+	LOGIN_ATTEMPT: "LoginAttempt",
+	PENDING_DEVICES_CHANGED: "PendingDevicesChanged",
+	PENDING_FOLDERS_CHANGED: "PendingFoldersChanged",
+	REMOTE_CHANGE_DETECTED: "RemoteChangeDetected",
+	REMOTE_DOWNLOAD_PROGRESS: "RemoteDownloadProgress",
+	REMOTE_INDEX_UPDATED: "RemoteIndexUpdated",
+	STARTING: "Starting",
+	STARTUP_COMPLETE: "StartupComplete",
+	STATE_CHANGED: "StateChanged"
 };
 
 // Abstract item used for folders and devices
 class Item {
 
-	constructor(data, manager){
+	constructor(data, manager) {
 		this._state = State.UNKNOWN,
-		this._stateEmitted = State.UNKNOWN,
-		this._stateEmitDelay = 200,
-		this.id = data.id;
+			this._stateEmitted = State.UNKNOWN,
+			this._stateEmitDelay = 200,
+			this.id = data.id;
 		this.name = data.name;
 		this._manager = manager;
 	}
 
-	isBusy(){
+	isBusy() {
 		return (this.getState() == State.SYNCING || this.getState() == State.SCANNING);
 	}
 
-	setState(state){
-		if(state.length > 0 && this._state != state){
-			if(this._stateSource){
+	setState(state) {
+		if (state.length > 0 && this._state != state) {
+			if (this._stateSource) {
 				this._stateSource.destroy();
 			}
 			console.info('State change', this.name, state);
@@ -133,7 +133,7 @@ class Item {
 			this._stateSource = GLib.timeout_source_new(this._stateEmitDelay);
 			this._stateSource.set_priority(GLib.PRIORITY_DEFAULT);
 			this._stateSource.set_callback(() => {
-				if(this._stateEmitted != this._state){
+				if (this._stateEmitted != this._state) {
 					console.info('Emit state change', this.name, this._state);
 					this._stateEmitted = this._state;
 					this.emit(Signal.STATE_CHANGE, this._state);
@@ -143,11 +143,11 @@ class Item {
 		}
 	}
 
-	getState(state){
+	getState(state) {
 		return this._state;
 	}
 
-	destroy(){
+	destroy() {
 		this.emit(Signal.DESTROY);
 	}
 
@@ -157,12 +157,12 @@ Signals.addSignalMethods(Item.prototype);
 // Abstract item collection used for folders and devices
 class ItemCollection {
 
-	constructor(){
+	constructor() {
 		this._collection = {};
 	}
 
-	add(item){
-		if(item instanceof Item){
+	add(item) {
+		if (item instanceof Item) {
 			this._collection[item.id] = item;
 			item.connect(Signal.DESTROY, (_item) => {
 				delete this._collection[_item.id];
@@ -171,8 +171,8 @@ class ItemCollection {
 		}
 	}
 
-	destroy(id){
-		if(id){
+	destroy(id) {
+		if (id) {
 			let item = this._collection[id];
 			delete this._collection[id];
 			item.destroy();
@@ -184,16 +184,16 @@ class ItemCollection {
 		}
 	}
 
-	get(id){
+	get(id) {
 		return this._collection[id];
 	}
 
-	exists(id){
+	exists(id) {
 		return (id in this._collection);
 	}
 
-	foreach(handler){
-		for(let itemID in this._collection){
+	foreach(handler) {
+		for (let itemID in this._collection) {
 			handler(this._collection[itemID]);
 		}
 	}
@@ -204,21 +204,21 @@ Signals.addSignalMethods(ItemCollection.prototype);
 // Device
 class Device extends Item {
 
-	constructor(data, manager){
+	constructor(data, manager) {
 		super(data, manager);
 		this._determineStateDelay = 600,
-		this.folders = new ItemCollection();
+			this.folders = new ItemCollection();
 		this.folders.connect(Signal.ADD, (collection, folder) => {
 			folder.connect(Signal.STATE_CHANGE, this.determineStateDelayed.bind(this));
 		});
 	}
 
-	isOnline(){
+	isOnline() {
 		return (this.getState() != State.DISCONNECTED && this.getState() != State.PAUSED);
 	}
 
-	determineStateDelayed(){
-		if(this._determineSource){
+	determineStateDelayed() {
+		if (this._determineSource) {
 			this._determineSource.destroy();
 		}
 		// Stop items from excessive state change calculations by only emitting 1 state per stateDelay
@@ -228,11 +228,11 @@ class Device extends Item {
 		this._determineSource.attach(null);
 	}
 
-	determineState(){
-		if(this.isOnline()){
+	determineState() {
+		if (this.isOnline()) {
 			this.setState(State.PAUSED);
 			this.folders.foreach((folder) => {
-				if(!this.isBusy()){
+				if (!this.isBusy()) {
 					console.info('Determine device state', this.name, folder.name, folder.getState());
 					this.setState(folder.getState());
 				}
@@ -240,11 +240,11 @@ class Device extends Item {
 		}
 	}
 
-	pause(){
+	pause() {
 		this._manager.pause(this);
 	}
 
-	resume(){
+	resume() {
 		this._manager.resume(this);
 	}
 
@@ -254,7 +254,7 @@ Signals.addSignalMethods(Device.prototype);
 // Device host
 class HostDevice extends Device {
 
-	constructor(data, manager){
+	constructor(data, manager) {
 		super(data, manager);
 		this._manager.connect(Signal.DEVICE_ADD, (manager, device) => {
 			device.connect(Signal.STATE_CHANGE, this.determineStateDelayed.bind(this));
@@ -265,15 +265,15 @@ class HostDevice extends Device {
 		this.determineState();
 	}
 
-	determineState(){
+	determineState() {
 		this.setState(State.PAUSED);
 		this._manager.devices.foreach((device) => {
-			if(this != device && !this.isBusy() && device.isOnline()){
+			if (this != device && !this.isBusy() && device.isOnline()) {
 				console.info('Determine host device state', this.name, device.name, device.getState());
 				this.setState(device.getState());
 			}
 		});
-		if(!this.isBusy()){
+		if (!this.isBusy()) {
 			super.determineState();
 		}
 	}
@@ -284,13 +284,13 @@ Signals.addSignalMethods(HostDevice.prototype);
 // Folder
 class Folder extends Item {
 
-	constructor(data, manager){
+	constructor(data, manager) {
 		super(data, manager);
 		this.path = data.path;
 		this.devices = new ItemCollection();
 	}
 
-	rescan(){
+	rescan() {
 		this._manager.rescan(this);
 	}
 
@@ -300,15 +300,15 @@ Signals.addSignalMethods(Folder.prototype);
 // Folder completion proxy per device
 class FolderCompletionProxy extends Folder {
 
-	constructor(data){
+	constructor(data) {
 		super(data.folder);
-		this.name += ' ('+data.device.name+')';
+		this.name += ' (' + data.device.name + ')';
 		this._folder = data.folder;
 		this._device = data.device;
 	}
 
-	setCompletion(percentage){
-		if(percentage<100){
+	setCompletion(percentage) {
+		if (percentage < 100) {
 			this.setState(State.SYNCING);
 		} else {
 			this.setState(State.IDLE);
@@ -321,15 +321,15 @@ Signals.addSignalMethods(FolderCompletionProxy.prototype);
 // Synthing configuration
 class Config {
 
-	constructor(){
+	constructor() {
 		this.clear()
 	}
 
-	destroy(){
+	destroy() {
 		this.clear()
 	}
 
-	clear(){
+	clear() {
 		this._uri = '';
 		this._address = '';
 		this._apikey = '';
@@ -337,11 +337,11 @@ class Config {
 		this._found = false;
 	}
 
-	load(){
+	load() {
 		this._found = false;
 		// Extract syncthing configuration from the default config file
-		let configFile = Gio.File.new_for_path(GLib.get_user_config_dir()+'/syncthing/config.xml');
-		if(configFile.query_exists(null)){
+		let configFile = Gio.File.new_for_path(GLib.get_user_config_dir() + '/syncthing/config.xml');
+		if (configFile.query_exists(null)) {
 			let configInputStream = configFile.read(null);
 			let configDataInputStream = Gio.DataInputStream.new(configInputStream);
 			let config = configDataInputStream.read_until("", null).toString();
@@ -352,57 +352,57 @@ class Config {
 				0
 			);
 			let reMatch = regExp.match(config, 0);
-			if(reMatch[0]){
+			if (reMatch[0]) {
 				this._address = reMatch[1].fetch(2);
 				this._apikey = reMatch[1].fetch(3);
-				this._uri = 'http'+((reMatch[1].fetch(1)=='true')?'s':'')+'://'+this._address;
+				this._uri = 'http' + ((reMatch[1].fetch(1) == 'true') ? 's' : '') + '://' + this._address;
 				this._found = true;
 				console.info('Found config', this._address, this._apikey, this._uri);
 			} else {
-				throw('Can\'t find gui xml node in config');
+				throw ('Can\'t find gui xml node in config');
 			}
 		}
 	}
 
-	setService(force=false){
+	setService(force = false) {
 		// (Force) Copy systemd config file to systemd's configuration directory (if it doesn't exist)
-		let systemDConfigPath = GLib.get_user_config_dir()+'/systemd/user';
-		let systemDConfigFileTo = Gio.File.new_for_path(systemDConfigPath+'/'+Service.NAME);
-		if(force || !systemDConfigFileTo.query_exists(null)){
-			let systemDConfigFileFrom = Gio.File.new_for_path(Me.path+'/'+Service.NAME);
+		let systemDConfigPath = GLib.get_user_config_dir() + '/systemd/user';
+		let systemDConfigFileTo = Gio.File.new_for_path(systemDConfigPath + '/' + Service.NAME);
+		if (force || !systemDConfigFileTo.query_exists(null)) {
+			let systemDConfigFileFrom = Gio.File.new_for_path(Me.path + '/' + Service.NAME);
 			let systemdConfigDirectory = Gio.File.new_for_path(systemDConfigPath);
-			if(!systemdConfigDirectory.query_exists(null)){
+			if (!systemdConfigDirectory.query_exists(null)) {
 				systemdConfigDirectory.make_directory_with_parents(null);
 			}
 			let copyFlag = Gio.FileCopyFlags.NONE;
-			if(force) copyFlag = Gio.FileCopyFlags.OVERWRITE;
-			if(systemDConfigFileFrom.copy(systemDConfigFileTo, copyFlag, null, null)){
-				console.info('Systemd configuration file copied to '+systemDConfigPath+'/'+Service.NAME);
+			if (force) copyFlag = Gio.FileCopyFlags.OVERWRITE;
+			if (systemDConfigFileFrom.copy(systemDConfigFileTo, copyFlag, null, null)) {
+				console.info('Systemd configuration file copied to ' + systemDConfigPath + '/' + Service.NAME);
 			} else {
-				console.warn('Couldn\'t copy systemd configuration file to '+systemDConfigPath+'/'+Service.NAME);
+				console.warn('Couldn\'t copy systemd configuration file to ' + systemDConfigPath + '/' + Service.NAME);
 			}
 		};
 	}
 
-	found(){
-		if(!this._found) this.load();
+	found() {
+		if (!this._found) this.load();
 		return this._found;
 	}
 
-	getAPIKey(){
+	getAPIKey() {
 		return this._apikey;
 	}
 
-	getURI(){
+	getURI() {
 		return this._uri;
 	}
 
 }
 
 // Main system manager
-class Manager {
+var Manager = class Manager {
 
-	constructor(){
+	constructor() {
 		this.folders = new ItemCollection();
 		this.devices = new ItemCollection();
 
@@ -411,7 +411,7 @@ class Manager {
 		});
 
 		this.devices.connect(Signal.ADD, (collection, device) => {
-			if(device instanceof HostDevice){
+			if (device instanceof HostDevice) {
 				this.host = device;
 				this.emit(Signal.HOST_ADD, this.host);
 			} else {
@@ -436,110 +436,110 @@ class Manager {
 		this._lastErrorTime = Date.now()
 
 		this.connect(Signal.SERVICE_CHANGE, (manager, state) => {
-			switch(state){
+			switch (state) {
 				case ServiceState.ACTIVE:
-					this.openConnection('GET','/rest/system/status',(status) => {
+					this.openConnection('GET', '/rest/system/status', (status) => {
 						this._hostID = status.myID;
 						this._callConfig((config) => {
 							this._callEvents('limit=1');
 						});
 					});
 					this._pollState();
-				break;
+					break;
 				case ServiceState.STOPPED:
 					this.destroy();
 					this._lastEventID = 1;
-				break;
+					break;
 			}
 		});
 	}
 
-	_callConfig(handler){
-		this.openConnection('GET','/rest/system/config',(config) => {
+	_callConfig(handler) {
+		this.openConnection('GET', '/rest/system/config', (config) => {
 			this._processConfig(config);
-			if(handler) handler(config);
+			if (handler) handler(config);
 		});
 	}
 
-	_callEvents(options){
-		this.openConnection('GET','/rest/events?'+options,(events) => {
-			for(let i=0;i<events.length;i++){
+	_callEvents(options) {
+		this.openConnection('GET', '/rest/events?' + options, (events) => {
+			for (let i = 0; i < events.length; i++) {
 				console.debug('Processing event', events[i].type, events[i].data);
 				try {
-					switch(events[i].type){
+					switch (events[i].type) {
 						case EventType.STARTUP_COMPLETE:
 							this._callConfig();
-						break;
+							break;
 						case EventType.CONFIG_SAVED:
 							this._processConfig(events[i].data);
-						break;
+							break;
 						case EventType.LOGIN_ATTEMPT:
-							if(events[i].data.success){
+							if (events[i].data.success) {
 								this.emit(Signal.LOGIN, events[i].data.username);
 							} else {
 								this.emit(Error.LOGIN, events[i].data.username);
 							}
-						break;
+							break;
 						case EventType.FOLDER_ERRORS:
-							if(this.folders.exists(events[i].data.folder)){
+							if (this.folders.exists(events[i].data.folder)) {
 								this.folders.get(events[i].data.folder).setState(State.ERRONEOUS);
 							}
-						break;
+							break;
 						case EventType.FOLDER_COMPLETION:
-							if(this.folders.exists(events[i].data.folder) && this.devices.exists(events[i].data.device)){
+							if (this.folders.exists(events[i].data.folder) && this.devices.exists(events[i].data.device)) {
 								let device = this.devices.get(events[i].data.device);
-								if(device.folders.exists(events[i].data.folder)){
-									if(!device.isOnline()) device.setState(State.SCANNING);
+								if (device.folders.exists(events[i].data.folder)) {
+									if (!device.isOnline()) device.setState(State.SCANNING);
 									device.folders.get(events[i].data.folder).setCompletion(events[i].data.completion);
 								}
 							}
-						break;
+							break;
 						case EventType.FOLDER_SUMMARY:
-							if(this.folders.exists(events[i].data.folder)){
+							if (this.folders.exists(events[i].data.folder)) {
 								this.folders.get(events[i].data.folder).setState(events[i].data.summary.state);
 							}
-						break;
+							break;
 						case EventType.FOLDER_PAUSED:
-							if(this.folders.exists(events[i].data.id)){
+							if (this.folders.exists(events[i].data.id)) {
 								this.folders.get(events[i].data.id).setState(State.PAUSED);
 							}
-						break;
+							break;
 						case EventType.PENDING_FOLDERS_CHANGED:
 							this.folders.destroy();
 							this._callConfig();
-						break;
+							break;
 						case EventType.STATE_CHANGED:
-							if(this.folders.exists(events[i].data.folder)){
+							if (this.folders.exists(events[i].data.folder)) {
 								this.folders.get(events[i].data.folder).setState(events[i].data.to);
 							}
-						break;
+							break;
 						case EventType.DEVICE_RESUMED:
-							if(this.devices.exists(events[i].data.device)){
+							if (this.devices.exists(events[i].data.device)) {
 								this.devices.get(events[i].data.device).setState(State.DISCONNECTED);
 							}
-						break;
+							break;
 						case EventType.DEVICE_PAUSED:
-							if(this.devices.exists(events[i].data.device)){
+							if (this.devices.exists(events[i].data.device)) {
 								this.devices.get(events[i].data.device).setState(State.PAUSED);
 							}
-						break;
+							break;
 						case EventType.DEVICE_CONNECTED:
-							if(this.devices.exists(events[i].data.id)){
+							if (this.devices.exists(events[i].data.id)) {
 								this.devices.get(events[i].data.id).setState(State.IDLE);
 							}
-						break;
+							break;
 						case EventType.DEVICE_DISCONNECTED:
-							if(this.devices.exists(events[i].data.id)){
+							if (this.devices.exists(events[i].data.id)) {
 								this.devices.get(events[i].data.id).setState(State.DISCONNECTED);
 							}
-						break;
+							break;
 						case EventType.PENDING_DEVICES_CHANGED:
 							this.devices.destroy();
 							this._callConfig();
-						break;
+							break;
 					}
 					this._lastEventID = events[i].id;
-				} catch(error){
+				} catch (error) {
 					console.warn('Event processing failed', error.message);
 				}
 			}
@@ -547,20 +547,20 @@ class Manager {
 			let source = GLib.timeout_source_new(50);
 			source.set_priority(GLib.PRIORITY_LOW);
 			source.set_callback(() => {
-				this._callEvents('since='+this._lastEventID);
+				this._callEvents('since=' + this._lastEventID);
 			});
 			source.attach(null);
 		});
 	}
 
-	_callConnections(){
-		this.openConnection('GET','/rest/system/connections',(data) => {
+	_callConnections() {
+		this.openConnection('GET', '/rest/system/connections', (data) => {
 			let devices = data.connections;
-			for(let deviceID in devices){
-				if(this.devices.exists(deviceID) && deviceID != this._hostID){
-					if(devices[deviceID].connected){
+			for (let deviceID in devices) {
+				if (this.devices.exists(deviceID) && deviceID != this._hostID) {
+					if (devices[deviceID].connected) {
 						this.devices.get(deviceID).setState(State.IDLE);
-					} else if(devices[deviceID].paused){
+					} else if (devices[deviceID].paused) {
 						this.devices.get(deviceID).setState(State.PAUSED);
 					} else {
 						this.devices.get(deviceID).setState(State.DISCONNECTED);
@@ -570,13 +570,13 @@ class Manager {
 		});
 	}
 
-	_processConfig(config){
+	_processConfig(config) {
 		// Only include devices which shares folders with this host
 		let usedDevices = {};
-		for(let i=0;i<config.folders.length;i++){
-			if(!this.folders.exists(config.folders[i].id)){
+		for (let i = 0; i < config.folders.length; i++) {
+			if (!this.folders.exists(config.folders[i].id)) {
 				let name = config.folders[i].label;
-				if(name.length == 0) name = config.folders[i].id;
+				if (name.length == 0) name = config.folders[i].id;
 				let folder = new Folder({
 					id: config.folders[i].id,
 					name: name,
@@ -584,17 +584,17 @@ class Manager {
 				}, this);
 				this.folders.add(folder);
 			}
-			if(config.folders[i].paused){
+			if (config.folders[i].paused) {
 				this.folders.get(config.folders[i].id).setState(State.PAUSED);
 			} else {
-				this.openConnection('GET','/rest/db/status?folder='+config.folders[i].id, function(folder){
+				this.openConnection('GET', '/rest/db/status?folder=' + config.folders[i].id, function (folder) {
 					return (data) => {
 						folder.setState(data.state);
 					}
 				}(this.folders.get(config.folders[i].id)));
 			}
-			for(let j=0;j<config.folders[i].devices.length;j++){
-				if(!(config.folders[i].devices[j].deviceID in usedDevices)){
+			for (let j = 0; j < config.folders[i].devices.length; j++) {
+				if (!(config.folders[i].devices[j].deviceID in usedDevices)) {
 					usedDevices[config.folders[i].devices[j].deviceID] = [];
 				}
 				usedDevices[config.folders[i].devices[j].deviceID].push(
@@ -603,10 +603,10 @@ class Manager {
 			}
 		}
 		// TODO: remove / update old devices & folders, current destroy is way to invasive
-		for(let i=0;i<config.devices.length;i++){
-			if(config.devices[i].deviceID in usedDevices && !this.devices.exists(config.devices[i].deviceID)){
+		for (let i = 0; i < config.devices.length; i++) {
+			if (config.devices[i].deviceID in usedDevices && !this.devices.exists(config.devices[i].deviceID)) {
 				let device;
-				if(this._hostID == config.devices[i].deviceID){
+				if (this._hostID == config.devices[i].deviceID) {
 					device = new HostDevice({
 						id: config.devices[i].deviceID,
 						name: config.devices[i].name
@@ -618,15 +618,15 @@ class Manager {
 					}, this);
 				}
 				this.devices.add(device);
-				for(let j=0;j<usedDevices[config.devices[i].deviceID].length;j++){
+				for (let j = 0; j < usedDevices[config.devices[i].deviceID].length; j++) {
 					let folder = usedDevices[config.devices[i].deviceID][j];
-					if(device != this.host){
+					if (device != this.host) {
 						folder = new FolderCompletionProxy({
 							folder: folder,
 							device: device
 						});
-						this.openConnection('GET','/rest/db/completion?folder='+folder.id+'&device='+device.id,
-							function(proxy){
+						this.openConnection('GET', '/rest/db/completion?folder=' + folder.id + '&device=' + device.id,
+							function (proxy) {
 								return (data) => {
 									proxy.setCompletion(data.completion);
 								}
@@ -640,31 +640,31 @@ class Manager {
 		this._callConnections();
 	}
 
-	_pollState(){
-		if(this._pollSource){
+	_pollState() {
+		if (this._pollSource) {
 			this._pollSource.destroy();
 		}
-		if(this._isServiceActive() && this.config.found()){
-			if(this._pollCount % this._pollConfigHook == 0){
+		if (this._isServiceActive() && this.config.found()) {
+			if (this._pollCount % this._pollConfigHook == 0) {
 				// TODO: this should not be necessary, we should remove old items
 				this.folders.destroy();
 				this.devices.destroy();
 				this._callConfig();
 			}
-			if(this._pollCount % this._pollConnectionHook == 0){
+			if (this._pollCount % this._pollConnectionHook == 0) {
 				this._isServiceEnabled();
 				this._callConnections();
 			}
-			this.openConnection('GET','/rest/system/error',(data) => {
+			this.openConnection('GET', '/rest/system/error', (data) => {
 				let errorTime;
 				let errors = data.errors;
-				if(errors != null){
-					for(let i=0;i<errors.length;i++){
+				if (errors != null) {
+					for (let i = 0; i < errors.length; i++) {
 						errorTime = new Date(errors[i].when)
-						if(errorTime > this._lastErrorTime){
+						if (errorTime > this._lastErrorTime) {
 							this._lastErrorTime = errorTime;
 							console.error(Error.SERVICE, errors[i]);
-							this.emit(Signal.ERROR,{ type: Error.SERVICE, message: errors[i].message });
+							this.emit(Signal.ERROR, { type: Error.SERVICE, message: errors[i].message });
 						}
 					}
 				}
@@ -679,92 +679,92 @@ class Manager {
 		this._pollCount++;
 	}
 
-	_isServiceActive(){
+	_isServiceActive() {
 		let state = this._serviceCommand('is-active');
 		let active = (state == 'active');
 		let failed = (state == 'failed')
-		if(failed != this._serviceFailed){
+		if (failed != this._serviceFailed) {
 			this._serviceActive = failed;
-			if(failed){
+			if (failed) {
 				console.error(Error.DAEMON, Service.NAME);
-				this.emit(Signal.ERROR,{ type: Error.DAEMON });
+				this.emit(Signal.ERROR, { type: Error.DAEMON });
 			}
 		}
-		if(active != this._serviceActive){
+		if (active != this._serviceActive) {
 			this._serviceActive = active;
-			this.emit(Signal.SERVICE_CHANGE,(active ? ServiceState.ACTIVE : ServiceState.STOPPED));
-			if(this.host) this.host.setState(active ? State.IDLE : State.DISCONNECTED);
+			this.emit(Signal.SERVICE_CHANGE, (active ? ServiceState.ACTIVE : ServiceState.STOPPED));
+			if (this.host) this.host.setState(active ? State.IDLE : State.DISCONNECTED);
 		}
 		return active;
 	}
 
-	_isServiceEnabled(){
+	_isServiceEnabled() {
 		let enabled = (this._serviceCommand('is-enabled') == 'enabled');
-		if(enabled != this._serviceEnabled){
+		if (enabled != this._serviceEnabled) {
 			this._serviceEnabled = enabled;
-			this.emit(Signal.SERVICE_CHANGE,(enabled ? ServiceState.ENABLED : ServiceState.DISABLED));
+			this.emit(Signal.SERVICE_CHANGE, (enabled ? ServiceState.ENABLED : ServiceState.DISABLED));
 		}
 		return enabled;
 	}
 
-	_serviceCommand(command){
-		let argv = 'systemctl --user '+command+' '+Service.NAME;
+	_serviceCommand(command) {
+		let argv = 'systemctl --user ' + command + ' ' + Service.NAME;
 		let result = GLib.spawn_sync(null, argv.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null)[1];
 		return ByteArray.toString(result).trim();
 	}
 
-	abortConnections(){
+	abortConnections() {
 		this._httpAborting = true;
 		this._httpSession.abort();
 	}
 
-	openConnection(method, uri, callback){
-		if(this.config.found()){
-			let msg = Soup.Message.new(method, this.config.getURI()+uri);
+	openConnection(method, uri, callback) {
+		if (this.config.found()) {
+			let msg = Soup.Message.new(method, this.config.getURI() + uri);
 			msg.request_headers.append('X-API-Key', this.config.getAPIKey());
 			this.openConnectionMessage(msg, callback);
 		}
 	}
 
-	openConnectionMessage(msg, callback){
-		if(this._serviceActive && this.config.found()){
-			console.debug('Opening connection', msg.method+':'+msg.uri.get_path());
+	openConnectionMessage(msg, callback) {
+		if (this._serviceActive && this.config.found()) {
+			console.debug('Opening connection', msg.method + ':' + msg.uri.get_path());
 			this._httpAborting = false;
 			this._httpSession.queue_message(msg, (session, msg) => {
-				if(msg.status_code == 200){
+				if (msg.status_code == 200) {
 					try {
-						if(callback && msg.response_body.data.length>0){
-							console.debug('Callback', msg.method+':'+msg.uri.get_path(), msg.response_body.data);
+						if (callback && msg.response_body.data.length > 0) {
+							console.debug('Callback', msg.method + ':' + msg.uri.get_path(), msg.response_body.data);
 							callback(JSON.parse(msg.response_body.data));
 						}
-					} catch(error){
-						console.error(Error.STREAM, msg.method+':'+msg.uri.get_path(), error.message, msg.response_body.data);
-						this.emit(Signal.ERROR,{ type: Error.STREAM, message: msg.method+':'+msg.uri.get_path() });
+					} catch (error) {
+						console.error(Error.STREAM, msg.method + ':' + msg.uri.get_path(), error.message, msg.response_body.data);
+						this.emit(Signal.ERROR, { type: Error.STREAM, message: msg.method + ':' + msg.uri.get_path() });
 					}
-				} else if(!this._httpAborting){
-					if(msg.status_code < 100){
-						console.info(msg.reason_phrase, 'will retry', msg.method+':'+msg.uri.get_path(), msg.status_code);
+				} else if (!this._httpAborting) {
+					if (msg.status_code < 100) {
+						console.info(msg.reason_phrase, 'will retry', msg.method + ':' + msg.uri.get_path(), msg.status_code);
 						// Retry this connection attempt
 						let source = GLib.timeout_source_new(1000);
 						source.set_priority(GLib.PRIORITY_LOW);
 						source.set_callback(() => {
-								this.openConnectionMessage(msg, callback);
+							this.openConnectionMessage(msg, callback);
 						});
 						source.attach(null);
 					} else {
-						console.error(Error.CONNECTION, msg.reason_phrase, msg.method+':'+msg.uri.get_path(), msg.status_code, msg.response_body.data);
-						this.emit(Signal.ERROR,{ type: Error.CONNECTION, message: msg.reason_phrase+' - '+msg.method+':'+msg.uri.get_path() });
+						console.error(Error.CONNECTION, msg.reason_phrase, msg.method + ':' + msg.uri.get_path(), msg.status_code, msg.response_body.data);
+						this.emit(Signal.ERROR, { type: Error.CONNECTION, message: msg.reason_phrase + ' - ' + msg.method + ':' + msg.uri.get_path() });
 					}
 				}
 			});
 		}
 	}
 
-	destroy(){
-		if(this._pollSource){
+	destroy() {
+		if (this._pollSource) {
 			this._pollSource.destroy();
 		}
-		if(this._stateSource){
+		if (this._stateSource) {
 			this._stateSource.destroy();
 		}
 		this.folders.destroy();
@@ -772,8 +772,8 @@ class Manager {
 		this.config.destroy();
 	}
 
-	attach(){
-		if(!this.config.found()){
+	attach() {
+		if (!this.config.found()) {
 			console.error(Error.CONFIG);
 			this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
 			this.emit(Signal.ERROR, { type: Error.CONFIG });
@@ -781,44 +781,44 @@ class Manager {
 		this._pollState();
 	}
 
-	enableService(){
+	enableService() {
 		this.config.setService(true);
 		this._serviceCommand('enable');
 		this._isServiceEnabled();
 	}
 
-	disableService(){
+	disableService() {
 		this._serviceCommand('disable');
 		this._isServiceEnabled();
 	}
 
-	startService(){
+	startService() {
 		this.config.setService();
 		this._serviceCommand('start');
 		this._serviceFailed = false
 	}
 
-	stopService(){
+	stopService() {
 		this._serviceCommand('stop');
 	}
 
-	rescan(folder){
-		if(folder){
-			this.openConnection('POST','/rest/db/scan?folder='+folder.id);
+	rescan(folder) {
+		if (folder) {
+			this.openConnection('POST', '/rest/db/scan?folder=' + folder.id);
 		} else {
-			this.openConnection('POST','/rest/db/scan');
+			this.openConnection('POST', '/rest/db/scan');
 		}
 	}
 
-	resume(device){
-		if(device){
-			this.openConnection('POST','/rest/system/resume?device='+device.id);
+	resume(device) {
+		if (device) {
+			this.openConnection('POST', '/rest/system/resume?device=' + device.id);
 		}
 	}
 
-	pause(device){
-		if(device){
-			this.openConnection('POST','/rest/system/pause?device='+device.id);
+	pause(device) {
+		if (device) {
+			this.openConnection('POST', '/rest/system/pause?device=' + device.id);
 		}
 	}
 

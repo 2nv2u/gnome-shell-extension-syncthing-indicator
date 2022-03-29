@@ -2,18 +2,10 @@
 	background-size: 22px;
 }
 .syncthing-indicator .popup-menu-icon {
-	padding: 2px 12px 2px 8px;
+	padding: 0 12px 0 6px;
 }
 .syncthing-indicator .popup-menu-item {
-	min-width:280px;
-}
-.syncthing-indicator .syncthing-submenu-icon {
-	margin: 4px 0 4px 0;
-}
-.syncthing-indicator .syncthing-menu-spacing {
-	margin-top: 6px;
-	margin-bottom: 6px;
-	padding: 4px 0 4px 0;
+	min-width: 280px;
 }
 .syncthing-indicator .popup-menu-icon.idle {
 	background-image: url(icons/icon-idle.svg);
