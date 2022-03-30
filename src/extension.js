@@ -265,10 +265,12 @@ class RescanMenuItem extends PopupMenu.PopupBaseMenuItem {
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
 			switch (state) {
-				case Syncthing.ServiceState.ACTIVE:
+				case Syncthing.ServiceState.USER_ACTIVE:
+				case Syncthing.ServiceState.SYSTEM_ACTIVE:
 					this.setSensitive(true);
 					break;
-				case Syncthing.ServiceState.STOPPED:
+				case Syncthing.ServiceState.USER_STOPPED:
+				case Syncthing.ServiceState.SYSTEM_STOPPED:
 					this.setSensitive(false);
 					break;
 				case Syncthing.ServiceState.ERROR:
@@ -307,10 +309,12 @@ class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
 			switch (state) {
-				case Syncthing.ServiceState.ACTIVE:
+				case Syncthing.ServiceState.USER_ACTIVE:
+				case Syncthing.ServiceState.SYSTEM_ACTIVE:
 					this.setSensitive(true);
 					break;
-				case Syncthing.ServiceState.STOPPED:
+				case Syncthing.ServiceState.USER_STOPPED:
+				case Syncthing.ServiceState.SYSTEM_STOPPED:
 					this.setSensitive(false);
 					break;
 				case Syncthing.ServiceState.ERROR:
@@ -343,16 +347,22 @@ class ServiceSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
 			switch (state) {
-				case Syncthing.ServiceState.ACTIVE:
+				case Syncthing.ServiceState.USER_ACTIVE:
 					this.setSensitive(true);
 					this.setToggleState(true);
 					break;
-				case Syncthing.ServiceState.STOPPED:
+				case Syncthing.ServiceState.SYSTEM_ACTIVE:
+					this.setSensitive(false);
+					this.setToggleState(true);
+					break;
+				case Syncthing.ServiceState.USER_STOPPED:
 					this.setSensitive(true);
 					this.setToggleState(false);
 					break;
+				case Syncthing.ServiceState.SYSTEM_STOPPED:
+					this.setSensitive(false);
 				case Syncthing.ServiceState.ERROR:
-					this.setSensitive(true);
+					this.setToggleState(false);
 					break;
 			}
 		});
@@ -391,16 +401,22 @@ class AutoSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
 			switch (state) {
-				case Syncthing.ServiceState.ENABLED:
+				case Syncthing.ServiceState.USER_ENABLED:
 					this.setSensitive(true);
 					this.setToggleState(true);
 					break;
-				case Syncthing.ServiceState.DISABLED:
+				case Syncthing.ServiceState.SYSTEM_ENABLED:
+					this.setSensitive(false);
+					this.setToggleState(true);
+					break;
+				case Syncthing.ServiceState.USER_DISABLED:
 					this.setSensitive(true);
 					this.setToggleState(false);
 					break;
-				case Syncthing.ServiceState.ERROR:
+				case Syncthing.ServiceState.SYSTEM_DISABLED:
 					this.setSensitive(false);
+				case Syncthing.ServiceState.ERROR:
+					this.setToggleState(false);
 					break;
 			}
 		});
@@ -471,7 +487,8 @@ class SyncthingIndicator extends PanelMenu.Button {
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
 			switch (state) {
-				case Syncthing.ServiceState.STOPPED:
+				case Syncthing.ServiceState.USER_STOPPED:
+				case Syncthing.ServiceState.SYSTEM_STOPPED:
 					this._folderMenu.setSensitive(false)
 					break;
 			}

@@ -65,10 +65,14 @@ var State = {
 
 // Service state constants
 var ServiceState = {
-	ACTIVE: "active",
-	STOPPED: "stopped",
-	ENABLED: "enabled",
-	DISABLED: "disabled",
+	USER_ACTIVE: "userActive",
+	USER_STOPPED: "userStopped",
+	USER_ENABLED: "userEnabled",
+	USER_DISABLED: "userDisabled",
+	SYSTEM_ACTIVE: "systemActive",
+	SYSTEM_STOPPED: "systemStopped",
+	SYSTEM_ENABLED: "systemEnabled",
+	SYSTEM_DISABLED: "systemDisabled",
 	ERROR: "error"
 };
 
@@ -334,13 +338,25 @@ class Config {
 		this._address = '';
 		this._apikey = '';
 		this._secure = false;
-		this._found = false;
+		this._exists = false;
 	}
 
 	load() {
-		this._found = false;
-		// Extract syncthing configuration from the default config file
-		let configFile = Gio.File.new_for_path(GLib.get_user_config_dir() + '/syncthing/config.xml');
+		this._exists = false;
+		// Extract syncthing config file location
+		let configPath = ''
+		try {
+			let result = GLib.spawn_sync(null, ['syncthing', '--paths'], null, GLib.SpawnFlags.SEARCH_PATH, null)[1];
+			let paths = {}, pathArray = ByteArray.toString(result).split('\n\n');
+			for (let i = 0; i < pathArray.length; i++) {
+				let items = pathArray[i].split(':\n\t');
+				if (items.length == 2) paths[items[0]] = items[1].split('\n\t');
+			}
+			configPath = paths['Configuration file'][0]
+		} catch (error) {
+			console.error('Can\'t find config file');
+		}
+		let configFile = Gio.File.new_for_path(configPath);
 		if (configFile.query_exists(null)) {
 			let configInputStream = configFile.read(null);
 			let configDataInputStream = Gio.DataInputStream.new(configInputStream);
@@ -356,10 +372,10 @@ class Config {
 				this._address = reMatch[1].fetch(2);
 				this._apikey = reMatch[1].fetch(3);
 				this._uri = 'http' + ((reMatch[1].fetch(1) == 'true') ? 's' : '') + '://' + this._address;
-				this._found = true;
+				this._exists = true;
 				console.info('Found config', this._address, this._apikey, this._uri);
 			} else {
-				throw ('Can\'t find gui xml node in config');
+				console.error('Can\'t find gui xml node in config');
 			}
 		}
 	}
@@ -384,9 +400,9 @@ class Config {
 		};
 	}
 
-	found() {
-		if (!this._found) this.load();
-		return this._found;
+	exists() {
+		if (!this._exists) this.load();
+		return this._exists;
 	}
 
 	getAPIKey() {
@@ -437,7 +453,8 @@ var Manager = class Manager {
 
 		this.connect(Signal.SERVICE_CHANGE, (manager, state) => {
 			switch (state) {
-				case ServiceState.ACTIVE:
+				case ServiceState.USER_ACTIVE:
+				case ServiceState.SYSTEM_ACTIVE:
 					this.openConnection('GET', '/rest/system/status', (status) => {
 						this._hostID = status.myID;
 						this._callConfig((config) => {
@@ -446,7 +463,8 @@ var Manager = class Manager {
 					});
 					this._pollState();
 					break;
-				case ServiceState.STOPPED:
+				case ServiceState.USER_STOPPED:
+				case ServiceState.SYSTEM_STOPPED:
 					this.destroy();
 					this._lastEventID = 1;
 					break;
@@ -646,7 +664,7 @@ var Manager = class Manager {
 		if (this._pollSource) {
 			this._pollSource.destroy();
 		}
-		if (this._isServiceActive() && this.config.found()) {
+		if (this._isServiceActive() && this.config.exists()) {
 			if (this._pollCount % this._pollConfigHook == 0) {
 				// TODO: this should not be necessary, we should remove old items
 				this.folders.destroy();
@@ -682,7 +700,8 @@ var Manager = class Manager {
 	}
 
 	_isServiceActive() {
-		let state = this._serviceCommand('is-active');
+		let userSpace = true, state = this._serviceCommand('is-active', userSpace);
+		if (state == 'inactive') userSpace = false; state = this._serviceCommand('is-active', userSpace);
 		let active = (state == 'active');
 		let failed = (state == 'failed')
 		if (failed != this._serviceFailed) {
@@ -694,25 +713,36 @@ var Manager = class Manager {
 		}
 		if (active != this._serviceActive) {
 			this._serviceActive = active;
-			this.emit(Signal.SERVICE_CHANGE, (active ? ServiceState.ACTIVE : ServiceState.STOPPED));
+			if (userSpace) {
+				this.emit(Signal.SERVICE_CHANGE, (active ? ServiceState.USER_ACTIVE : ServiceState.USER_STOPPED));
+			} else {
+				this.emit(Signal.SERVICE_CHANGE, (active ? ServiceState.SYSTEM_ACTIVE : ServiceState.SYSTEM_STOPPED));
+			}
 			if (this.host) this.host.setState(active ? State.IDLE : State.DISCONNECTED);
 		}
 		return active;
 	}
 
 	_isServiceEnabled() {
-		let enabled = (this._serviceCommand('is-enabled') == 'enabled');
+		let userSpace = true, enabled = (this._serviceCommand('is-enabled', userSpace) == 'enabled');
+		if (!enabled) userSpace = false; enabled = (this._serviceCommand('is-enabled', userSpace) == 'enabled');
 		if (enabled != this._serviceEnabled) {
 			this._serviceEnabled = enabled;
-			this.emit(Signal.SERVICE_CHANGE, (enabled ? ServiceState.ENABLED : ServiceState.DISABLED));
+			if (userSpace) {
+				this.emit(Signal.SERVICE_CHANGE, (enabled ? ServiceState.USER_ENABLED : ServiceState.USER_DISABLED));
+			} else {
+				this.emit(Signal.SERVICE_CHANGE, (enabled ? ServiceState.SYSTEM_ENABLED : ServiceState.SYSTEM_DISABLED));
+			}
 		}
 		return enabled;
 	}
 
-	_serviceCommand(command) {
-		let argv = 'systemctl --user ' + command + ' ' + Service.NAME;
-		let result = GLib.spawn_sync(null, argv.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null)[1];
-		return ByteArray.toString(result).trim();
+	_serviceCommand(command, userSpace = true) {
+		let args = ['systemctl', command, Service.NAME];
+		if (userSpace) args.splice(1, 0, '--user');
+		let result = ByteArray.toString(GLib.spawn_sync(null, args, null, GLib.SpawnFlags.SEARCH_PATH, null)[1]).trim();
+		console.debug('Calling systemd', command, userSpace, args, result)
+		return result
 	}
 
 	abortConnections() {
@@ -721,7 +751,7 @@ var Manager = class Manager {
 	}
 
 	openConnection(method, uri, callback) {
-		if (this.config.found()) {
+		if (this.config.exists()) {
 			let msg = Soup.Message.new(method, this.config.getURI() + uri);
 			msg.request_headers.append('X-API-Key', this.config.getAPIKey());
 			this.openConnectionMessage(msg, callback);
@@ -729,7 +759,7 @@ var Manager = class Manager {
 	}
 
 	openConnectionMessage(msg, callback) {
-		if (this._serviceActive && this.config.found()) {
+		if (this._serviceActive && this.config.exists()) {
 			console.debug('Opening connection', msg.method + ':' + msg.uri.get_path());
 			this._httpAborting = false;
 			this._httpSession.queue_message(msg, (session, msg) => {
@@ -775,7 +805,7 @@ var Manager = class Manager {
 	}
 
 	attach() {
-		if (!this.config.found()) {
+		if (!this.config.exists()) {
 			console.error(Error.CONFIG);
 			this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
 			this.emit(Signal.ERROR, { type: Error.CONFIG });
