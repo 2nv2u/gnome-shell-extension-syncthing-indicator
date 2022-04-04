@@ -752,7 +752,7 @@ var Manager = class Manager {
 
 	_serviceCommand(command, user = true) {
 		let args = ['systemctl', command, Service.NAME];
-		if (!user) args.splice(1, 0, '--user');
+		if (user) args.splice(1, 0, '--user');
 		let result = ByteArray.toString(GLib.spawn_sync(null, args, null, GLib.SpawnFlags.SEARCH_PATH, null)[1]).trim();
 		console.debug('Calling systemd', command, user, args, result)
 		return result
