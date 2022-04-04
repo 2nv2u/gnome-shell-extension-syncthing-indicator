@@ -128,14 +128,14 @@ class Item {
 			if (this._stateSource) {
 				this._stateSource.destroy();
 			}
-			console.info('State change', this.name, state);
+			console.info('State change', this._name, state);
 			this._state = state;
 			// Stop items from excessive state changes by only emitting 1 state per stateDelay
 			this._stateSource = GLib.timeout_source_new(this._stateEmitDelay);
 			this._stateSource.set_priority(GLib.PRIORITY_DEFAULT);
 			this._stateSource.set_callback(() => {
 				if (this._stateEmitted != this._state) {
-					console.info('Emit state change', this.name, this._state);
+					console.info('Emit state change', this._name, this._state);
 					this._stateEmitted = this._state;
 					this.emit(Signal.STATE_CHANGE, this._state);
 				}
@@ -149,10 +149,10 @@ class Item {
 	}
 
 	setName(name) {
-		if (name.length > 0 && this.name != name) {
-			console.info('Emit name change', this.name, name);
-			this.name = name
-			this.emit(Signal.NAME_CHANGE, this.name);
+		if (name.length > 0 && this._name != name) {
+			console.info('Emit name change', this._name, name);
+			this._name = name
+			this.emit(Signal.NAME_CHANGE, this._name);
 		}
 	}
 
@@ -246,7 +246,7 @@ class Device extends Item {
 			this.setState(State.PAUSED);
 			this.folders.foreach((folder) => {
 				if (!this.isBusy()) {
-					console.info('Determine device state', this.name, folder.name, folder.getState());
+					console.info('Determine device state', this.getName(), folder.getName(), folder.getState());
 					this.setState(folder.getState());
 				}
 			});
@@ -282,7 +282,7 @@ class HostDevice extends Device {
 		this.setState(State.PAUSED);
 		this._manager.devices.foreach((device) => {
 			if (this != device && !this.isBusy() && device.isOnline()) {
-				console.info('Determine host device state', this.name, device.name, device.getState());
+				console.info('Determine host device state', this.getName(), device.getName(), device.getState());
 				this.setState(device.getState());
 			}
 		});
@@ -315,7 +315,7 @@ class FolderCompletionProxy extends Folder {
 
 	constructor(data) {
 		super(data.folder);
-		this.name += ' (' + data.device.name + ')';
+		this._name = data.folder.getName() + ' (' + data.device.getName() + ')';
 		this._folder = data.folder;
 		this._device = data.device;
 	}
@@ -651,19 +651,20 @@ var Manager = class Manager {
 					for (let j = 0; j < usedDevices[config.devices[i].deviceID].length; j++) {
 						let folder = usedDevices[config.devices[i].deviceID][j];
 						if (device != this.host) {
-							folder = new FolderCompletionProxy({
+							let proxy = new FolderCompletionProxy({
 								folder: folder,
 								device: device
 							});
-							if (this.folders.get(folder.id).getState() != State.PAUSED) {
-								this.openConnection('GET', '/rest/db/completion?folder=' + folder.id + '&device=' + device.id,
+							if (folder.getState() != State.PAUSED) {
+								this.openConnection('GET', '/rest/db/completion?folder=' + proxy.id + '&device=' + device.id,
 									function (proxy) {
 										return (data) => {
 											proxy.setCompletion(data.completion);
 										}
-									}(folder)
+									}(proxy)
 								);
 							}
+							folder = proxy
 						}
 						device.folders.add(folder);
 					}
