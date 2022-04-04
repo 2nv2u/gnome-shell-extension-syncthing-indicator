@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingManager 0.26
+	SyncthingManager 0.27
 ================================================================================================================
 
 	GJS syncthing systemd manager
@@ -40,14 +40,11 @@ var Signal = {
 	LOGIN: "login",
 	ADD: "add",
 	DESTROY: "destroy",
+	NAME_CHANGE: "nameChange",
 	SERVICE_CHANGE: "serviceChange",
 	HOST_ADD: "hostAdd",
 	FOLDER_ADD: "folderAdd",
-	FOLDER_CHANGE: "folderChange",
-	FOLDER_DESTROY: "folderDestroy",
 	DEVICE_ADD: "deviceAdd",
-	DEVICE_CHANGE: "deviceChange",
-	DEVICE_DESTROY: "deviceDestroy",
 	STATE_CHANGE: "stateChange",
 	ERROR: "error"
 };
@@ -118,7 +115,7 @@ class Item {
 			this._stateEmitted = State.UNKNOWN,
 			this._stateEmitDelay = 200,
 			this.id = data.id;
-		this.name = data.name;
+		this._name = data.name;
 		this._manager = manager;
 	}
 
@@ -147,8 +144,20 @@ class Item {
 		}
 	}
 
-	getState(state) {
+	getState() {
 		return this._state;
+	}
+
+	setName(name) {
+		if (name.length > 0 && this.name != name) {
+			console.info('Emit name change', this.name, name);
+			this.name = name
+			this.emit(Signal.NAME_CHANGE, this.name);
+		}
+	}
+
+	getName() {
+		return this._name;
 	}
 
 	destroy() {
@@ -592,15 +601,17 @@ var Manager = class Manager {
 		// Only include devices which shares folders with this host
 		let usedDevices = {};
 		for (let i = 0; i < config.folders.length; i++) {
+			let name = config.folders[i].label;
+			if (name.length == 0) name = config.folders[i].id;
 			if (!this.folders.exists(config.folders[i].id)) {
-				let name = config.folders[i].label;
-				if (name.length == 0) name = config.folders[i].id;
 				let folder = new Folder({
 					id: config.folders[i].id,
 					name: name,
 					path: config.folders[i].path
 				}, this);
 				this.folders.add(folder);
+			} else {
+				this.folders.get(config.folders[i].id).setName(name)
 			}
 			if (config.folders[i].paused) {
 				this.folders.get(config.folders[i].id).setState(State.PAUSED);
@@ -622,38 +633,43 @@ var Manager = class Manager {
 		}
 		// TODO: remove / update old devices & folders, current destroy is way to invasive
 		for (let i = 0; i < config.devices.length; i++) {
-			if (config.devices[i].deviceID in usedDevices && !this.devices.exists(config.devices[i].deviceID)) {
+			if (config.devices[i].deviceID in usedDevices) {
 				let device;
-				if (this._hostID == config.devices[i].deviceID) {
-					device = new HostDevice({
-						id: config.devices[i].deviceID,
-						name: config.devices[i].name
-					}, this);
-				} else {
-					device = new Device({
-						id: config.devices[i].deviceID,
-						name: config.devices[i].name
-					}, this);
-				}
-				this.devices.add(device);
-				for (let j = 0; j < usedDevices[config.devices[i].deviceID].length; j++) {
-					let folder = usedDevices[config.devices[i].deviceID][j];
-					if (device != this.host) {
-						folder = new FolderCompletionProxy({
-							folder: folder,
-							device: device
-						});
-						if (this.folders.get(folder.id).getState() != State.PAUSED) {
-							this.openConnection('GET', '/rest/db/completion?folder=' + folder.id + '&device=' + device.id,
-								function (proxy) {
-									return (data) => {
-										proxy.setCompletion(data.completion);
-									}
-								}(folder)
-							);
-						}
+				if (!this.devices.exists(config.devices[i].deviceID)) {
+					if (this._hostID == config.devices[i].deviceID) {
+						device = new HostDevice({
+							id: config.devices[i].deviceID,
+							name: config.devices[i].name
+						}, this);
+					} else {
+						device = new Device({
+							id: config.devices[i].deviceID,
+							name: config.devices[i].name
+						}, this);
 					}
-					device.folders.add(folder);
+					this.devices.add(device);
+					for (let j = 0; j < usedDevices[config.devices[i].deviceID].length; j++) {
+						let folder = usedDevices[config.devices[i].deviceID][j];
+						if (device != this.host) {
+							folder = new FolderCompletionProxy({
+								folder: folder,
+								device: device
+							});
+							if (this.folders.get(folder.id).getState() != State.PAUSED) {
+								this.openConnection('GET', '/rest/db/completion?folder=' + folder.id + '&device=' + device.id,
+									function (proxy) {
+										return (data) => {
+											proxy.setCompletion(data.completion);
+										}
+									}(folder)
+								);
+							}
+						}
+						device.folders.add(folder);
+					}
+				} else {
+					device = this.devices.get(config.devices[i].deviceID)
+					device.setName(config.devices[i].name)
 				}
 			}
 		}

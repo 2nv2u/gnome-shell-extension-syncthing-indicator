@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.26
+	SyncthingIndicator 0.27
 ================================================================================================================
 
 	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
@@ -127,7 +127,7 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 		this.icon = new St.Icon({ gicon: icon, style_class: 'popup-menu-icon syncthing-state-icon' });
 		this.actor.add_child(this.icon);
 
-		this.label = new St.Label({ text: folder.name, style_class: 'syncthing-state-label' });
+		this.label = new St.Label({ text: folder.getName(), style_class: 'syncthing-state-label' });
 		this.actor.add_child(this.label);
 		this.actor.label_actor = this.label;
 
@@ -135,6 +135,10 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 
 		this._folder.connect(Syncthing.Signal.STATE_CHANGE, (folder, state) => {
 			this.icon.style_class = 'popup-menu-icon syncthing-state-icon ' + state;
+		});
+
+		this._folder.connect(Syncthing.Signal.NAME_CHANGE, (folder, name) => {
+			this.label.text = name;
 		});
 
 		this._folder.connect(Syncthing.Signal.DESTROY, (folder) => {
@@ -182,11 +186,16 @@ class DeviceMenu extends SectionMenu {
 
 	}
 
-	setDevice(device) {
-		this.device = device;
-		this.label.text = device.name;
-		this.device.connect(Syncthing.Signal.STATE_CHANGE, (device, state) => {
+	setHost(device) {
+		this._host = device;
+		this.label.text = device.getName();
+
+		this._host.connect(Syncthing.Signal.STATE_CHANGE, (device, state) => {
 			this.icon.style_class = 'popup-menu-icon syncthing-state-icon ' + state;
+		});
+
+		this._host.connect(Syncthing.Signal.NAME_CHANGE, (device, name) => {
+			this.label.text = name;
 		});
 	}
 
@@ -197,7 +206,7 @@ DeviceMenu = GObject.registerClass({ GTypeName: 'DeviceMenu' }, DeviceMenu)
 class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 	_init(device) {
-		super._init(device.name, false, null);
+		super._init(device.getName(), false, null);
 
 		this._device = device;
 
@@ -226,6 +235,10 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 					break
 			}
 			this.icon.style_class = 'popup-menu-icon syncthing-state-icon ' + state;
+		});
+
+		this._device.connect(Syncthing.Signal.NAME_CHANGE, (device, name) => {
+			this.label.text = name;
 		});
 
 		this._device.connect(Syncthing.Signal.DESTROY, () => {
@@ -508,7 +521,7 @@ class SyncthingIndicator extends PanelMenu.Button {
 		});
 
 		extension.manager.connect(Syncthing.Signal.HOST_ADD, (manager, device) => {
-			this._deviceMenu.setDevice(device);
+			this._deviceMenu.setHost(device);
 			device.connect(Syncthing.Signal.STATE_CHANGE, (device, state) => {
 				this.icon.setState(state);
 			});
