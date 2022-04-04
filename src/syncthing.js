@@ -699,42 +699,55 @@ var Manager = class Manager {
 		this._pollCount++;
 	}
 
+	_serviceState(user = true) {
+		let command = this._serviceCommand('is-enabled', user), enabled = (command == 'enabled'), disabled = (command == 'disabled');
+		if (enabled || disabled) {
+			return {
+				user: user,
+				enabled: enabled,
+				disabled: disabled
+			}
+		} else if (user) {
+			return this._serviceState(!user);
+		}
+
+	}
+
 	_isServiceActive() {
-		let userSpace = true, state = this._serviceCommand('is-active', userSpace);
-		if (state == 'inactive') userSpace = false; state = this._serviceCommand('is-active', userSpace);
-		let active = (state == 'active');
-		let failed = (state == 'failed')
-		if (failed != this._serviceFailed) {
-			this._serviceActive = failed;
-			if (failed) {
-				console.error(Error.DAEMON, Service.NAME);
-				this.emit(Signal.ERROR, { type: Error.DAEMON });
+		let state = this._serviceState();
+		if (state.enabled || state.disabled) {
+			let command = this._serviceCommand('is-active', state.user), active = (command == 'active'), failed = (command == 'failed')
+			if (failed != this._serviceFailed) {
+				this._serviceActive = failed;
+				if (failed) {
+					console.error(Error.DAEMON, Service.NAME);
+					this.emit(Signal.ERROR, { type: Error.DAEMON });
+				}
 			}
-		}
-		if (active != this._serviceActive) {
-			this._serviceActive = active;
-			if (userSpace) {
-				this.emit(Signal.SERVICE_CHANGE, (active ? ServiceState.USER_ACTIVE : ServiceState.USER_STOPPED));
-			} else {
-				this.emit(Signal.SERVICE_CHANGE, (active ? ServiceState.SYSTEM_ACTIVE : ServiceState.SYSTEM_STOPPED));
+			if (active != this._serviceActive) {
+				this._serviceActive = active;
+				if (state.user) {
+					this.emit(Signal.SERVICE_CHANGE, (active ? ServiceState.USER_ACTIVE : ServiceState.USER_STOPPED));
+				} else {
+					this.emit(Signal.SERVICE_CHANGE, (active ? ServiceState.SYSTEM_ACTIVE : ServiceState.SYSTEM_STOPPED));
+				}
+				if (this.host) this.host.setState(active ? State.IDLE : State.DISCONNECTED);
 			}
-			if (this.host) this.host.setState(active ? State.IDLE : State.DISCONNECTED);
+			return active;
 		}
-		return active;
 	}
 
 	_isServiceEnabled() {
-		let userSpace = true, enabled = (this._serviceCommand('is-enabled', userSpace) == 'enabled');
-		if (!enabled) userSpace = false; enabled = (this._serviceCommand('is-enabled', userSpace) == 'enabled');
-		if (enabled != this._serviceEnabled) {
-			this._serviceEnabled = enabled;
-			if (userSpace) {
-				this.emit(Signal.SERVICE_CHANGE, (enabled ? ServiceState.USER_ENABLED : ServiceState.USER_DISABLED));
+		let state = this._serviceState();
+		if ((state.enabled || state.disabled) && state.enabled != this._serviceEnabled) {
+			this._serviceEnabled = state.enabled;
+			if (state.user) {
+				this.emit(Signal.SERVICE_CHANGE, (state.enabled ? ServiceState.USER_ENABLED : ServiceState.USER_DISABLED));
 			} else {
-				this.emit(Signal.SERVICE_CHANGE, (enabled ? ServiceState.SYSTEM_ENABLED : ServiceState.SYSTEM_DISABLED));
+				this.emit(Signal.SERVICE_CHANGE, (state.enabled ? ServiceState.SYSTEM_ENABLED : ServiceState.SYSTEM_DISABLED));
 			}
 		}
-		return enabled;
+		return state.enabled;
 	}
 
 	_serviceCommand(command, userSpace = true) {
