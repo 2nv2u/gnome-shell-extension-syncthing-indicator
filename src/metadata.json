@@ -6,9 +6,10 @@
     "3.38",
     "40",
     "41",
-    "42"
+    "42",
+    "43"
   ],
   "url": "https://github.com/2nv2u/gnome-shell-extension-syncthing-indicator",
   "uuid": "syncthing@gnome.2nv2u.com",
-  "version": 27
+  "version": 28
 }
