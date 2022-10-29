@@ -799,15 +799,18 @@ var Manager = class Manager {
 		if (this._serviceActive && this.config.exists()) {
 			console.debug('Opening connection', msg.method + ':' + msg.uri.get_path());
 			this._httpAborting = false;
-			this._httpSession.queue_message(msg, (session, msg) => {
+			this._httpSession.send_and_read_async(msg, GLib.PRIORITY_DEFAULT, null, (session, result) => {
 				if (msg.status_code == 200) {
+					let bytes = session.send_and_read_finish(result);
+					let decoder = new TextDecoder('utf-8');
+					let response = decoder.decode(bytes.get_data());
 					try {
-						if (callback && msg.response_body.data.length > 0) {
-							console.debug('Callback', msg.method + ':' + msg.uri.get_path(), msg.response_body.data);
-							callback(JSON.parse(msg.response_body.data));
+						if (callback && response.length > 0) {
+							console.debug('Callback', msg.method + ':' + msg.uri.get_path(), response);
+							callback(JSON.parse(response));
 						}
 					} catch (error) {
-						console.error(Error.STREAM, msg.method + ':' + msg.uri.get_path(), error.message, msg.response_body.data);
+						console.error(Error.STREAM, msg.method + ':' + msg.uri.get_path(), error.message, response);
 						this.emit(Signal.ERROR, { type: Error.STREAM, message: msg.method + ':' + msg.uri.get_path() });
 					}
 				} else if (!this._httpAborting) {
@@ -821,8 +824,8 @@ var Manager = class Manager {
 						});
 						source.attach(null);
 					} else {
-						console.error(Error.CONNECTION, msg.reason_phrase, msg.method + ':' + msg.uri.get_path(), msg.status_code, msg.response_body.data);
-						this.emit(Signal.ERROR, { type: Error.CONNECTION, message: msg.reason_phrase + ' - ' + msg.method + ':' + msg.uri.get_path() });
+						console.error(Error.CONNECTION, msg.reason_phrase, msg.method + ':' + msg.get_uri().get_path(), msg.status_code);
+						this.emit(Signal.ERROR, { type: Error.CONNECTION, message: msg.reason_phrase + ' - ' + msg.method + ':' + msg.get_uri().get_path() });
 					}
 				}
 			});
