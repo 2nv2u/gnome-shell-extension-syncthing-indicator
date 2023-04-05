@@ -40,15 +40,15 @@ class SyncthingPanelIcon {
 		);
 		this._idleIcon = new St.Icon({
 			gicon: Gio.icon_new_for_string(Me.path + '/icons/syncthing-idle.svg'),
-			icon_size: 20
+			style_class : 'system-status-icon',
 		});
 		this._pausedIcon = new St.Icon({
 			gicon: Gio.icon_new_for_string(Me.path + '/icons/syncthing-paused.svg'),
-			icon_size: 20
+			style_class : 'system-status-icon',
 		});
 		this._disconnectedIcon = new St.Icon({
 			gicon: Gio.icon_new_for_string(Me.path + '/icons/syncthing-disconnected.svg'),
-			icon_size: 20
+			style_class : 'system-status-icon',
 		});
 		this.actor = new St.Bin();
 		this.actor.set_child(this._disconnectedIcon);
