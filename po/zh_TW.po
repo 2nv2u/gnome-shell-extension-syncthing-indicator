@@ -1,0 +1,60 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Victor Tseng <palatis@gmail.com>\n"
+"Language-Team: \n"
+"Language: zh_TW\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.2.2\n"
+
+#: extension.js:101
+msgid "folders"
+msgstr "資料夾"
+
+#: extension.js:155 extension.js:334
+msgid "failed-URI"
+msgstr "無法開啟 URI"
+
+#: extension.js:167
+msgid "this-device"
+msgstr "這個設備"
+
+#: extension.js:298
+msgid "rescan"
+msgstr "重新掃描所有資料夾"
+
+#: extension.js:324
+msgid "web-interface"
+msgstr "打開網頁界面"
+
+#: extension.js:346
+msgid "service"
+msgstr "服務"
+
+#: extension.js:366
+msgid "autostart"
+msgstr "重新啟動"
+
+#: extension.js:413
+msgid "daemon-error"
+msgstr "無法啟動 Syncthing 伺服程式，檢視紀錄檔取得更多資訊。"
+
+#: extension.js:416
+msgid "service-error"
+msgstr "Syncthing 服務回報了錯誤，檢視紀錄檔取得更多資訊。"
+
+#: extension.js:419
+msgid "decoding-error"
+msgstr "Syncthing 連線解碼失敗，檢視紀錄檔取得更多資訊。"
+
+#: extension.js:422
+msgid "connection-error"
+msgstr "Syncthing 連線錯誤，檢視紀錄檔取得更多資訊。"
+
+#: extension.js:425
+msgid "config-error"
+msgstr "無法找到 Syncthing 設定檔，可能沒有安裝？檢視紀錄檔取得更多資訊。"
