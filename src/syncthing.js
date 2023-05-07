@@ -800,12 +800,26 @@ var Manager = class Manager {
 			console.debug('Opening connection', msg.method + ':' + msg.uri.get_path());
 			this._httpAborting = false;
 			this._httpSession.send_and_read_async(msg, GLib.PRIORITY_DEFAULT, null, (session, result) => {
-				if (msg.status_code == 200) {
-					let bytes = session.send_and_read_finish(result);
-					let decoder = new TextDecoder('utf-8');
-					let response = decoder.decode(bytes.get_data());
+				if (msg.status_code == Soup.Status.OK) {
+					let response;
 					try {
-						if (callback && response.length > 0) {
+						let bytes = session.send_and_read_finish(result);
+						let decoder = new TextDecoder('utf-8');
+						response = decoder.decode(bytes.get_data());
+					} catch (error) {
+						if (error.code == Gio.IOErrorEnum.TIMED_OUT) {
+							console.info(error.message, 'will retry', msg.method + ':' + msg.uri.get_path());
+							// Retry this connection attempt
+							let source = GLib.timeout_source_new(1000);
+							source.set_priority(GLib.PRIORITY_LOW);
+							source.set_callback(() => {
+								this.openConnectionMessage(msg, callback);
+							});
+							source.attach(null);
+						}
+					}
+					try {
+						if (callback && response && response.length > 0) {
 							console.debug('Callback', msg.method + ':' + msg.uri.get_path(), response);
 							callback(JSON.parse(response));
 						}
@@ -814,19 +828,8 @@ var Manager = class Manager {
 						this.emit(Signal.ERROR, { type: Error.STREAM, message: msg.method + ':' + msg.uri.get_path() });
 					}
 				} else if (!this._httpAborting) {
-					if (msg.status_code < 100) {
-						console.info(msg.reason_phrase, 'will retry', msg.method + ':' + msg.uri.get_path(), msg.status_code);
-						// Retry this connection attempt
-						let source = GLib.timeout_source_new(1000);
-						source.set_priority(GLib.PRIORITY_LOW);
-						source.set_callback(() => {
-							this.openConnectionMessage(msg, callback);
-						});
-						source.attach(null);
-					} else {
-						console.error(Error.CONNECTION, msg.reason_phrase, msg.method + ':' + msg.get_uri().get_path(), msg.status_code);
-						this.emit(Signal.ERROR, { type: Error.CONNECTION, message: msg.reason_phrase + ' - ' + msg.method + ':' + msg.get_uri().get_path() });
-					}
+					console.error(Error.CONNECTION, msg.reason_phrase, msg.method + ':' + msg.get_uri().get_path(), msg.status_code);
+					this.emit(Signal.ERROR, { type: Error.CONNECTION, message: msg.reason_phrase + ' - ' + msg.method + ':' + msg.get_uri().get_path() });
 				}
 			});
 		}
