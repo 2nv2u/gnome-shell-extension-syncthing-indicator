@@ -6,6 +6,8 @@ Shell indicator for starting, monitoring and controlling the Syncthing daemon us
 
 What is [Syncthing](https://syncthing.net/)?
 
+Please note that this extension does not install Syncthing itself, refer the guide on the Syncthing website for more information
+
 ## Installation from gnome extension website
 https://extensions.gnome.org/extension/1070/syncthing-indicator/
 
