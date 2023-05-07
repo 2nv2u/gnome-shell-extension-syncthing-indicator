@@ -523,7 +523,7 @@ var Manager = class Manager {
 							if (this.folders.exists(events[i].data.folder) && this.devices.exists(events[i].data.device)) {
 								let device = this.devices.get(events[i].data.device);
 								if (device.folders.exists(events[i].data.folder)) {
-									if (!device.isOnline()) device.setState(State.SCANNING);
+									if (device.isOnline()) device.setState(State.SCANNING);
 									device.folders.get(events[i].data.folder).setCompletion(events[i].data.completion);
 								}
 							}
