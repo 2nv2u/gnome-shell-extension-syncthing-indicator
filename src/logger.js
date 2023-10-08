@@ -1,21 +1,21 @@
 /* =============================================================================================================
-	Logger 0.2
+	Logger 0.3
 ================================================================================================================
 
 	GJS logger service
 
-	Copyright (c) 2019, 2nv2u <info@2nv2u.com>
+	Copyright (c) 2023, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
 ============================================================================================================= */
 
-var Level = {
+export const Level = {
 	DEBUG: 0,
 	INFO: 1,
 	WARN: 2,
 	ERROR: 3
 };
 
-var Service = class Service {
+export class Service {
 
 	constructor(level, prefix) {
 		this._levels = [];

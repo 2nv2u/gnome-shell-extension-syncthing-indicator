@@ -1,55 +1,47 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.30
+	SyncthingIndicator 0.32
 ================================================================================================================
 
 	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
 
 	Credits to <jay.strict@posteo.de> for the reference implementation
 
-	Copyright (c) 2019-2022, 2nv2u <info@2nv2u.com>
+	Copyright (c) 2019-2023, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
 ============================================================================================================= */
 
-const Gio = imports.gi.Gio;
-const GObject = imports.gi.GObject;
-const Gtk = imports.gi.Gtk;
-const St = imports.gi.St;
+import Gio from 'gi://Gio';
+import GObject from 'gi://GObject';
+import St from 'gi://St';
 
-const Main = imports.ui.main;
-const Animation = imports.ui.animation;
-const PanelMenu = imports.ui.panelMenu;
-const PopupMenu = imports.ui.popupMenu;
-const StatusSystem = imports.ui.status.system;
-const Gettext = imports.gettext;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as Animation from 'resource:///org/gnome/shell/ui/animation.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const Domain = Gettext.domain(Me.metadata.uuid);
-const _ = Domain.gettext;
-
-const Logger = Me.imports.logger;
-const Syncthing = Me.imports.syncthing;
+import * as Syncthing from './syncthing.js';
 
 // Syncthing indicator panel icon
 class SyncthingPanelIcon {
 
-	constructor() {
+	constructor(iconPath) {
 		this._workingIcon = new Animation.Animation(
-			Gio.File.new_for_path(Me.path + '/icons/syncthing-working.svg'), 20, 20, 80
+			Gio.File.new_for_path(iconPath + 'syncthing-working.svg'), 20, 20, 80
 		);
 		this._idleIcon = new St.Icon({
-			gicon: Gio.icon_new_for_string(Me.path + '/icons/syncthing-idle.svg'),
+			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-idle.svg'),
 			style_class: 'system-status-icon',
 			icon_size: 20
 		});
 		this._pausedIcon = new St.Icon({
-			gicon: Gio.icon_new_for_string(Me.path + '/icons/syncthing-paused.svg'),
+			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-paused.svg'),
 			style_class: 'system-status-icon',
 			icon_size: 20
 		});
 		this._disconnectedIcon = new St.Icon({
-			gicon: Gio.icon_new_for_string(Me.path + '/icons/syncthing-disconnected.svg'),
+			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-disconnected.svg'),
 			style_class: 'system-status-icon',
 			icon_size: 20
 		});
@@ -210,9 +202,7 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 	_init(device) {
 		super._init(device.getName(), false, null);
-
 		this._device = device;
-
 		let icon = new Gio.ThemedIcon({ name: 'network-server-symbolic' });
 		this.icon = new St.Icon({ gicon: icon, style_class: 'popup-menu-icon syncthing-state-icon' });
 		this.actor.insert_child_at_index(this.icon, 1);
@@ -458,10 +448,8 @@ class SyncthingIndicator extends PanelMenu.Button {
 
 	_init(extension) {
 		super._init(0.0, "SyncthingIndicator");
-
 		this.menu.box.add_style_class_name('syncthing-indicator');
-
-		this.icon = new SyncthingPanelIcon();
+		this.icon = new SyncthingPanelIcon(extension.metadata.path + '/icons/');
 		this.add_actor(this.icon.actor);
 
 		this._deviceMenu = new DeviceMenu(extension);
@@ -543,16 +531,11 @@ class SyncthingIndicator extends PanelMenu.Button {
 SyncthingIndicator = GObject.registerClass({ GTypeName: 'SyncthingIndicator' }, SyncthingIndicator)
 
 // Syncthing indicator extension
-class SyncthingIndicatorExtension {
-
-	constructor() {
-		this.manager;
-		this.indicator;
-	}
+export default class SyncthingIndicatorExtension extends Extension {
 
 	// Syncthing indicator enabler
 	enable() {
-		this.manager = new Syncthing.Manager();
+		this.manager = new Syncthing.Manager(this.metadata.path);
 		this.indicator = new SyncthingIndicator(this);
 		Main.panel.addToStatusArea('syncthingIndicator', this.indicator);
 		this.manager.attach();
@@ -566,10 +549,4 @@ class SyncthingIndicatorExtension {
 		this.manager = null;
 	}
 
-}
-
-// Syncthing indicator extension initiator
-function init() {
-	ExtensionUtils.initTranslations(Me.metadata.uuid);
-	return new SyncthingIndicatorExtension()
 }

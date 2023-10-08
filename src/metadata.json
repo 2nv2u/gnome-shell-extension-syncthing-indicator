@@ -2,10 +2,11 @@
   "description": "Shell indicator for starting, monitoring and controlling the Syncthing daemon using SystemD",
   "name": "Syncthing Indicator",
   "shell-version": [
-    "43",
-    "44"
+    "44",
+    "45"
   ],
   "url": "https://github.com/2nv2u/gnome-shell-extension-syncthing-indicator",
   "uuid": "syncthing@gnome.2nv2u.com",
-  "version": 31
+  "gettext-domain": "syncthing@gnome.2nv2u.com",
+  "version": 32
 }

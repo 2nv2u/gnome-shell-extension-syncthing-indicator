@@ -1,27 +1,27 @@
 /* =============================================================================================================
-	SyncthingManager 0.31
+	SyncthingManager 0.32
 ================================================================================================================
 
 	GJS syncthing systemd manager
 
-	Copyright (c) 2019-2022, 2nv2u <info@2nv2u.com>
+	Copyright (c) 2019-2023, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
 ============================================================================================================= */
 
-const Gio = imports.gi.Gio;
-const GLib = imports.gi.GLib;
-const Soup = imports.gi.Soup;
+
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Soup from 'gi://Soup?version=3.0';
+
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+
+import * as Logger from './logger.js';
 const Signals = imports.signals;
-const ByteArray = imports.byteArray;
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
-const Logger = Me.imports.logger;
 const console = new Logger.Service(Logger.Level.WARN, 'syncthing-indicator-manager');
 
 // Error constants
-var Error = {
+export const Error = {
 	LOGIN: "Login attempt failed",
 	DAEMON: "Service failed to start",
 	SERVICE: "Service reported error",
@@ -31,12 +31,12 @@ var Error = {
 };
 
 // Service constants
-var Service = {
+export const Service = {
 	NAME: 'syncthing.service'
 };
 
 // Signal constants
-var Signal = {
+export const Signal = {
 	LOGIN: "login",
 	ADD: "add",
 	DESTROY: "destroy",
@@ -50,7 +50,7 @@ var Signal = {
 };
 
 // State constants
-var State = {
+export const State = {
 	UNKNOWN: "unknown",
 	IDLE: "idle",
 	SCANNING: "scanning",
@@ -61,7 +61,7 @@ var State = {
 };
 
 // Service state constants
-var ServiceState = {
+export const ServiceState = {
 	USER_ACTIVE: "userActive",
 	USER_STOPPED: "userStopped",
 	USER_ENABLED: "userEnabled",
@@ -74,7 +74,7 @@ var ServiceState = {
 };
 
 // Signal constants
-var EventType = {
+export const EventType = {
 	CONFIG_SAVED: "ConfigSaved",
 	DEVICE_CONNECTED: "DeviceConnected",
 	DEVICE_DISCONNECTED: "DeviceDisconnected",
@@ -346,7 +346,8 @@ class Config {
 
 	CONFIG_PATH_KEY = 'Configuration file'
 
-	constructor() {
+	constructor(serviceFilePath) {
+		this.serviceFilePath = serviceFilePath;
 		this.clear()
 	}
 
@@ -368,7 +369,7 @@ class Config {
 		try {
 			// Extract syncthing config file location from the synthing path command
 			let result = GLib.spawn_sync(null, ['syncthing', '--paths'], null, GLib.SpawnFlags.SEARCH_PATH, null)[1];
-			let paths = {}, pathArray = ByteArray.toString(result).split('\n\n');
+			let paths = {}, pathArray = new TextDecoder().decode(result).split('\n\n');
 			for (let i = 0; i < pathArray.length; i++) {
 				let items = pathArray[i].split(':\n\t');
 				if (items.length == 2) paths[items[0]] = items[1].split('\n\t');
@@ -411,7 +412,7 @@ class Config {
 		let systemDConfigPath = GLib.get_user_config_dir() + '/systemd/user';
 		let systemDConfigFileTo = Gio.File.new_for_path(systemDConfigPath + '/' + Service.NAME);
 		if (force || !systemDConfigFileTo.query_exists(null)) {
-			let systemDConfigFileFrom = Gio.File.new_for_path(Me.path + '/' + Service.NAME);
+			let systemDConfigFileFrom = Gio.File.new_for_path(this.serviceFilePath + '/' + Service.NAME);
 			let systemdConfigDirectory = Gio.File.new_for_path(systemDConfigPath);
 			if (!systemdConfigDirectory.query_exists(null)) {
 				systemdConfigDirectory.make_directory_with_parents(null);
@@ -442,9 +443,10 @@ class Config {
 }
 
 // Main system manager
-var Manager = class Manager {
+export const Manager = class Manager {
 
-	constructor() {
+	constructor(serviceFilePath) {
+
 		this.folders = new ItemCollection();
 		this.devices = new ItemCollection();
 
@@ -461,7 +463,7 @@ var Manager = class Manager {
 			}
 		});
 
-		this.config = new Config();
+		this.config = new Config(serviceFilePath);
 
 		this._httpSession = new Soup.Session();
 		this._httpSession.ssl_strict = false; // Accept self signed certificates for now
@@ -790,7 +792,7 @@ var Manager = class Manager {
 	_serviceCommand(command, user = true) {
 		let args = ['systemctl', command, Service.NAME];
 		if (user) args.splice(1, 0, '--user');
-		let result = ByteArray.toString(GLib.spawn_sync(null, args, null, GLib.SpawnFlags.SEARCH_PATH, null)[1]).trim();
+		let result = new TextDecoder().decode(GLib.spawn_sync(null, args, null, GLib.SpawnFlags.SEARCH_PATH, null)[1]).trim();
 		console.debug('Calling systemd', command, user, args, result)
 		return result
 	}
