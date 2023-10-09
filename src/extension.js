@@ -23,6 +23,8 @@ import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/
 
 import * as Syncthing from './syncthing.js';
 
+const LOGPRE = 'syncthing-indicator:'
+
 // Syncthing indicator panel icon
 class SyncthingPanelIcon {
 
@@ -147,6 +149,7 @@ class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
 			let launchContext = global.create_app_launch_context(event.get_time(), -1);
 			Gio.AppInfo.launch_default_for_uri(this.path, launchContext);
 		} catch (e) {
+			console.error(LOGPRE, 'failed-URI', uri, e.message)
 			Main.notifyError(_('failed-URI') + ': ' + uri, e.message);
 		}
 		super.activate(event);
@@ -336,6 +339,7 @@ class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
 		try {
 			Gio.AppInfo.launch_default_for_uri(this.extension.manager.config.getURI(), launchContext);
 		} catch (e) {
+			console.error(LOGPRE, 'failed-URI', uri, e.message)
 			Main.notifyError(_('failed-URI') + ': ' + uri, e.message);
 		}
 		super.activate(event);
@@ -470,23 +474,26 @@ class SyncthingIndicator extends PanelMenu.Button {
 		});
 
 		extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
+			let errorType = 'unknown-error'
 			switch (error.type) {
 				case Syncthing.Error.DAEMON:
-					Main.notifyError('Syncthing Indicator', _('daemon-error'));
+					errorType = 'daemon-error'
 					break;
 				case Syncthing.Error.SERVICE:
-					Main.notifyError('Syncthing Indicator', _('service-error'));
+					errorType = 'service-error'
 					break;
 				case Syncthing.Error.STREAM:
-					Main.notifyError('Syncthing Indicator', _('decoding-error'));
+					errorType = 'decoding-error'
 					break;
 				case Syncthing.Error.CONNECTION:
-					Main.notifyError('Syncthing Indicator', _('connection-error'));
+					errorType = 'connection-error'
 					break;
 				case Syncthing.Error.CONFIG:
-					Main.notifyError('Syncthing Indicator', _('config-error'));
+					errorType = 'config-error'
 					break;
 			}
+			console.error(LOGPRE, errorType, error)
+			Main.notifyError('Syncthing Indicator', _(errorType));
 		});
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {

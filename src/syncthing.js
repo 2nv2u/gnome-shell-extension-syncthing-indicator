@@ -12,10 +12,10 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup';
-import * as Logger from './logger.js';
+
 import * as Signals from 'resource:///org/gnome/shell/misc/signals.js';
 
-const console = new Logger.Service(Logger.Level.WARN, 'syncthing-indicator-manager');
+const LOGPRE = 'syncthing-indicator-manager:'
 
 // Error constants
 export const Error = {
@@ -126,14 +126,14 @@ class Item extends Signals.EventEmitter {
 			if (this._stateSource) {
 				this._stateSource.destroy();
 			}
-			console.info('State change', this._name, state);
+			console.info(LOGPRE, 'state change', this._name, state);
 			this._state = state;
 			// Stop items from excessive state changes by only emitting 1 state per stateDelay
 			this._stateSource = GLib.timeout_source_new(this._stateEmitDelay);
 			this._stateSource.set_priority(GLib.PRIORITY_DEFAULT);
 			this._stateSource.set_callback(() => {
 				if (this._stateEmitted != this._state) {
-					console.info('Emit state change', this._name, this._state);
+					console.info(LOGPRE, 'emit state change', this._name, this._state);
 					this._stateEmitted = this._state;
 					this.emit(Signal.STATE_CHANGE, this._state);
 				}
@@ -148,7 +148,7 @@ class Item extends Signals.EventEmitter {
 
 	setName(name) {
 		if (name.length > 0 && this._name != name) {
-			console.info('Emit name change', this._name, name);
+			console.info(LOGPRE, 'Emit name change', this._name, name);
 			this._name = name
 			this.emit(Signal.NAME_CHANGE, this._name);
 		}
@@ -246,7 +246,7 @@ class Device extends Item {
 			this.setState(State.PAUSED);
 			this.folders.foreach((folder) => {
 				if (!this.isBusy()) {
-					console.info('Determine device state', this.getName(), folder.getName(), folder.getState());
+					console.info(LOGPRE, 'determine device state', this.getName(), folder.getName(), folder.getState());
 					this.setState(folder.getState());
 				}
 			});
@@ -288,7 +288,7 @@ class HostDevice extends Device {
 		this.setState(State.PAUSED);
 		this._manager.devices.foreach((device) => {
 			if (this != device && !this.isBusy() && device.isOnline()) {
-				console.info('Determine host device state', this.getName(), device.getName(), device.getState());
+				console.info(LOGPRE, 'determine host device state', this.getName(), device.getName(), device.getState());
 				this.setState(device.getState());
 			}
 		});
@@ -374,7 +374,7 @@ class Config {
 				configPath = GLib.get_user_config_dir() + '/syncthing/config.xml';
 			}
 		} catch (error) {
-			console.error('Can\'t find config file');
+			console.error(LOGPRE, 'can\'t find config file');
 		}
 		let configFile = Gio.File.new_for_path(configPath);
 		if (configFile.query_exists(null)) {
@@ -393,9 +393,9 @@ class Config {
 				this._apikey = reMatch[1].fetch(3);
 				this._uri = 'http' + ((reMatch[1].fetch(1) == 'true') ? 's' : '') + '://' + this._address;
 				this._exists = true;
-				console.info('Found config', this._address, this._apikey, this._uri);
+				console.info(LOGPRE, 'found config', this._address, this._apikey, this._uri);
 			} else {
-				console.error('Can\'t find gui xml node in config');
+				console.error(LOGPRE, 'can\'t find gui xml node in config');
 			}
 		}
 	}
@@ -413,9 +413,9 @@ class Config {
 			let copyFlag = Gio.FileCopyFlags.NONE;
 			if (force) copyFlag = Gio.FileCopyFlags.OVERWRITE;
 			if (systemDConfigFileFrom.copy(systemDConfigFileTo, copyFlag, null, null)) {
-				console.info('Systemd configuration file copied to ' + systemDConfigPath + '/' + Service.NAME);
+				console.info(LOGPRE, 'systemd configuration file copied to ' + systemDConfigPath + '/' + Service.NAME);
 			} else {
-				console.warn('Couldn\'t copy systemd configuration file to ' + systemDConfigPath + '/' + Service.NAME);
+				console.warn(LOGPRE, 'couldn\'t copy systemd configuration file to ' + systemDConfigPath + '/' + Service.NAME);
 			}
 		};
 	}
@@ -499,7 +499,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 	_callEvents(options) {
 		this.openConnection('GET', '/rest/events?' + options, (events) => {
 			for (let i = 0; i < events.length; i++) {
-				console.debug('Processing event', events[i].type, events[i].data);
+				console.debug(LOGPRE, 'processing event', events[i].type, events[i].data);
 				try {
 					switch (events[i].type) {
 						case EventType.STARTUP_COMPLETE:
@@ -575,7 +575,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 					}
 					this._lastEventID = events[i].id;
 				} catch (error) {
-					console.warn('Event processing failed', error.message);
+					console.warn(LOGPRE, 'event processing failed', error.message);
 				}
 			}
 			// Reschedule this event stream
@@ -710,7 +710,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 						errorTime = new Date(errors[i].when)
 						if (errorTime > this._lastErrorTime) {
 							this._lastErrorTime = errorTime;
-							console.error(Error.SERVICE, errors[i]);
+							console.error(LOGPRE, Error.SERVICE, errors[i]);
 							this.emit(Signal.ERROR, { type: Error.SERVICE, message: errors[i].message });
 						}
 					}
@@ -747,7 +747,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 			if (failed != this._serviceFailed) {
 				this._serviceActive = failed;
 				if (failed) {
-					console.error(Error.DAEMON, Service.NAME);
+					console.error(LOGPRE, Error.DAEMON, Service.NAME);
 					this.emit(Signal.ERROR, { type: Error.DAEMON });
 				}
 			}
@@ -781,7 +781,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 		let args = ['systemctl', command, Service.NAME];
 		if (user) args.splice(1, 0, '--user');
 		let result = new TextDecoder().decode(GLib.spawn_sync(null, args, null, GLib.SpawnFlags.SEARCH_PATH, null)[1]).trim();
-		console.debug('Calling systemd', command, user, args, result)
+		console.debug(LOGPRE, 'calling systemd', command, user, args, result)
 		return result
 	}
 
@@ -800,7 +800,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 
 	openConnectionMessage(msg, callback) {
 		if (this._serviceActive && this.config.exists()) {
-			console.debug('Opening connection', msg.method + ':' + msg.uri.get_path());
+			console.debug(LOGPRE, 'opening connection', msg.method + ':' + msg.uri.get_path());
 			this._httpAborting = false;
 			this._httpSession.send_and_read_async(msg, GLib.PRIORITY_DEFAULT, null, (session, result) => {
 				if (msg.status_code == Soup.Status.OK) {
@@ -811,7 +811,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 						response = decoder.decode(bytes.get_data());
 					} catch (error) {
 						if (error.code == Gio.IOErrorEnum.TIMED_OUT) {
-							console.info(error.message, 'will retry', msg.method + ':' + msg.uri.get_path());
+							console.info(LOGPRE, error.message, 'will retry', msg.method + ':' + msg.uri.get_path());
 							// Retry this connection attempt
 							let source = GLib.timeout_source_new(1000);
 							this._timedSources[source.get_id()] = source;
@@ -825,15 +825,15 @@ export const Manager = class Manager extends Signals.EventEmitter {
 					}
 					try {
 						if (callback && response && response.length > 0) {
-							console.debug('Callback', msg.method + ':' + msg.uri.get_path(), response);
+							console.debug(LOGPRE, 'callback', msg.method + ':' + msg.uri.get_path(), response);
 							callback(JSON.parse(response));
 						}
 					} catch (error) {
-						console.error(Error.STREAM, msg.method + ':' + msg.uri.get_path(), error.message, response);
+						console.error(LOGPRE, Error.STREAM, msg.method + ':' + msg.uri.get_path(), error.message, response);
 						this.emit(Signal.ERROR, { type: Error.STREAM, message: msg.method + ':' + msg.uri.get_path() });
 					}
 				} else if (!this._httpAborting) {
-					console.error(Error.CONNECTION, msg.reason_phrase, msg.method + ':' + msg.get_uri().get_path(), msg.status_code);
+					console.error(LOGPRE, Error.CONNECTION, msg.reason_phrase, msg.method + ':' + msg.get_uri().get_path(), msg.status_code);
 					this.emit(Signal.ERROR, { type: Error.CONNECTION, message: msg.reason_phrase + ' - ' + msg.method + ':' + msg.get_uri().get_path() });
 				}
 			});
@@ -857,7 +857,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 
 	attach() {
 		if (!this.config.exists()) {
-			console.error(Error.CONFIG);
+			console.error(LOGPRE, Error.CONFIG);
 			this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
 			this.emit(Signal.ERROR, { type: Error.CONFIG });
 		}
