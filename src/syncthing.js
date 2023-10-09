@@ -11,12 +11,9 @@
 
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import Soup from 'gi://Soup?version=3.0';
-
-import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
-
+import Soup from 'gi://Soup';
 import * as Logger from './logger.js';
-const Signals = imports.signals;
+import * as Signals from 'resource:///org/gnome/shell/misc/signals.js';
 
 const console = new Logger.Service(Logger.Level.WARN, 'syncthing-indicator-manager');
 
@@ -108,9 +105,10 @@ export const EventType = {
 };
 
 // Abstract item used for folders and devices
-class Item {
+class Item extends Signals.EventEmitter {
 
 	constructor(data, manager) {
+		super();
 		this._state = State.UNKNOWN;
 		this._stateEmitted = State.UNKNOWN;
 		this._stateEmitDelay = 200;
@@ -168,12 +166,12 @@ class Item {
 	}
 
 }
-Signals.addSignalMethods(Item.prototype);
 
 // Abstract item collection used for folders and devices
-class ItemCollection {
+class ItemCollection extends Signals.EventEmitter {
 
 	constructor() {
+		super();
 		this._collection = {};
 	}
 
@@ -215,7 +213,6 @@ class ItemCollection {
 	}
 
 }
-Signals.addSignalMethods(ItemCollection.prototype);
 
 // Device
 class Device extends Item {
@@ -272,7 +269,6 @@ class Device extends Item {
 	}
 
 }
-Signals.addSignalMethods(Device.prototype);
 
 // Device host
 class HostDevice extends Device {
@@ -302,7 +298,6 @@ class HostDevice extends Device {
 	}
 
 }
-Signals.addSignalMethods(HostDevice.prototype);
 
 // Folder
 class Folder extends Item {
@@ -318,7 +313,6 @@ class Folder extends Item {
 	}
 
 }
-Signals.addSignalMethods(Folder.prototype);
 
 // Folder completion proxy per device
 class FolderCompletionProxy extends Folder {
@@ -339,7 +333,6 @@ class FolderCompletionProxy extends Folder {
 	}
 
 }
-Signals.addSignalMethods(FolderCompletionProxy.prototype);
 
 // Synthing configuration
 class Config {
@@ -443,17 +436,15 @@ class Config {
 }
 
 // Main system manager
-export const Manager = class Manager {
+export const Manager = class Manager extends Signals.EventEmitter {
 
 	constructor(serviceFilePath) {
-
+		super();
 		this.folders = new ItemCollection();
 		this.devices = new ItemCollection();
-
 		this.folders.connect(Signal.ADD, (collection, folder) => {
 			this.emit(Signal.FOLDER_ADD, folder);
 		});
-
 		this.devices.connect(Signal.ADD, (collection, device) => {
 			if (device instanceof HostDevice) {
 				this.host = device;
@@ -462,9 +453,7 @@ export const Manager = class Manager {
 				this.emit(Signal.DEVICE_ADD, device);
 			}
 		});
-
 		this.config = new Config(serviceFilePath);
-
 		this._httpSession = new Soup.Session();
 		this._httpSession.ssl_strict = false; // Accept self signed certificates for now
 		this._httpAborting = false;
@@ -479,7 +468,6 @@ export const Manager = class Manager {
 		this._hostID = '';
 		this._lastErrorTime = Date.now();
 		this._timedSources = new Object();
-
 		this.connect(Signal.SERVICE_CHANGE, (manager, state) => {
 			switch (state) {
 				case ServiceState.USER_ACTIVE:
@@ -918,4 +906,3 @@ export const Manager = class Manager {
 	}
 
 }
-Signals.addSignalMethods(Manager.prototype);
