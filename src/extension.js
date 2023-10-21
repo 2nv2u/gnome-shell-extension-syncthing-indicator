@@ -34,17 +34,14 @@ class SyncthingPanelIcon {
 		);
 		this._idleIcon = new St.Icon({
 			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-idle.svg'),
-			style_class: 'system-status-icon',
 			icon_size: 20
 		});
 		this._pausedIcon = new St.Icon({
 			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-paused.svg'),
-			style_class: 'system-status-icon',
 			icon_size: 20
 		});
 		this._disconnectedIcon = new St.Icon({
 			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-disconnected.svg'),
-			style_class: 'system-status-icon',
 			icon_size: 20
 		});
 		this.actor = new St.Bin();
@@ -166,21 +163,24 @@ class DeviceMenu extends SectionMenu {
 
 		this.label.style_class = 'syncthing-state-label';
 
-		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-
-		this._serviceSwitch = new ServiceSwitchMenuItem(extension);
-		this.menu.addMenuItem(this._serviceSwitch);
-
-		this._autoSwitch = new AutoSwitchMenuItem(extension);
-		this.menu.addMenuItem(this._autoSwitch);
-
-		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-
-		this._configItem = new ConfigMenuItem(extension);
-		this.menu.addMenuItem(this._configItem);
+		// this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+		this.menu.addMenuItem(new PopupMenu.PopupBaseMenuItem({
+			can_focus: false,
+			hover: false,
+			reactive: false
+		}), 0);
 
 		this._rescanItem = new RescanMenuItem(extension);
-		this.menu.addMenuItem(this._rescanItem);
+		this.menu.addMenuItem(this._rescanItem, 0);
+
+		this._configItem = new ConfigMenuItem(extension);
+		this.menu.addMenuItem(this._configItem, 0);
+
+		this._autoSwitch = new AutoSwitchMenuItem(extension);
+		this.menu.addMenuItem(this._autoSwitch, 0);
+
+		this._serviceSwitch = new ServiceSwitchMenuItem(extension);
+		this.menu.addMenuItem(this._serviceSwitch, 0);
 
 	}
 
