@@ -454,7 +454,7 @@ class SyncthingIndicator extends PanelMenu.Button {
 		super._init(0.0, "SyncthingIndicator");
 		this.menu.box.add_style_class_name('syncthing-indicator');
 		this.icon = new SyncthingPanelIcon(extension.metadata.path + '/icons/');
-		this.add_actor(this.icon.actor);
+		this.add_child(this.icon.actor);
 
 		this._deviceMenu = new DeviceMenu(extension);
 		this.menu.addMenuItem(this._deviceMenu);
