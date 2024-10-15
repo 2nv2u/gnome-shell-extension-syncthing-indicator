@@ -3,10 +3,11 @@
   "name": "Syncthing Indicator",
   "shell-version": [
     "45",
-    "46"
+    "46",
+    "47"
   ],
   "url": "https://github.com/2nv2u/gnome-shell-extension-syncthing-indicator",
   "uuid": "syncthing@gnome.2nv2u.com",
   "gettext-domain": "syncthing@gnome.2nv2u.com",
-  "version": 35
+  "version": 36
 }
