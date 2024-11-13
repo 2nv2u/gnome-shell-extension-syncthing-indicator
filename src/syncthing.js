@@ -29,7 +29,7 @@ export const Error = {
 
 // Service constants
 export const Service = {
-	NAME: 'syncthing.service'
+	NAME: 'syncthing'
 };
 
 // Signal constants
@@ -403,9 +403,10 @@ class Config {
 	setService(force = false) {
 		// (Force) Copy systemd config file to systemd's configuration directory (if it doesn't exist)
 		let systemDConfigPath = GLib.get_user_config_dir() + '/systemd/user';
-		let systemDConfigFileTo = Gio.File.new_for_path(systemDConfigPath + '/' + Service.NAME);
+		let systemDConfigFile = Service.NAME + '.service';
+		let systemDConfigFileTo = Gio.File.new_for_path(systemDConfigPath + '/' + systemDConfigFile);
 		if (force || !systemDConfigFileTo.query_exists(null)) {
-			let systemDConfigFileFrom = Gio.File.new_for_path(this.serviceFilePath + '/' + Service.NAME);
+			let systemDConfigFileFrom = Gio.File.new_for_path(this.serviceFilePath + '/' + systemDConfigFile);
 			let systemdConfigDirectory = Gio.File.new_for_path(systemDConfigPath);
 			if (!systemdConfigDirectory.query_exists(null)) {
 				systemdConfigDirectory.make_directory_with_parents(null);
@@ -413,9 +414,9 @@ class Config {
 			let copyFlag = Gio.FileCopyFlags.NONE;
 			if (force) copyFlag = Gio.FileCopyFlags.OVERWRITE;
 			if (systemDConfigFileFrom.copy(systemDConfigFileTo, copyFlag, null, null)) {
-				console.info(LOGPRE, 'systemd configuration file copied to ' + systemDConfigPath + '/' + Service.NAME);
+				console.info(LOGPRE, 'systemd configuration file copied to ' + systemDConfigFileTo);
 			} else {
-				console.warn(LOGPRE, 'couldn\'t copy systemd configuration file to ' + systemDConfigPath + '/' + Service.NAME);
+				console.warn(LOGPRE, 'couldn\'t copy systemd configuration file to ' + systemDConfigFileTo);
 			}
 		};
 	}
@@ -726,15 +727,15 @@ export const Manager = class Manager extends Signals.EventEmitter {
 		this._pollCount++;
 	}
 
-	_serviceState(user = true) {
+	_serviceState(user = false) {
 		let command = this._serviceCommand('is-enabled', user), enabled = (command == 'enabled'), disabled = (command == 'disabled');
-		if (enabled || disabled) {
+		if (enabled) {
 			return {
 				user: user,
 				enabled: enabled,
 				disabled: disabled
 			}
-		} else if (user) {
+		} else if (!user) {
 			return this._serviceState(!user);
 		}
 
@@ -778,8 +779,13 @@ export const Manager = class Manager extends Signals.EventEmitter {
 	}
 
 	_serviceCommand(command, user = true) {
-		let args = ['systemctl', command, Service.NAME];
-		if (user) args.splice(1, 0, '--user');
+		let args = ['systemctl', command];
+		if(user){
+			args.push(Service.NAME);
+			args.push('--user');
+		} else {
+			args.push(Service.NAME + '@' + GLib.get_user_name());
+		}
 		let result = new TextDecoder().decode(GLib.spawn_sync(null, args, null, GLib.SpawnFlags.SEARCH_PATH, null)[1]).trim();
 		console.debug(LOGPRE, 'calling systemd', command, user, args, result)
 		return result
