@@ -358,25 +358,25 @@ class Config {
 
 	load() {
 		this._exists = false;
-		let configPath = ''
-		try {
-			// Extract syncthing config file location from the synthing path command
-			let result = GLib.spawn_sync(null, ['syncthing', '--paths'], null, GLib.SpawnFlags.SEARCH_PATH, null)[1];
-			let paths = {}, pathArray = new TextDecoder().decode(result).split('\n\n');
-			for (let i = 0; i < pathArray.length; i++) {
-				let items = pathArray[i].split(':\n\t');
-				if (items.length == 2) paths[items[0]] = items[1].split('\n\t');
-			}
-			if (this.CONFIG_PATH_KEY in paths) {
-				configPath = paths[this.CONFIG_PATH_KEY][0]
-			} else {
-				// As aternative, extract syncthing configuration from the default user config file
-				configPath = GLib.get_user_config_dir() + '/syncthing/config.xml';
-			}
-		} catch (error) {
-			console.error(LOGPRE, 'can\'t find config file');
+		let configFile = Gio.File.new_for_path('');
+		// Extract syncthing config file location from the synthing path command
+		let result = GLib.spawn_sync(null, ['syncthing', '--paths'], null, GLib.SpawnFlags.SEARCH_PATH, null)[1];
+		let paths = {}, pathArray = new TextDecoder().decode(result).split('\n\n');
+		for (let i = 0; i < pathArray.length; i++) {
+			let items = pathArray[i].split(':\n\t');
+			if (items.length == 2) paths[items[0]] = items[1].split('\n\t');
 		}
-		let configFile = Gio.File.new_for_path(configPath);
+		if (this.CONFIG_PATH_KEY in paths) {
+			configFile = Gio.File.new_for_path(paths[this.CONFIG_PATH_KEY][0]);
+		}
+		// As aternative, extract syncthing configuration from the default user config file
+		if (!configFile.query_exists(null)){
+			configFile = Gio.File.new_for_path(GLib.get_user_state_dir() + '/syncthing/config.xml');
+		}
+		// As aternative, extract syncthing configuration from the deprecated user config file
+		if (!configFile.query_exists(null)){
+			configFile = Gio.File.new_for_path(GLib.get_user_config_dir() + '/syncthing/config.xml');
+		}
 		if (configFile.query_exists(null)) {
 			let configInputStream = configFile.read(null);
 			let configDataInputStream = Gio.DataInputStream.new(configInputStream);
