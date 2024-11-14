@@ -729,16 +729,14 @@ export const Manager = class Manager extends Signals.EventEmitter {
 
 	_serviceState(user = false) {
 		let command = this._serviceCommand('is-enabled', user), enabled = (command == 'enabled'), disabled = (command == 'disabled');
-		if (enabled) {
-			return {
-				user: user,
-				enabled: enabled,
-				disabled: disabled
-			}
-		} else if (!user) {
-			return this._serviceState(!user);
+		if (!enabled && !user) {
+			return this._serviceState(true);
 		}
-
+		return {
+			user: user,
+			enabled: enabled,
+			disabled: disabled
+		}
 	}
 
 	_isServiceActive() {
