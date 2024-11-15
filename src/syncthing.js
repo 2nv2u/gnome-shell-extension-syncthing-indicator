@@ -886,6 +886,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 	}
 
 	stopService() {
+		this.abortConnections();
 		this._serviceCommand('stop');
 	}
 
