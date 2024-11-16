@@ -29,9 +29,18 @@ const LOGPRE = 'syncthing-indicator:'
 class SyncthingPanelIcon {
 
 	constructor(iconPath) {
-		this._workingIcon = new Animation.Animation(
-			Gio.File.new_for_path(iconPath + 'syncthing-working.svg'), 20, 20, 80
-		);
+		// This throws an error in Ubuntu so will revert to just the first frame of the animation
+		// https://github.com/2nv2u/gnome-shell-extension-syncthing-indicator/issues/39
+		try {
+			this._workingIcon = new Animation.Animation(
+				Gio.File.new_for_path(iconPath + 'syncthing-working.svg'), 20, 20, 80
+			);
+		} catch (e) {
+			this._idleIcon = new St.Icon({
+				gicon: Gio.icon_new_for_string(iconPath + 'syncthing-working.svg'),
+				icon_size: 20
+			});
+		}
 		this._idleIcon = new St.Icon({
 			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-idle.svg'),
 			icon_size: 20
