@@ -15,3 +15,6 @@ https://extensions.gnome.org/extension/1070/syncthing-indicator/
  1. `git clone https://github.com/2nv2u/gnome-shell-extension-syncthing-indicator.git`
  1. `./gnome-shell-extension-syncthing-indicator/install.sh`
  1. Restart shell or log out & log in
+
+## Debugging during development
+`clear && export G_MESSAGES_DEBUG=all && dbus-run-session -- gnome-shell --nested --wayland | grep syncthing-indicator`
