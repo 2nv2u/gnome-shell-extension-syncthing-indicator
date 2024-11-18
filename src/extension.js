@@ -1,12 +1,12 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.37
+	SyncthingIndicator 0.38
 ================================================================================================================
 
 	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
 
 	Credits to <jay.strict@posteo.de> for the reference implementation
 
-	Copyright (c) 2019-2023, 2nv2u <info@2nv2u.com>
+	Copyright (c) 2019-2024, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
 ============================================================================================================= */
 
@@ -33,7 +33,7 @@ class SyncthingPanelIcon {
 		// https://github.com/2nv2u/gnome-shell-extension-syncthing-indicator/issues/39
 		try {
 			this._workingIcon = new Animation.Animation(
-				Gio.File.new_for_path(iconPath + 'syncthing-working.svg'), 20, 20, 80
+				Gio.File.new_for_path(iconPath + 'syncthing-working-animated.svg'), 20, 20, 80
 			);
 		} catch (e) {
 			this._idleIcon = new St.Icon({
@@ -58,12 +58,16 @@ class SyncthingPanelIcon {
 	}
 
 	setState(state) {
-		this._workingIcon.stop();
+		if (this._workingIcon instanceof Animation.Animation) {
+			this._workingIcon.stop();
+		}
 		switch (state) {
 			case Syncthing.State.SYNCING:
 			case Syncthing.State.SCANNING:
 				this.actor.set_child(this._workingIcon);
-				this._workingIcon.play();
+				if (this._workingIcon instanceof Animation.Animation) {
+					this._workingIcon.play();
+				}
 				break
 			case Syncthing.State.PAUSED:
 				this.actor.set_child(this._pausedIcon);

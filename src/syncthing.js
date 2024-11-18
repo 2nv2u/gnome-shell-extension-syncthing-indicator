@@ -1,10 +1,10 @@
 /* =============================================================================================================
-	SyncthingManager 0.33
+	SyncthingManager 0.38
 ================================================================================================================
 
 	GJS syncthing systemd manager
 
-	Copyright (c) 2019-2023, 2nv2u <info@2nv2u.com>
+	Copyright (c) 2019-2024, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
 ============================================================================================================= */
 
@@ -370,11 +370,11 @@ class Config {
 			configFile = Gio.File.new_for_path(paths[this.CONFIG_PATH_KEY][0]);
 		}
 		// As aternative, extract syncthing configuration from the default user config file
-		if (!configFile.query_exists(null)){
+		if (!configFile.query_exists(null)) {
 			configFile = Gio.File.new_for_path(GLib.get_user_state_dir() + '/syncthing/config.xml');
 		}
 		// As aternative, extract syncthing configuration from the deprecated user config file
-		if (!configFile.query_exists(null)){
+		if (!configFile.query_exists(null)) {
 			configFile = Gio.File.new_for_path(GLib.get_user_config_dir() + '/syncthing/config.xml');
 		}
 		if (configFile.query_exists(null)) {
@@ -778,7 +778,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 
 	_serviceCommand(command, user = true) {
 		let args = ['systemctl', command];
-		if(user){
+		if (user) {
 			args.push(Service.NAME);
 			args.push('--user');
 		} else {
