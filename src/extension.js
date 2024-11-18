@@ -24,6 +24,7 @@ import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/
 import * as Syncthing from './syncthing.js';
 
 const LOGPRE = 'syncthing-indicator:'
+let appendtoError = false;
 
 // Syncthing indicator panel icon
 class SyncthingPanelIcon {
@@ -36,10 +37,11 @@ class SyncthingPanelIcon {
 				Gio.File.new_for_path(iconPath + 'syncthing-working.svg'), 20, 20, 80
 			);
 		} catch (e) {
-			this._idleIcon = new St.Icon({
-				gicon: Gio.icon_new_for_string(iconPath + 'syncthing-working.svg'),
-				icon_size: 20
-			});
+		    appendtoError = true;
+			this._workingIcon = new St.Icon({
+			    gicon: Gio.icon_new_for_string(iconPath + 'syncthing-running.svg'),
+			    icon_size: 20
+		    });
 		}
 		this._idleIcon = new St.Icon({
 			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-idle.svg'),
@@ -58,12 +60,16 @@ class SyncthingPanelIcon {
 	}
 
 	setState(state) {
-		this._workingIcon.stop();
+		if (!appendtoError) {
+			this._workingIcon.stop();
+		}
 		switch (state) {
 			case Syncthing.State.SYNCING:
 			case Syncthing.State.SCANNING:
 				this.actor.set_child(this._workingIcon);
-				this._workingIcon.play();
+				if (!appendtoError) {
+					this._workingIcon.play();
+				}
 				break
 			case Syncthing.State.PAUSED:
 				this.actor.set_child(this._pausedIcon);
