@@ -37,7 +37,7 @@ class SyncthingPanelIcon {
 				Gio.File.new_for_path(iconPath + 'syncthing-working.svg'), 20, 20, 80
 			);
 		} catch (e) {
-		    appendtoError = true;
+		    	appendtoError = true;
 			this._workingIcon = new St.Icon({
 			    gicon: Gio.icon_new_for_string(iconPath + 'syncthing-running.svg'),
 			    icon_size: 20
