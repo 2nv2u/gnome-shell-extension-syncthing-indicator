@@ -33,24 +33,24 @@ class SyncthingPanelIcon {
 		// https://github.com/2nv2u/gnome-shell-extension-syncthing-indicator/issues/39
 		try {
 			this._workingIcon = new Animation.Animation(
-				Gio.File.new_for_path(iconPath + 'syncthing-working-animated.svg'), 20, 20, 80
+				Gio.File.new_for_path(iconPath + 'syncthing-working-animated-symbolic.svg'), 20, 20, 80
 			);
 		} catch (e) {
 			this._idleIcon = new St.Icon({
-				gicon: Gio.icon_new_for_string(iconPath + 'syncthing-working.svg'),
+				gicon: Gio.icon_new_for_string(iconPath + 'syncthing-working-symbolic.svg'),
 				icon_size: 20
 			});
 		}
 		this._idleIcon = new St.Icon({
-			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-idle.svg'),
+			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-idle-symbolic.svg'),
 			icon_size: 20
 		});
 		this._pausedIcon = new St.Icon({
-			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-paused.svg'),
+			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-paused-symbolic.svg'),
 			icon_size: 20
 		});
 		this._disconnectedIcon = new St.Icon({
-			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-disconnected.svg'),
+			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-disconnected-symbolic.svg'),
 			icon_size: 20
 		});
 		this.actor = new St.Bin();
