@@ -52,18 +52,9 @@ SwitchMenuItem = GObject.registerClass({ GTypeName: 'SwitchMenuItem' }, SwitchMe
 class SyncthingPanelIcon {
 
 	constructor(iconPath) {
-		// This throws an error in Ubuntu so will revert to just the first frame of the animation
-		// https://github.com/2nv2u/gnome-shell-extension-syncthing-indicator/issues/39
-		try {
-			this._workingIcon = new Animation.AnimatedIcon(
-				Gio.File.new_for_path(iconPath + 'syncthing-working-animated.svg'), 20, 20
-			);
-		} catch (e) {
-			this._idleIcon = new St.Icon({
-				gicon: Gio.icon_new_for_string(iconPath + 'syncthing-working.svg'),
-				icon_size: 20
-			});
-		}
+		this._workingIcon = new Animation.AnimatedIcon(
+			Gio.File.new_for_path(iconPath + 'syncthing-working-animated.svg'), 20, 20
+		);
 		this._idleIcon = new St.Icon({
 			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-idle.svg'),
 			icon_size: 20
@@ -81,16 +72,12 @@ class SyncthingPanelIcon {
 	}
 
 	setState(state) {
-		if (this._workingIcon instanceof Animation.AnimatedIcon) {
-			this._workingIcon.stop();
-		}
+		this._workingIcon.stop();
 		switch (state) {
 			case Syncthing.State.SYNCING:
 			case Syncthing.State.SCANNING:
 				this.actor.set_child(this._workingIcon);
-				if (this._workingIcon instanceof Animation.AnimatedIcon) {
-					this._workingIcon.play();
-				}
+				this._workingIcon.play();
 				break
 			case Syncthing.State.PAUSED:
 				this.actor.set_child(this._pausedIcon);
