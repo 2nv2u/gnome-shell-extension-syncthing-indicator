@@ -15,12 +15,12 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import * as Animation from 'resource:///org/gnome/shell/ui/animation.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import * as Animation from './animation.js';
 import * as Syncthing from './syncthing.js';
 
 const LOGPRE = 'syncthing-indicator:'
@@ -55,8 +55,8 @@ class SyncthingPanelIcon {
 		// This throws an error in Ubuntu so will revert to just the first frame of the animation
 		// https://github.com/2nv2u/gnome-shell-extension-syncthing-indicator/issues/39
 		try {
-			this._workingIcon = new Animation.Animation(
-				Gio.File.new_for_path(iconPath + 'syncthing-working-animated.svg'), 20, 20, 80
+			this._workingIcon = new Animation.AnimatedIcon(
+				Gio.File.new_for_path(iconPath + 'syncthing-working-animated.svg'), 20, 20
 			);
 		} catch (e) {
 			this._idleIcon = new St.Icon({
@@ -81,14 +81,14 @@ class SyncthingPanelIcon {
 	}
 
 	setState(state) {
-		if (this._workingIcon instanceof Animation.Animation) {
+		if (this._workingIcon instanceof Animation.AnimatedIcon) {
 			this._workingIcon.stop();
 		}
 		switch (state) {
 			case Syncthing.State.SYNCING:
 			case Syncthing.State.SCANNING:
 				this.actor.set_child(this._workingIcon);
-				if (this._workingIcon instanceof Animation.Animation) {
+				if (this._workingIcon instanceof Animation.AnimatedIcon) {
 					this._workingIcon.play();
 				}
 				break
