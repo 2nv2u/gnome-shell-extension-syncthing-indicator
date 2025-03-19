@@ -25,6 +25,29 @@ import * as Syncthing from './syncthing.js';
 
 const LOGPRE = 'syncthing-indicator:'
 
+// Syncthing suspendable switch menu item
+class SwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
+
+	activate(event) {
+		if (this._switch.mapped)
+			this.toggle();
+	}
+
+	_attachSwitchSignal() {
+		this._switchSignalID = this.connect('toggled', this._process.bind(this));
+	}
+
+	_detachSwitchSignal() {
+		this.disconnect(this._switchSignalID);
+	}
+
+	_process(event, state) {
+		// Process action when toggle signal is attached		
+	}
+
+}
+SwitchMenuItem = GObject.registerClass({ GTypeName: 'SwitchMenuItem' }, SwitchMenuItem)
+
 // Syncthing indicator panel icon
 class SyncthingPanelIcon {
 
@@ -214,7 +237,7 @@ class DeviceMenu extends SectionMenu {
 DeviceMenu = GObject.registerClass({ GTypeName: 'DeviceMenu' }, DeviceMenu)
 
 // Syncthing indicator device menu item
-class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
+class DeviceMenuItem extends SwitchMenuItem {
 
 	_init(device) {
 		super._init(device.getName(), false, null);
@@ -229,6 +252,7 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 		this._device.connect(Syncthing.Signal.STATE_CHANGE, (device) => {
 			let state = device.getState()
+			this._detachSwitchSignal();
 			switch (state) {
 				case Syncthing.State.DISCONNECTED:
 					this.setSensitive(false);
@@ -243,6 +267,7 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 					this.setToggleState(true);
 					break
 			}
+			this._attachSwitchSignal();
 			this.icon.style_class = 'popup-menu-icon syncthing-state-icon ' + state;
 		});
 
@@ -256,8 +281,9 @@ class DeviceMenuItem extends PopupMenu.PopupSwitchMenuItem {
 
 	}
 
-	activate(event) {
-		if (!this.actor.state) {
+	_process(event, state) {
+		this.setSensitive(false);
+		if (state) {
 			this._device.resume();
 		} else {
 			this._device.pause();
@@ -362,13 +388,14 @@ class ConfigMenuItem extends PopupMenu.PopupBaseMenuItem {
 ConfigMenuItem = GObject.registerClass({ GTypeName: 'ConfigMenuItem' }, ConfigMenuItem)
 
 // Syncthing service switch menu item
-class ServiceSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
+class ServiceSwitchMenuItem extends SwitchMenuItem {
 
 	_init(extension) {
 		super._init(_("service"), false);
 		this.extension = extension
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
+			this._detachSwitchSignal();
 			switch (state) {
 				case Syncthing.ServiceState.USER_ACTIVE:
 					this.setSensitive(true);
@@ -388,24 +415,24 @@ class ServiceSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 					this.setToggleState(false);
 					break;
 			}
+			this._attachSwitchSignal();
 		});
 
 		extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
+			this._detachSwitchSignal();
 			switch (error.type) {
 				case Syncthing.Error.DAEMON:
 					this.setSensitive(true);
 					this.setToggleState(false);
 					break;
 			}
+			this._attachSwitchSignal();
 		});
-
 	}
 
-	activate(event) {
+	_process(event, state) {
 		this.setSensitive(false);
-		if (this._switch.mapped)
-			this.toggle();
-		if (this.actor.state) {
+		if(state) {
 			this.extension.manager.startService();
 		} else {
 			this.extension.manager.stopService();
@@ -416,13 +443,14 @@ class ServiceSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 ServiceSwitchMenuItem = GObject.registerClass({ GTypeName: 'ServiceSwitchMenuItem' }, ServiceSwitchMenuItem)
 
 // Syncthing service switch menu item
-class AutoSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
+class AutoSwitchMenuItem extends SwitchMenuItem {
 
 	_init(extension) {
 		super._init(_("autostart"), false);
 		this.extension = extension
 
 		extension.manager.connect(Syncthing.Signal.SERVICE_CHANGE, (manager, state) => {
+			this._detachSwitchSignal();
 			switch (state) {
 				case Syncthing.ServiceState.USER_ENABLED:
 					this.setSensitive(true);
@@ -442,15 +470,14 @@ class AutoSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
 					this.setToggleState(false);
 					break;
 			}
+			this._attachSwitchSignal();
 		});
 
 	}
 
-	activate(event) {
+	_process(event, state) {
 		this.setSensitive(false);
-		if (this._switch.mapped)
-			this.toggle();
-		if (this.actor.state) {
+		if(state) {
 			this.extension.manager.enableService();
 		} else {
 			this.extension.manager.disableService();
