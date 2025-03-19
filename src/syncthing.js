@@ -750,6 +750,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 					this.emit(Signal.ERROR, { type: Error.DAEMON });
 				}
 			}
+			console.debug(LOGPRE, 'service active', state.user, active, this._serviceActive);
 			if (active != this._serviceActive) {
 				this._serviceActive = active;
 				if (state.user) {
@@ -765,6 +766,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 
 	_isServiceEnabled() {
 		let state = this._serviceState();
+		console.debug(LOGPRE, 'service enabled', state.user, state.enabled, this._serviceEnabled);
 		if ((state.enabled || state.disabled) && state.enabled != this._serviceEnabled) {
 			this._serviceEnabled = state.enabled;
 			if (state.user) {
@@ -785,8 +787,8 @@ export const Manager = class Manager extends Signals.EventEmitter {
 			args.push(Service.NAME + '@' + GLib.get_user_name());
 		}
 		let result = new TextDecoder().decode(GLib.spawn_sync(null, args, null, GLib.SpawnFlags.SEARCH_PATH, null)[1]).trim();
-		console.debug(LOGPRE, 'calling systemd', command, user, args, result)
-		return result
+		console.debug(LOGPRE, 'calling systemd', command, user, args.toString(), result);
+		return result;
 	}
 
 	abortConnections() {
