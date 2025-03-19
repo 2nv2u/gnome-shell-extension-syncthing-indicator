@@ -491,7 +491,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 	}
 
 	_callConfig(handler) {
-		this.openConnection('GET', '/rest/system/config', (config) => {
+		this.openConnection('GET', '/rest/config', (config) => {
 			this._processConfig(config);
 			if (handler) handler(config);
 		});
