@@ -1,10 +1,10 @@
 /* =============================================================================================================
-	SyncthingManager 0.38
+	SyncthingManager 0.39
 ================================================================================================================
 
 	GJS syncthing systemd manager
 
-	Copyright (c) 2019-2024, 2nv2u <info@2nv2u.com>
+	Copyright (c) 2019-2025, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
 ============================================================================================================= */
 
@@ -491,7 +491,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 	}
 
 	_callConfig(handler) {
-		this.openConnection('GET', '/rest/config', (config) => {
+		this.openConnection('GET', '/rest/system/config', (config) => {
 			this._processConfig(config);
 			if (handler) handler(config);
 		});
