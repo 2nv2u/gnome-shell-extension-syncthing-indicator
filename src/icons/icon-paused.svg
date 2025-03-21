@@ -1,32 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-  xmlns:dc="http://purl.org/dc/elements/1.1/"
-  xmlns:cc="http://creativecommons.org/ns#"
-  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-  xmlns:svg="http://www.w3.org/2000/svg"
-  xmlns="http://www.w3.org/2000/svg"
-  version="1.1"
-  id="Layer_1"
-  x="0px"
-  y="0px"
-  width="40"
-  height="32"
-  viewBox="0 0 40 32"
-  enable-background="new 0 0 465 420"
-  xml:space="preserve"><metadata
-     id="metadata31"><rdf:RDF><cc:Work
-         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
-     id="defs29" /><rect
-     style="display:inline;opacity:0.5;fill:#d6d6d6;fill-opacity:1;stroke:none;stroke-opacity:1"
-     id="rect4135-06"
-     width="2.9954078"
-     height="8.273138"
-     x="30.78565"
-     y="18.864187" /><rect
-     style="display:inline;opacity:0.5;fill:#d6d6d6;fill-opacity:1;stroke:none;stroke-opacity:1"
-     id="rect4135-0-9"
-     width="2.9954078"
-     height="8.273138"
-     x="36.090206"
-     y="18.875111" /></svg>
+<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" x="0px" y="0px" width="40" height="32" viewBox="0 0 40 32">
+  <rect style="display:inline;opacity:0.5;fill:#d6d6d6;fill-opacity:1;stroke:none;stroke-opacity:1" width="2.9954078" height="8.273138" x="30.78565" y="18.864187"/>
+  <rect style="display:inline;opacity:0.5;fill:#d6d6d6;fill-opacity:1;stroke:none;stroke-opacity:1" width="2.9954078" height="8.273138" x="36.090206" y="18.875111"/>
+</svg>
+
