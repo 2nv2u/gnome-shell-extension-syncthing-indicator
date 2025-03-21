@@ -1,12 +1,12 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.38
+	SyncthingIndicator 0.39
 ================================================================================================================
 
 	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
 
 	Credits to <jay.strict@posteo.de> for the reference implementation
 
-	Copyright (c) 2019-2024, 2nv2u <info@2nv2u.com>
+	Copyright (c) 2019-2025, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
 ============================================================================================================= */
 
@@ -20,7 +20,6 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import * as Animation from './animation.js';
 import * as Syncthing from './syncthing.js';
 
 const LOGPRE = 'syncthing-indicator:'
@@ -52,9 +51,10 @@ SwitchMenuItem = GObject.registerClass({ GTypeName: 'SwitchMenuItem' }, SwitchMe
 class SyncthingPanelIcon {
 
 	constructor(iconPath) {
-		this._workingIcon = new Animation.AnimatedIcon(
-			Gio.File.new_for_path(iconPath + 'syncthing-working-animated.svg'), 20, 20
-		);
+		this._workingIcon = new St.Icon({
+			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-working.svg'),
+			icon_size: 20
+		});
 		this._idleIcon = new St.Icon({
 			gicon: Gio.icon_new_for_string(iconPath + 'syncthing-idle.svg'),
 			icon_size: 20
@@ -72,12 +72,10 @@ class SyncthingPanelIcon {
 	}
 
 	setState(state) {
-		this._workingIcon.stop();
 		switch (state) {
 			case Syncthing.State.SYNCING:
 			case Syncthing.State.SCANNING:
 				this.actor.set_child(this._workingIcon);
-				this._workingIcon.play();
 				break
 			case Syncthing.State.PAUSED:
 				this.actor.set_child(this._pausedIcon);
