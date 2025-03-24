@@ -2,8 +2,6 @@
   "description": "Shell indicator for starting, monitoring and controlling the Syncthing daemon using SystemD",
   "name": "Syncthing Indicator",
   "shell-version": [
-    "45",
-    "46",
     "47",
     "48"
   ],
