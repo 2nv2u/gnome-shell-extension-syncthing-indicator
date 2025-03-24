@@ -33,3 +33,17 @@
 .syncthing-indicator .syncthing-state-icon.disconnected {
 	background-image: url(icons/icon-disconnected.svg);
 }
+
+.syncthing-indicator .icon-button {
+	margin-left: 10px;
+	background-color: rgba(255,255,255,0.1);
+}
+
+.syncthing-indicator .icon-button:hover {
+	margin-left: 10px;
+	background-color: rgba(255,255,255,0.2);
+}
+
+.syncthing-indicator .separator {
+	background-color: rgba(255,255,255,0.1);
+}
