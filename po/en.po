@@ -1,56 +1,127 @@
 msgid ""
 msgstr ""
-"Last-Translator: \n"
-"Language-Team: \n"
-"Language: \n"
+"POT-Creation-Date: 2025-03-24 21:14+0100\n"
+"Language: English \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: extension.js:101
+#: src/components.js:127
 msgid "folders"
 msgstr "Folders"
 
-#: extension.js:155 extension.js:334
-msgid "failed-URI"
-msgstr "Failed to launch URI"
-
-#: extension.js:167
+#: src/components.js:209
 msgid "this-device"
 msgstr "This Device"
 
-#: extension.js:298
-msgid "rescan"
-msgstr "Rescan All Folders"
+#: src/components.js:261
+msgid "devices"
+msgstr "Remote Devices"
 
-#: extension.js:324
-msgid "web-interface"
-msgstr "Open Web Interface"
-
-#: extension.js:346
+#: src/components.js:346
 msgid "service"
 msgstr "Service"
 
-#: extension.js:366
+#: src/components.js:407
 msgid "autostart"
 msgstr "Autostart"
 
-#: extension.js:413
-msgid "daemon-error"
-msgstr "Syncthing daemon cannot be started, check log for more details"
+#: src/components.js:458
+msgid "rescan"
+msgstr "Rescan all folders"
 
-#: extension.js:416
-msgid "service-error"
-msgstr "Syncthing service reported an error, check log for more details"
+#: src/components.js:499
+msgid "web-interface"
+msgstr "Open web interface"
 
-#: extension.js:419
-msgid "decoding-error"
-msgstr "Syncthing connection decoding error, check log for more details"
+#: src/components.js:543 src/prefs.js:32
+msgid "settings"
+msgstr "Settings"
 
-#: extension.js:422
-msgid "connection-error"
-msgstr "Syncthing connection status error, check log for more details"
+#: src/panelMenu.js:81 src/quickSetting.js:29 src/quickSetting.js:40
+msgid "syncthing"
+msgstr "Syncthing"
 
-#: extension.js:425
-msgid "config-error"
-msgstr "Cannot find Syncthing config, syncthing might not be installed, check log for more details"
+#: src/prefs.js:33
+msgid "settings-group-title"
+msgstr "Synchting indicator settings"
+
+#: src/prefs.js:42
+msgid "settings-group-description"
+msgstr "You can change some settings on the location and / or look &amp; feel of the Syncthing Indicator"
+
+#: src/prefs.js:51
+msgid "main-panel"
+msgstr "Main panel"
+
+#: src/prefs.js:52
+msgid "quick-settings"
+msgstr "Quick settings"
+
+#: src/prefs.js:56
+msgid "menu-type-title"
+msgstr "Menu type"
+
+#: src/prefs.js:58
+msgid "menu-type-subtitle"
+msgstr "Select the menu integration type"
+
+#: src/prefs.js:73
+msgid "icon-state-title"
+msgstr "Icon state"
+
+#: src/prefs.js:75
+msgid "icon-state-subtitle"
+msgstr "Show Syncthing state with different icons"
+
+#: src/prefs.js:89
+msgid "setting-button-title"
+msgstr "Settings button"
+
+#: src/prefs.js:91
+msgid "setting-button-subtitle"
+msgstr "Show Syncthing Indicator extension settings button"
+
+#: src/prefs.js:105
+msgid "auto-config-group-title"
+msgstr "Auto &amp; manual configuration"
+
+#: src/prefs.js:106
+msgid "auto-config-group-description"
+msgstr "By default Syncthing Indicator will search for the connection string by parsing 'syncthing --paths' command or look for the config.xml in the default locations. If this fails you can set the API key and URI yourself."
+
+#: src/prefs.js:112
+msgid "auto-config-title"
+msgstr "Use auto configuration"
+
+#: src/prefs.js:114
+msgid "auto-config-subtitle"
+msgstr "Read API key from the Syncthing configuration by searching for the config file"
+
+#: src/prefs.js:128
+msgid "config-file-title"
+msgstr "Configuration file location"
+
+#: src/prefs.js:141 src/prefs.js:167
+msgid "service-address-title"
+msgstr "Service address &amp; port"
+
+#: src/prefs.js:154 src/prefs.js:190
+msgid "api-key-title"
+msgstr "API key"
+
+#: src/prefs.js:169
+msgid "service-address-tooltip"
+msgstr "Service address used to connect to the Syncthing API"
+
+#: src/prefs.js:192
+msgid "api-key-tooltip"
+msgstr "API key used to authenticate to the Syncthing API"
+
+#: src/prefs.js:219
+msgid "syncthing-indicator"
+msgstr "Syncthing Indicator"
+
+#: src/prefs.js:226
+msgid "copyright"
+msgstr "Copyright"

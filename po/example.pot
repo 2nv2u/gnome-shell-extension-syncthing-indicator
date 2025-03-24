@@ -1,56 +1,138 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
 msgid ""
 msgstr ""
-"Last-Translator: \n"
-"Language-Team: \n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-24 21:35+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: extension.js:101
+#: src/components.js:127
 msgid "folders"
 msgstr ""
 
-#: extension.js:155 extension.js:334
-msgid "failed-URI"
-msgstr ""
-
-#: extension.js:167
+#: src/components.js:209
 msgid "this-device"
 msgstr ""
 
-#: extension.js:298
-msgid "rescan"
+#: src/components.js:261
+msgid "devices"
 msgstr ""
 
-#: extension.js:324
-msgid "web-interface"
-msgstr ""
-
-#: extension.js:346
+#: src/components.js:346
 msgid "service"
 msgstr ""
 
-#: extension.js:366
+#: src/components.js:407
 msgid "autostart"
 msgstr ""
 
-#: extension.js:413
-msgid "daemon-error"
+#: src/components.js:458
+msgid "rescan"
 msgstr ""
 
-#: extension.js:416
-msgid "service-error"
+#: src/components.js:499
+msgid "web-interface"
 msgstr ""
 
-#: extension.js:419
-msgid "decoding-error"
+#: src/components.js:543
+msgid "settings"
 msgstr ""
 
-#: extension.js:422
-msgid "connection-error"
+#: src/panelMenu.js:81 src/quickSetting.js:29 src/quickSetting.js:40
+msgid "syncthing"
 msgstr ""
 
-#: extension.js:425
-msgid "config-error"
+#: src/prefs.js:41
+msgid "settings-group-title"
+msgstr ""
+
+#: src/prefs.js:42
+msgid "settings-group-description"
+msgstr ""
+
+#: src/prefs.js:59
+msgid "main-panel"
+msgstr ""
+
+#: src/prefs.js:60
+msgid "quick-settings"
+msgstr ""
+
+#: src/prefs.js:64
+msgid "menu-type-title"
+msgstr ""
+
+#: src/prefs.js:66
+msgid "menu-type-subtitle"
+msgstr ""
+
+#: src/prefs.js:81
+msgid "icon-state-title"
+msgstr ""
+
+#: src/prefs.js:83
+msgid "icon-state-subtitle"
+msgstr ""
+
+#: src/prefs.js:97
+msgid "setting-button-title"
+msgstr ""
+
+#: src/prefs.js:99
+msgid "setting-button-subtitle"
+msgstr ""
+
+#: src/prefs.js:113
+msgid "auto-config-group-title"
+msgstr ""
+
+#: src/prefs.js:114
+msgid "auto-config-group-description"
+msgstr ""
+
+#: src/prefs.js:120
+msgid "auto-config-title"
+msgstr ""
+
+#: src/prefs.js:122
+msgid "auto-config-subtitle"
+msgstr ""
+
+#: src/prefs.js:136
+msgid "config-file-title"
+msgstr ""
+
+#: src/prefs.js:149 src/prefs.js:175
+msgid "service-address-title"
+msgstr ""
+
+#: src/prefs.js:162 src/prefs.js:198
+msgid "api-key-title"
+msgstr ""
+
+#: src/prefs.js:177
+msgid "service-address-tooltip"
+msgstr ""
+
+#: src/prefs.js:200
+msgid "api-key-tooltip"
+msgstr ""
+
+#: src/prefs.js:227
+msgid "syncthing-indicator"
+msgstr ""
+
+#: src/prefs.js:234
+msgid "copyright"
 msgstr ""
