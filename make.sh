@@ -18,6 +18,9 @@ for LANG_FILE in $SCRIPT_PATH/po/*.po; do
     msgfmt $LANG_FILE -o $MO_PATH/$EXT_NAME.mo
 done
 
+# Compile schemas
+glib-compile-schemas $SCRIPT_PATH/src/schemas/
+
 # Zip extensions files
 [ -f $CUR_PATH/$EXT_NAME.zip ] && rm -f $CUR_PATH/$EXT_NAME.zip
 (cd $SCRIPT_PATH/src && zip -r $CUR_PATH/$EXT_NAME.zip *)
