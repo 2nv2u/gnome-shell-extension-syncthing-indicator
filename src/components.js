@@ -547,6 +547,7 @@ export const SettingsButton = GObject.registerClass(
 
             this.connect("clicked", () => {
                 this.extension.openPreferences();
+                this.extension.indicator.close();
             });
         }
     }
