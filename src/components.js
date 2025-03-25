@@ -20,65 +20,69 @@ import * as Syncthing from "./syncthing.js";
 const LOG_PREFIX = "syncthing-indicator-components:";
 
 // Syncthing indicator panel icon
-export class SyncthingPanelIcon {
-    constructor(extension) {
-        let iconPath = extension.metadata.path + "/icons/";
-        this._showState = extension.settings.get_boolean("icon-state");
-        this.actor = new St.Icon({
-            icon_size: 18,
-        });
-        this._actors = [this.actor];
-        this._idleIcon = Gio.icon_new_for_string(
-            iconPath + "syncthing-idle.svg"
-        );
-        if (this._showState) {
-            this._workingIcon = Gio.icon_new_for_string(
-                iconPath + "syncthing-working.svg"
+export const SyncthingPanelIcon = GObject.registerClass(
+    class SyncthingPanelIcon extends St.Icon {
+        _init(extension) {
+            super._init({
+                icon_size: 18,
+            });
+
+            let iconPath = extension.metadata.path + "/icons/";
+            this._showState = extension.settings.get_boolean("icon-state");
+
+            this._actors = [this];
+            this._idleGIcon = Gio.icon_new_for_string(
+                iconPath + "syncthing-idle.svg"
             );
-            this._pausedIcon = Gio.icon_new_for_string(
-                iconPath + "syncthing-paused.svg"
-            );
-            this._disconnectedIcon = Gio.icon_new_for_string(
-                iconPath + "syncthing-disconnected.svg"
-            );
-            this.setIcon(this._disconnectedIcon);
-        } else {
-            this.setIcon(this._idleIcon);
+            if (this._showState) {
+                this._workingGIcon = Gio.icon_new_for_string(
+                    iconPath + "syncthing-working.svg"
+                );
+                this._pausedGIcon = Gio.icon_new_for_string(
+                    iconPath + "syncthing-paused.svg"
+                );
+                this._disconnectedGIcon = Gio.icon_new_for_string(
+                    iconPath + "syncthing-disconnected.svg"
+                );
+                this.setGIcon(this._disconnectedGIcon);
+            } else {
+                this.setGIcon(this._idleGIcon);
+            }
+        }
+
+        setState(state) {
+            if (!this._showState) return;
+            switch (state) {
+                case Syncthing.State.SYNCING:
+                case Syncthing.State.SCANNING:
+                    this.setGIcon(this._workingGIcon);
+                    break;
+                case Syncthing.State.PAUSED:
+                    this.setGIcon(this._pausedGIcon);
+                    break;
+                case Syncthing.State.UNKNOWN:
+                case Syncthing.State.DISCONNECTED:
+                    this.setGIcon(this._disconnectedGIcon);
+                    break;
+                default:
+                    this.setGIcon(this._idleGIcon);
+                    break;
+            }
+        }
+
+        addActor(actor) {
+            actor.gicon = this._activeIcon;
+            this._actors.push(actor);
+        }
+
+        setGIcon(gicon) {
+            this._activeIcon = gicon;
+            for (let i = 0; i < this._actors.length; i++) {
+                this._actors[i].gicon = gicon;
+            }
         }
     }
-
-    setState(state) {
-        if (!this._showState) return;
-        switch (state) {
-            case Syncthing.State.SYNCING:
-            case Syncthing.State.SCANNING:
-                this.setIcon(this._workingIcon);
-                break;
-            case Syncthing.State.PAUSED:
-                this.setIcon(this._pausedIcon);
-                break;
-            case Syncthing.State.UNKNOWN:
-            case Syncthing.State.DISCONNECTED:
-                this.setIcon(this._disconnectedIcon);
-                break;
-            default:
-                this.setIcon(this._idleIcon);
-                break;
-        }
-    }
-
-    addActor(actor) {
-        actor.gicon = this._activeIcon;
-        this._actors.push(actor);
-    }
-
-    setIcon(icon) {
-        this._activeIcon = icon;
-        for (let i = 0; i < this._actors.length; i++) {
-            this._actors[i].gicon = icon;
-        }
-    }
-}
+);
 
 // Syncthing suspendable switch menu item
 export const SwitchMenuItem = GObject.registerClass(
