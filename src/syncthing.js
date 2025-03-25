@@ -1098,8 +1098,9 @@ export const Manager = class Manager extends Signals.EventEmitter {
             console.error(LOG_PREFIX, Error.CONFIG);
             this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
             this.emit(Signal.ERROR, { type: Error.CONFIG });
+        } else {
+            console.info("attach manager", this._isServiceActive());
         }
-        this._pollState();
     }
 
     enableService() {
