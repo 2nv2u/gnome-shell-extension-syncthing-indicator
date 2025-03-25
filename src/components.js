@@ -84,6 +84,110 @@ export const SyncthingPanelIcon = GObject.registerClass(
     }
 );
 
+// Syncthing indicator menu
+export class SyncthingPanel {
+    constructor(extension, menu) {
+        this.menu = menu;
+        this.icon = new SyncthingPanelIcon(extension);
+
+        // Device & folder section
+        this._deviceMenu = new DeviceMenu(extension);
+        // this._deviceMenu.showServiceSwitch(true);
+        // if (extension.settings.get_boolean("auto-start-item")) {
+        //     this._deviceMenu.showAutostartSwitch(true);
+        // }
+        this.menu.addMenuItem(this._deviceMenu);
+        this._deviceMenu.menu.connect("open-state-changed", (menu, open) => {
+            if (this.menu.isOpen && !open) this._folderMenu.menu.open(true);
+        });
+
+        this._folderMenu = new FolderMenu(extension);
+        this.menu.addMenuItem(this._folderMenu);
+        this._folderMenu.menu.connect("open-state-changed", (menu, open) => {
+            if (this.menu.isOpen && !open) this._deviceMenu.menu.open(true);
+        });
+
+        this.menu.connect("open-state-changed", (menu, open) => {
+            if (open) this.open(false);
+        });
+
+        extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
+            let errorType = "unknown-error";
+            switch (error.type) {
+                case Syncthing.Error.DAEMON:
+                    errorType = "daemon-error";
+                    break;
+                case Syncthing.Error.SERVICE:
+                    errorType = "service-error";
+                    break;
+                case Syncthing.Error.STREAM:
+                    errorType = "decoding-error";
+                    break;
+                case Syncthing.Error.CONNECTION:
+                    errorType = "connection-error";
+                    break;
+                case Syncthing.Error.CONFIG:
+                    errorType = "config-error";
+                    break;
+            }
+            console.error(LOG_PREFIX, errorType, error);
+            Main.notifyError("Syncthing Indicator", _(errorType));
+        });
+
+        extension.manager.connect(
+            Syncthing.Signal.SERVICE_CHANGE,
+            (manager, state) => {
+                switch (state) {
+                    case Syncthing.ServiceState.USER_STOPPED:
+                    case Syncthing.ServiceState.SYSTEM_STOPPED:
+                        this._folderMenu.setSensitive(false);
+                        break;
+                }
+            }
+        );
+
+        extension.manager.connect(
+            Syncthing.Signal.FOLDER_ADD,
+            (manager, folder) => {
+                this._folderMenu.setSensitive(true);
+                this._folderMenu.addSectionItem(new FolderMenuItem(folder));
+            }
+        );
+
+        extension.manager.connect(
+            Syncthing.Signal.DEVICE_ADD,
+            (manager, device) => {
+                this._deviceMenu.addSectionItem(new DeviceMenuItem(device));
+            }
+        );
+
+        extension.manager.connect(
+            Syncthing.Signal.HOST_ADD,
+            (manager, device) => {
+                this._deviceMenu.setHost(device);
+                device.connect(
+                    Syncthing.Signal.STATE_CHANGE,
+                    (device, state) => {
+                        this.icon.setState(state);
+                    }
+                );
+            }
+        );
+    }
+
+    open(animate) {
+        if (this._folderMenu.getSensitive()) {
+            this._folderMenu.menu.open(animate);
+        } else {
+            this._deviceMenu.menu.open(animate);
+        }
+    }
+
+    close() {
+        this.menu.close();
+    }
+}
+
 // Syncthing suspendable switch menu item
 export const SwitchMenuItem = GObject.registerClass(
     class SwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {

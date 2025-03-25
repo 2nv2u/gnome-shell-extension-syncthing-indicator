@@ -24,21 +24,17 @@ const LOG_PREFIX = "syncthing-indicator-quick-setting:";
 // Syncthing indicator controller toggle
 export const SyncthingIndicatorToggle = GObject.registerClass(
     class SyncthingIndicatorToggle extends QuickSettings.QuickMenuToggle {
-        _init(indicator, extension) {
+        _init(extension) {
             super._init({
                 title: _("syncthing"),
                 toggleMode: true,
             });
 
             this.extension = extension;
-            let manager = extension.manager;
-
-            indicator.icon.addActor(this);
 
             this.menu.box.add_style_class_name("syncthing-indicator");
             this.menu.box.add_style_class_name("toggle");
             this.menu.setHeader(null, _("syncthing"));
-            indicator.icon.addActor(this.menu._headerIcon);
 
             // Header action bar section
             // This is too instrusive in the implementation of the QuickToggleMenu
@@ -85,7 +81,14 @@ export const SyncthingIndicatorToggle = GObject.registerClass(
                 }
             });
 
-            manager.connect(
+            extension.manager.connect(
+                Syncthing.Signal.HOST_ADD,
+                (manager, device) => {
+                    this.subtitle = device.getName();
+                }
+            );
+
+            extension.manager.connect(
                 Syncthing.Signal.SERVICE_CHANGE,
                 (manager, state) => {
                     switch (state) {
@@ -107,107 +110,16 @@ export const SyncthingIndicatorToggle = GObject.registerClass(
                 }
             );
 
-            manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
-                switch (error.type) {
-                    case Syncthing.Error.DAEMON:
-                        this.set({ reactive: true, checked: false });
-                        break;
-                }
-            });
-
-            this._deviceMenu = new Components.DeviceMenu(extension);
-            this._deviceMenu.showAutostartSwitch(true);
-            this.menu.addMenuItem(this._deviceMenu);
-            this._deviceMenu.menu.connect(
-                "open-state-changed",
-                (menu, open) => {
-                    if (this.menu.isOpen && !open)
-                        this._folderMenu.menu.open(true);
-                }
-            );
-
-            this._folderMenu = new Components.FolderMenu(extension);
-            this.menu.addMenuItem(this._folderMenu);
-            this._folderMenu.menu.connect(
-                "open-state-changed",
-                (menu, open) => {
-                    if (this.menu.isOpen && !open)
-                        this._deviceMenu.menu.open(true);
-                }
-            );
-
-            this.menu.connect("open-state-changed", (menu, open) => {
-                if (open) this.open(false);
-            });
-
-            manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
-                let errorType = "unknown-error";
-                switch (error.type) {
-                    case Syncthing.Error.DAEMON:
-                        errorType = "daemon-error";
-                        break;
-                    case Syncthing.Error.SERVICE:
-                        errorType = "service-error";
-                        break;
-                    case Syncthing.Error.STREAM:
-                        errorType = "decoding-error";
-                        break;
-                    case Syncthing.Error.CONNECTION:
-                        errorType = "connection-error";
-                        break;
-                    case Syncthing.Error.CONFIG:
-                        errorType = "config-error";
-                        break;
-                }
-                console.error(LOG_PREFIX, errorType, error);
-                Main.notifyError("Syncthing Indicator", _(errorType));
-            });
-
-            manager.connect(
-                Syncthing.Signal.SERVICE_CHANGE,
-                (manager, state) => {
-                    switch (state) {
-                        case Syncthing.ServiceState.USER_STOPPED:
-                        case Syncthing.ServiceState.SYSTEM_STOPPED:
-                            this._folderMenu.setSensitive(false);
+            extension.manager.connect(
+                Syncthing.Signal.ERROR,
+                (manager, error) => {
+                    switch (error.type) {
+                        case Syncthing.Error.DAEMON:
+                            this.set({ reactive: true, checked: false });
                             break;
                     }
                 }
             );
-
-            manager.connect(Syncthing.Signal.FOLDER_ADD, (manager, folder) => {
-                this._folderMenu.setSensitive(true);
-                let folderMenuItem = new Components.FolderMenuItem(folder);
-                this._folderMenu.addSectionItem(folderMenuItem);
-                // Close quick settigns on opening folder
-                folderMenuItem.connect("activate", () => {
-                    Main.panel.statusArea.quickSettings.menu.close();
-                });
-            });
-
-            manager.connect(Syncthing.Signal.DEVICE_ADD, (manager, device) => {
-                this._deviceMenu.addSectionItem(
-                    new Components.DeviceMenuItem(device)
-                );
-            });
-
-            manager.connect(Syncthing.Signal.HOST_ADD, (manager, device) => {
-                this._deviceMenu.setHost(device);
-                this.subtitle = device.getName();
-            });
-        }
-
-        open(animate) {
-            if (this._folderMenu.getSensitive()) {
-                this._folderMenu.menu.open(animate);
-            } else {
-                this._deviceMenu.menu.open(animate);
-            }
-        }
-
-        close() {
-            this.menu.close();
-            Main.panel.statusArea.quickSettings.menu.close();
         }
     }
 );
@@ -217,23 +129,20 @@ export const SyncthingIndicatorQuickSetting = GObject.registerClass(
         _init(extension) {
             super._init();
 
-            this.icon = new Components.SyncthingPanelIcon(extension);
-            this.icon.addActor(this._addIndicator());
+            this.toggle = new SyncthingIndicatorToggle(extension);
+            this.quickSettingsItems.push(this.toggle);
 
-            this.menu = new SyncthingIndicatorToggle(this, extension);
-            this.quickSettingsItems.push(this.menu);
-
-            extension.manager.connect(
-                Syncthing.Signal.HOST_ADD,
-                (manager, device) => {
-                    device.connect(
-                        Syncthing.Signal.STATE_CHANGE,
-                        (device, state) => {
-                            this.icon.setState(state);
-                        }
-                    );
-                }
+            this.panel = new Components.SyncthingPanel(
+                extension,
+                this.toggle.menu
             );
+            this.panel.icon.addActor(this._addIndicator());
+            this.panel.icon.addActor(this.toggle);
+            this.panel.icon.addActor(this.toggle.menu._headerIcon);
+
+            this.panel.menu.connect("open-state-changed", (menu, open) => {
+                if (!open) Main.panel.statusArea.quickSettings.menu.close();
+            });
         }
 
         destroy() {
@@ -241,12 +150,20 @@ export const SyncthingIndicatorQuickSetting = GObject.registerClass(
             super.destroy();
         }
 
+        // open(animate) {
+        //     this.toggle.menu.open(animate);
+        // }
+
+        // close() {
+        //     this.toggle.menu.close();
+        // }
+
         open(animate) {
-            this.menu.open(animate);
+            this.panel.open(animate);
         }
 
         close() {
-            this.menu.close();
+            this.panel.close();
         }
     }
 );
