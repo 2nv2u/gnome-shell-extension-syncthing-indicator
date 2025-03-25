@@ -8,6 +8,8 @@
 	This work is distributed under GPLv3, see LICENSE for more information.
 ============================================================================================================= */
 
+import GLib from "gi://GLib";
+
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import {
     Extension,
@@ -24,25 +26,9 @@ export default class SyncthingIndicatorExtension extends Extension {
     enable() {
         this.settings = this.getSettings();
         this.settings.connect("changed", () => {
-            this.indicator.close();
-            this.indicator.destroy();
-            this.manager.destroy();
-            this._initIndicator();
+            this.disable();
+            this.enable();
         });
-
-        this._initIndicator();
-    }
-
-    // Syncthing indicator disabler
-    disable() {
-        this.settings = null;
-        this.indicator.destroy();
-        this.indicator = null;
-        this.manager.destroy();
-        this.manager = null;
-    }
-
-    _initIndicator() {
         this.manager = new Syncthing.Manager(this.metadata.path);
         switch (this.settings.get_int("menu")) {
             case 0:
@@ -61,5 +47,14 @@ export default class SyncthingIndicatorExtension extends Extension {
                 break;
         }
         this.manager.attach();
+    }
+
+    // Syncthing indicator disabler
+    disable() {
+        this.settings = null;
+        this.indicator.destroy();
+        this.indicator = null;
+        this.manager.destroy();
+        this.manager = null;
     }
 }
