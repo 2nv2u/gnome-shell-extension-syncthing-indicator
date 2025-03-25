@@ -15,7 +15,12 @@
 		<key name="settings-button" type="b">
 			<default>true</default>
 			<summary>Settings button</summary>
-			<description>Show Syncthing indicator extension settings button</description>
+			<description>Show extension settings button</description>
+		</key>
+		<key name="auto-start-item" type="b">
+			<default>true</default>
+			<summary>Autostart switch</summary>
+			<description>Show extension autostart switch</description>
 		</key>
 		<key name="auto-config" type="b">
 			<default>true</default>

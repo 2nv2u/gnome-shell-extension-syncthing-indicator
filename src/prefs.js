@@ -65,16 +65,13 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
         // Menu type model
         let menuTypesModel = new Gtk.StringList();
-        menuTypesModel.append(_("quick-settings", "Quick Settings"));
-        menuTypesModel.append(_("main-panel", "Main Panel"));
+        menuTypesModel.append(_("quick-settings"));
+        menuTypesModel.append(_("main-panel"));
 
         // Menu type combo selector
         const typeCombo = new Adw.ComboRow({
             title: _("menu-type-title", "Menu type"),
-            subtitle: _(
-                "menu-type-subtitle",
-                "Select the menu integration type."
-            ),
+            subtitle: _("menu-type-subtitle"),
             model: menuTypesModel,
         });
         settings.bind(
@@ -88,10 +85,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         // Icon state switch
         const iconStateSwitch = new Adw.SwitchRow({
             title: _("icon-state-title", "Icon state"),
-            subtitle: _(
-                "icon-state-subtitle",
-                "Show Syncthing state with different icons."
-            ),
+            subtitle: _("icon-state-subtitle"),
         });
         settings.bind(
             "icon-state",
@@ -102,12 +96,22 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         mainGroup.add(iconStateSwitch);
 
         // Settings button switch
+        const autoStartItemSwitch = new Adw.SwitchRow({
+            title: _("auto-start-item"),
+            subtitle: _("auto-start-item-subtitle"),
+        });
+        settings.bind(
+            "auto-start-item",
+            autoStartItemSwitch,
+            "active",
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        mainGroup.add(autoStartItemSwitch);
+
+        // Settings button switch
         const settingsButtonSwitch = new Adw.SwitchRow({
-            title: _("setting-button-title", "Settings button"),
-            subtitle: _(
-                "setting-button-subtitle",
-                "Show Syncthing indicator extension settings button."
-            ),
+            title: _("setting-button-title"),
+            subtitle: _("setting-button-subtitle"),
         });
         settings.bind(
             "settings-button",
@@ -126,11 +130,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
         // // Automatic configuration switch
         // const autoConfigSwitch = new Adw.SwitchRow({
-        //     title: _("auto-config-title", "Automatic configuration"),
-        //     subtitle: _(
-        //         "auto-config-subtitle",
-        //         "Read API key from the Syncthing configuration by searching for the config file."
-        //     ),
+        //     title: _("auto-config-title"),
+        //     subtitle: _("auto-config-subtitle"),
         // });
         // settings.bind(
         //     "auto-config",
@@ -142,7 +143,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
         // // Config file view
         // const configFileView = new Adw.ActionRow({
-        //     title: _("config-file-title", "Config file location"),
+        //     title: _("config-file-title"),
         //     subtitle: "%CONFIGVALUE%",
         // });
         // settings.bind(
@@ -155,7 +156,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
         // // Service address & port view
         // const serviceAddressView = new Adw.ActionRow({
-        //     title: _("service-address-title", "Service address &amp; port"),
+        //     title: _("service-address-title"),
         //     subtitle: "%CONFIGVALUE%",
         // });
         // settings.bind(
@@ -168,7 +169,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
         // // API key view
         // const apiKeyView = new Adw.ActionRow({
-        //     title: _("api-key-title", "API key"),
+        //     title: _("api-key-title"),
         //     subtitle: "%CONFIGVALUE%",
         // });
         // settings.bind(
@@ -181,11 +182,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
         // // Service address & port entry
         // const serviceAddressEntry = new Adw.EntryRow({
-        //     title: _("service-address-title", "Service address &amp; port"),
-        //     tooltip_text: _(
-        //         "service-address-tooltip",
-        //         "Service address used to connect to the Syncthing API."
-        //     ),
+        //     title: _("service-address-title"),
+        //     tooltip_text: _("service-address-tooltip"),
         //     show_apply_button: true,
         // });
         // settings.bind(
@@ -204,11 +202,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
         // // API key entry
         // const apiKeyEntry = new Adw.EntryRow({
-        //     title: _("api-key-title", "API key"),
-        //     tooltip_text: _(
-        //         "api-key-tooltip",
-        //         "API key used to authenticate to the Syncthing API."
-        //     ),
+        //     title: _("api-key-title"),
+        //     tooltip_text: _("api-key-tooltip"),
         //     show_apply_button: true,
         // });
         // settings.bind(
