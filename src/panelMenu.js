@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.40
+	SyncthingIndicator 0.41
 ================================================================================================================
 
 	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
@@ -106,8 +106,12 @@ export const SyncthingIndicatorPanel = GObject.registerClass(
             }
 
             this.panel = new Components.SyncthingPanel(extension, this.menu);
-            this.add_child(this.panel.icon);
+            this.panel.showServiceSwitch(true);
+            this.panel.showAutostartSwitch(
+                extension.settings.get_boolean("auto-start-item")
+            );
             this.panel.icon.addActor(this._headerIcon);
+            this.add_child(this.panel.icon);
         }
 
         open(animate) {

@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.40
+	SyncthingIndicator 0.41
 ================================================================================================================
 
 	GJS syncthing gnome-shell quick setting indicator signalling the Syncthing deamon status.
@@ -136,6 +136,9 @@ export const SyncthingIndicatorQuickSetting = GObject.registerClass(
                 extension,
                 this.toggle.menu
             );
+            this.panel.showAutostartSwitch(
+                extension.settings.get_boolean("auto-start-item")
+            );
             this.panel.icon.addActor(this._addIndicator());
             this.panel.icon.addActor(this.toggle);
             this.panel.icon.addActor(this.toggle.menu._headerIcon);
@@ -149,14 +152,6 @@ export const SyncthingIndicatorQuickSetting = GObject.registerClass(
             this.quickSettingsItems.forEach((item) => item.destroy());
             super.destroy();
         }
-
-        // open(animate) {
-        //     this.toggle.menu.open(animate);
-        // }
-
-        // close() {
-        //     this.toggle.menu.close();
-        // }
 
         open(animate) {
             this.panel.open(animate);

@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.40
+	SyncthingIndicator 0.41
 ================================================================================================================
 
 	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
@@ -92,10 +92,6 @@ export class SyncthingPanel {
 
         // Device & folder section
         this._deviceMenu = new DeviceMenu(extension);
-        // this._deviceMenu.showServiceSwitch(true);
-        // if (extension.settings.get_boolean("auto-start-item")) {
-        //     this._deviceMenu.showAutostartSwitch(true);
-        // }
         this.menu.addMenuItem(this._deviceMenu);
         this._deviceMenu.menu.connect("open-state-changed", (menu, open) => {
             if (this.menu.isOpen && !open) this._folderMenu.menu.open(true);
@@ -173,6 +169,14 @@ export class SyncthingPanel {
                 );
             }
         );
+    }
+
+    showServiceSwitch(toggle) {
+        this._deviceMenu.showServiceSwitch(toggle);
+    }
+
+    showAutostartSwitch(toggle) {
+        this._deviceMenu.showAutostartSwitch(toggle);
     }
 
     open(animate) {
@@ -347,17 +351,21 @@ export const DeviceMenu = GObject.registerClass(
         }
 
         addSectionItem(item) {
-            if (!this._deviceSeparator.visible)
-                this._deviceSeparator.visible = true;
+            this._deviceSeparator.visible =
+                this._autoSwitch.visible || this._serviceSwitch.visible;
             super.addSectionItem(item);
         }
 
         showAutostartSwitch(toggle) {
             this._autoSwitch.visible = toggle;
+            this._deviceSeparator.visible =
+                this._autoSwitch.visible || this._serviceSwitch.visible;
         }
 
         showServiceSwitch(toggle) {
             this._serviceSwitch.visible = toggle;
+            this._deviceSeparator.visible =
+                this._autoSwitch.visible || this._serviceSwitch.visible;
         }
     }
 );
