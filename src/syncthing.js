@@ -15,7 +15,7 @@ import Soup from "gi://Soup";
 import * as Signals from "resource:///org/gnome/shell/misc/signals.js";
 
 const LOG_PREFIX = "syncthing-indicator-manager:";
-const POLL_TIME = 5000;
+const POLL_TIME = 20000;
 const CONNECTION_RETRY_DELAY = 1000;
 const DEVICE_STATE_DELAY = 600;
 const ITEM_STATE_DELAY = 200;
