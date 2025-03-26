@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="gnome-shell-extensions">
-	<schema id="org.gnome.shell.extensions.syncthing-gnome-2nv2u-com"
-		path="/org/gnome/shell/extensions/syncthing-gnome-2nv2u-com/">
+	<schema id="org.gnome.shell.extensions.syncthing"
+		path="/org/gnome/shell/extensions/syncthing/">
 		<key name="menu" type="i">
 			<default>0</default>
 			<summary>Menu type</summary>

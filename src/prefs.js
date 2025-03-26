@@ -52,9 +52,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
             this.showAbout();
         });
 
-        let settings = this.getSettings(
-            "org.gnome.shell.extensions.syncthing-gnome-2nv2u-com"
-        );
+        let settings = this.getSettings("org.gnome.shell.extensions.syncthing");
 
         // Settings group
         const mainGroup = new Adw.PreferencesGroup({
