@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingManager 0.40
+	SyncthingManager 0.41
 ================================================================================================================
 
 	GJS syncthing systemd manager
@@ -15,6 +15,11 @@ import Soup from "gi://Soup";
 import * as Signals from "resource:///org/gnome/shell/misc/signals.js";
 
 const LOG_PREFIX = "syncthing-indicator-manager:";
+const POLL_TIME = 5000;
+const CONNECTION_RETRY_DELAY = 1000;
+const DEVICE_STATE_DELAY = 600;
+const ITEM_STATE_DELAY = 200;
+const RESCHEDULE_EVENT_DELAY = 50;
 
 // Error constants
 export const Error = {
@@ -103,13 +108,63 @@ export const EventType = {
     STATE_CHANGED: "StateChanged",
 };
 
+class Timer {
+    constructor(timeout, recurring = false, priority = GLib.PRIORITY_DEFAULT) {
+        this._timeout = timeout;
+        this._recurring = recurring;
+        this._priority = priority;
+    }
+
+    run(
+        callback,
+        timeout = this._timeout,
+        recurring = this._recurring,
+        priority = this._priority
+    ) {
+        this.cancel();
+        this._run(callback, timeout, recurring, priority);
+    }
+
+    _run(callback, timeout, recurring, priority) {
+        if (!this._source || recurring) {
+            this._source = GLib.timeout_source_new(timeout);
+            this._source.set_priority(priority);
+            this._source.set_callback(() => {
+                callback();
+                if (recurring) {
+                    this._run(callback, timeout, recurring, priority);
+                } else {
+                    return GLib.SOURCE_REMOVE;
+                }
+            });
+        }
+        this._source.attach(null);
+    }
+
+    cancel() {
+        if (this._source) {
+            this._source.destroy();
+            this._source = null;
+        }
+    }
+
+    static run(
+        timeout,
+        callback,
+        recurring = false,
+        priority = GLib.PRIORITY_DEFAULT
+    ) {
+        return new Timer(timeout, recurring, priority).run(callback);
+    }
+}
+
 // Abstract item used for folders and devices
 class Item extends Signals.EventEmitter {
     constructor(data, manager) {
         super();
         this._state = State.UNKNOWN;
         this._stateEmitted = State.UNKNOWN;
-        this._stateEmitDelay = 200;
+        this._stateTimer = new Timer(ITEM_STATE_DELAY);
         this.id = data.id;
         this._name = data.name;
         this._manager = manager;
@@ -124,17 +179,13 @@ class Item extends Signals.EventEmitter {
 
     setState(state) {
         if (state.length > 0 && this._state != state) {
-            if (this._stateSource) {
-                this._stateSource.destroy();
-            }
+            this._stateTimer.cancel();
             console.info(LOG_PREFIX, "state change", this._name, state);
             this._state = state;
             // Stop items from excessive state changes by only emitting 1 state per stateDelay
-            this._stateSource = GLib.timeout_source_new(this._stateEmitDelay);
-            this._stateSource.set_priority(GLib.PRIORITY_DEFAULT);
-            this._stateSource.set_callback(() => {
+            this._stateTimer.run(() => {
                 if (this._stateEmitted != this._state) {
-                    console.info(
+                    console.debug(
                         LOG_PREFIX,
                         "emit state change",
                         this._name,
@@ -144,7 +195,6 @@ class Item extends Signals.EventEmitter {
                     this.emit(Signal.STATE_CHANGE, this._state);
                 }
             });
-            this._stateSource.attach(null);
         }
     }
 
@@ -154,7 +204,7 @@ class Item extends Signals.EventEmitter {
 
     setName(name) {
         if (name.length > 0 && this._name != name) {
-            console.info(LOG_PREFIX, "Emit name change", this._name, name);
+            console.info(LOG_PREFIX, "emit name change", this._name, name);
             this._name = name;
             this.emit(Signal.NAME_CHANGE, this._name);
         }
@@ -165,9 +215,7 @@ class Item extends Signals.EventEmitter {
     }
 
     destroy() {
-        if (this._stateSource) {
-            this._stateSource.destroy();
-        }
+        this._stateTimer.cancel();
         this.emit(Signal.DESTROY);
     }
 }
@@ -181,6 +229,12 @@ class ItemCollection extends Signals.EventEmitter {
 
     add(item) {
         if (item instanceof Item) {
+            console.info(
+                LOG_PREFIX,
+                "add",
+                item.constructor.name,
+                item.getName()
+            );
             this._collection[item.id] = item;
             item.connect(Signal.DESTROY, (_item) => {
                 delete this._collection[_item.id];
@@ -221,7 +275,7 @@ class ItemCollection extends Signals.EventEmitter {
 class Device extends Item {
     constructor(data, manager) {
         super(data, manager);
-        this._determineStateDelay = 600;
+        this._determineTimer = new Timer(DEVICE_STATE_DELAY);
         this.folders = new ItemCollection();
         this.folders.connect(Signal.ADD, (collection, folder) => {
             folder.connect(
@@ -239,16 +293,8 @@ class Device extends Item {
     }
 
     determineStateDelayed() {
-        if (this._determineSource) {
-            this._determineSource.destroy();
-        }
         // Stop items from excessive state change calculations by only emitting 1 state per stateDelay
-        this._determineSource = GLib.timeout_source_new(
-            this._determineStateDelay
-        );
-        this._determineSource.set_priority(GLib.PRIORITY_DEFAULT);
-        this._determineSource.set_callback(this.determineState.bind(this));
-        this._determineSource.attach(null);
+        this._determineTimer.run(this.determineState.bind(this));
     }
 
     determineState() {
@@ -278,9 +324,7 @@ class Device extends Item {
     }
 
     destroy() {
-        if (this._determineSource) {
-            this._determineSource.destroy();
-        }
+        this._determineTimer.cancel();
         super.destroy();
     }
 }
@@ -521,14 +565,13 @@ export const Manager = class Manager extends Signals.EventEmitter {
         this._serviceFailed = false;
         this._serviceActive = false;
         this._serviceEnabled = false;
-        this._pollTime = 20000;
-        this._pollCount = 0;
+        this._pollTimer = new Timer(POLL_TIME, true);
+        this._pollCount = 1; // Start at 1 to stop from recycling the hooks
         this._pollConnectionHook = 6; // Every 2 minutes
         this._pollConfigHook = 45; // Every 15 minutes
         this._lastEventID = 1;
         this._hostID = "";
         this._lastErrorTime = Date.now();
-        this._timedSources = new Object();
         this.connect(Signal.SERVICE_CHANGE, (manager, state) => {
             switch (state) {
                 case ServiceState.USER_ACTIVE:
@@ -543,7 +586,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
                             });
                         }
                     );
-                    this._pollState();
+                    this._pollTimer.run(this._pollState.bind(this));
                     break;
                 case ServiceState.USER_STOPPED:
                 case ServiceState.SYSTEM_STOPPED:
@@ -684,14 +727,9 @@ export const Manager = class Manager extends Signals.EventEmitter {
                 }
             }
             // Reschedule this event stream
-            let source = GLib.timeout_source_new(50);
-            this._timedSources[source.get_id()] = source;
-            source.set_priority(GLib.PRIORITY_LOW);
-            source.set_callback(() => {
-                delete this._timedSources[source.get_id()];
+            Timer.run(RESCHEDULE_EVENT_DELAY, () => {
                 this._callEvents("since=" + this._lastEventID);
             });
-            source.attach(null);
         });
     }
 
@@ -817,9 +855,13 @@ export const Manager = class Manager extends Signals.EventEmitter {
     }
 
     _pollState() {
-        if (this._pollSource) {
-            this._pollSource.destroy();
-        }
+        console.debug(
+            LOG_PREFIX,
+            "poll state",
+            this._pollCount,
+            this._pollCount % this._pollConfigHook,
+            this._pollCount % this._pollConnectionHook
+        );
         if (this._isServiceActive() && this.config.exists()) {
             if (this._pollCount % this._pollConfigHook == 0) {
                 // TODO: this should not be necessary, we should remove old items
@@ -851,10 +893,6 @@ export const Manager = class Manager extends Signals.EventEmitter {
         } else {
             this._isServiceEnabled();
         }
-        this._pollSource = GLib.timeout_source_new(this._pollTime);
-        this._pollSource.set_priority(GLib.PRIORITY_LOW);
-        this._pollSource.set_callback(this._pollState.bind(this));
-        this._pollSource.attach(null);
         this._pollCount++;
     }
 
@@ -885,7 +923,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
                     this.emit(Signal.ERROR, { type: Error.DAEMON });
                 }
             }
-            console.debug(
+            console.info(
                 LOG_PREFIX,
                 "service active",
                 state.user,
@@ -920,7 +958,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 
     _isServiceEnabled() {
         let state = this._serviceState();
-        console.debug(
+        console.info(
             LOG_PREFIX,
             "service enabled",
             state.user,
@@ -1022,14 +1060,9 @@ export const Manager = class Manager extends Signals.EventEmitter {
                                     msg.method + ":" + msg.uri.get_path()
                                 );
                                 // Retry this connection attempt
-                                let source = GLib.timeout_source_new(1000);
-                                this._timedSources[source.get_id()] = source;
-                                source.set_priority(GLib.PRIORITY_LOW);
-                                source.set_callback(() => {
-                                    delete this._timedSources[source.get_id()];
+                                Timer.run(CONNECTION_RETRY_DELAY, () => {
                                     this.openConnectionMessage(msg, callback);
                                 });
-                                source.attach(null);
                             }
                         }
                         try {
@@ -1079,15 +1112,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
     }
 
     destroy() {
-        if (this._pollSource) {
-            this._pollSource.destroy();
-        }
-        if (this._stateSource) {
-            this._stateSource.destroy();
-        }
-        for (const [key, value] of Object.entries(this._timedSources)) {
-            value.destroy();
-        }
+        this._pollTimer.cancel();
         this.folders.destroy();
         this.devices.destroy();
         this.config.destroy();
