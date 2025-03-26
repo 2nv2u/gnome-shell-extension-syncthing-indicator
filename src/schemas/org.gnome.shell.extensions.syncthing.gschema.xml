@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="gnome-shell-extensions">
+	<schema id="org.gnome.shell.extensions.syncthing"
+		path="/org/gnome/shell/extensions/syncthing/">
+		<key name="menu" type="i">
+			<default>0</default>
+			<summary>Menu type</summary>
+			<description>Select the menu integration type</description>
+		</key>
+		<key name="icon-state" type="b">
+			<default>true</default>
+			<summary>Icon state</summary>
+			<description>Show Syncthing state with different icons</description>
+		</key>
+		<key name="settings-button" type="b">
+			<default>true</default>
+			<summary>Settings button</summary>
+			<description>Show extension settings button</description>
+		</key>
+		<key name="auto-start-item" type="b">
+			<default>true</default>
+			<summary>Autostart switch</summary>
+			<description>Show extension autostart switch</description>
+		</key>
+		<key name="auto-config" type="b">
+			<default>true</default>
+			<summary>Use auto configuration</summary>
+			<description>Read API key from the Syncthing configuration by searching for the config file</description>
+		</key>
+		<key name="service-address" type="s">
+			<default>""</default>
+			<summary>Service address &amp; port</summary>
+			<description>Service address used to connect to the Syncthing API</description>
+		</key>
+		<key name="api-key" type="s">
+			<default>""</default>
+			<summary>API key</summary>
+			<description>API key used to authenticate to the Syncthing API</description>
+		</key>
+	</schema>
+</schemalist>
