@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.41
+	SyncthingIndicator 0.42
 ================================================================================================================
 
 	GJS syncthing gnome-shell quick setting indicator signalling the Syncthing deamon status.
