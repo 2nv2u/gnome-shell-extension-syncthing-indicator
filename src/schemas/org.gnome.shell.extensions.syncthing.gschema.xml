@@ -27,10 +27,10 @@
 			<summary>Use auto configuration</summary>
 			<description>Read API key from the Syncthing configuration by searching for the config file</description>
 		</key>
-		<key name="service-address" type="s">
+		<key name="service-uri" type="s">
 			<default>""</default>
-			<summary>Service address &amp; port</summary>
-			<description>Service address used to connect to the Syncthing API</description>
+			<summary>Service URI &amp; port</summary>
+			<description>Service URI used to connect to the Syncthing API</description>
 		</key>
 		<key name="api-key" type="s">
 			<default>""</default>
