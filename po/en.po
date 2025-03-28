@@ -72,11 +72,11 @@ msgstr "Syncthing"
 
 #: src/prefs.js:59
 msgid "settings-group-title"
-msgstr "Synchting indicator settings"
+msgstr "Synchting Indicator settings"
 
 #: src/prefs.js:60
 msgid "settings-group-description"
-msgstr "You can change some settings on the location and / or look &amp; feel of the Syncthing Indicator"
+msgstr "You can change some settings on the location and / or look &amp; feel of the extension"
 
 #: src/prefs.js:66
 msgid "quick-settings"
