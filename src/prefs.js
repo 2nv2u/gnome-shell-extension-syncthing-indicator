@@ -119,104 +119,104 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         );
         mainGroup.add(settingsButtonSwitch);
 
-        // // Automatic configuration group
-        // const autoGroup = new Adw.PreferencesGroup({
-        //     title: _("auto-config-group-title", ""),
-        //     description: _("auto-config-group-description"),
-        // });
-        // page.add(autoGroup);
+        // Automatic configuration group
+        const autoGroup = new Adw.PreferencesGroup({
+            title: _("auto-config-group-title", ""),
+            description: _("auto-config-group-description"),
+        });
+        page.add(autoGroup);
 
-        // // Automatic configuration switch
-        // const autoConfigSwitch = new Adw.SwitchRow({
-        //     title: _("auto-config-title"),
-        //     subtitle: _("auto-config-subtitle"),
-        // });
-        // settings.bind(
-        //     "auto-config",
-        //     autoConfigSwitch,
-        //     "active",
-        //     Gio.SettingsBindFlags.DEFAULT
-        // );
-        // autoGroup.add(autoConfigSwitch);
+        // Automatic configuration switch
+        const autoConfigSwitch = new Adw.SwitchRow({
+            title: _("auto-config-title"),
+            subtitle: _("auto-config-subtitle"),
+        });
+        settings.bind(
+            "auto-config",
+            autoConfigSwitch,
+            "active",
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        autoGroup.add(autoConfigSwitch);
 
-        // // Config file view
-        // const configFileView = new Adw.ActionRow({
-        //     title: _("config-file-title"),
-        //     subtitle: "%CONFIGVALUE%",
-        // });
-        // settings.bind(
-        //     "auto-config",
-        //     configFileView,
-        //     "visible",
-        //     Gio.SettingsBindFlags.DEFAULT
-        // );
-        // autoGroup.add(configFileView);
+        // Config file view
+        const configFileView = new Adw.ActionRow({
+            title: _("config-file-title"),
+            subtitle: "%CONFIGVALUE%",
+        });
+        settings.bind(
+            "auto-config",
+            configFileView,
+            "visible",
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        autoGroup.add(configFileView);
 
-        // // Service address & port view
-        // const serviceAddressView = new Adw.ActionRow({
-        //     title: _("service-address-title"),
-        //     subtitle: "%CONFIGVALUE%",
-        // });
-        // settings.bind(
-        //     "auto-config",
-        //     serviceAddressView,
-        //     "visible",
-        //     Gio.SettingsBindFlags.DEFAULT
-        // );
-        // autoGroup.add(serviceAddressView);
+        // Service address & port view
+        const serviceAddressView = new Adw.ActionRow({
+            title: _("service-address-title"),
+            subtitle: "%CONFIGVALUE%",
+        });
+        settings.bind(
+            "auto-config",
+            serviceAddressView,
+            "visible",
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        autoGroup.add(serviceAddressView);
 
-        // // API key view
-        // const apiKeyView = new Adw.ActionRow({
-        //     title: _("api-key-title"),
-        //     subtitle: "%CONFIGVALUE%",
-        // });
-        // settings.bind(
-        //     "auto-config",
-        //     apiKeyView,
-        //     "visible",
-        //     Gio.SettingsBindFlags.DEFAULT
-        // );
-        // autoGroup.add(apiKeyView);
+        // API key view
+        const apiKeyView = new Adw.ActionRow({
+            title: _("api-key-title"),
+            subtitle: "%CONFIGVALUE%",
+        });
+        settings.bind(
+            "auto-config",
+            apiKeyView,
+            "visible",
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        autoGroup.add(apiKeyView);
 
-        // // Service address & port entry
-        // const serviceAddressEntry = new Adw.EntryRow({
-        //     title: _("service-address-title"),
-        //     tooltip_text: _("service-address-tooltip"),
-        //     show_apply_button: true,
-        // });
-        // settings.bind(
-        //     "auto-config",
-        //     serviceAddressEntry,
-        //     "visible",
-        //     Gio.SettingsBindFlags.INVERT_BOOLEAN
-        // );
-        // settings.bind(
-        //     "service-address",
-        //     serviceAddressEntry,
-        //     "text",
-        //     Gio.SettingsBindFlags.DEFAULT
-        // );
-        // autoGroup.add(serviceAddressEntry);
+        // Service address & port entry
+        const serviceAddressEntry = new Adw.EntryRow({
+            title: _("service-address-title"),
+            tooltip_text: _("service-address-tooltip"),
+            show_apply_button: true,
+        });
+        settings.bind(
+            "auto-config",
+            serviceAddressEntry,
+            "visible",
+            Gio.SettingsBindFlags.INVERT_BOOLEAN
+        );
+        settings.bind(
+            "service-address",
+            serviceAddressEntry,
+            "text",
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        autoGroup.add(serviceAddressEntry);
 
-        // // API key entry
-        // const apiKeyEntry = new Adw.EntryRow({
-        //     title: _("api-key-title"),
-        //     tooltip_text: _("api-key-tooltip"),
-        //     show_apply_button: true,
-        // });
-        // settings.bind(
-        //     "auto-config",
-        //     apiKeyEntry,
-        //     "visible",
-        //     Gio.SettingsBindFlags.INVERT_BOOLEAN
-        // );
-        // settings.bind(
-        //     "api-key",
-        //     apiKeyEntry,
-        //     "text",
-        //     Gio.SettingsBindFlags.DEFAULT
-        // );
-        // autoGroup.add(apiKeyEntry);
+        // API key entry
+        const apiKeyEntry = new Adw.EntryRow({
+            title: _("api-key-title"),
+            tooltip_text: _("api-key-tooltip"),
+            show_apply_button: true,
+        });
+        settings.bind(
+            "auto-config",
+            apiKeyEntry,
+            "visible",
+            Gio.SettingsBindFlags.INVERT_BOOLEAN
+        );
+        settings.bind(
+            "api-key",
+            apiKeyEntry,
+            "text",
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        autoGroup.add(apiKeyEntry);
     }
 
     showAbout() {
