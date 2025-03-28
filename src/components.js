@@ -108,26 +108,27 @@ export class SyncthingPanel {
         });
 
         extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
-            let errorType = "unknown-error";
+            // Use line based gettext function to be able to generate right text pot output
+            let errorText = _("unknown-error");
             switch (error.type) {
                 case Syncthing.Error.DAEMON:
-                    errorType = "daemon-error";
+                    errorText = _("daemon-error");
                     break;
                 case Syncthing.Error.SERVICE:
-                    errorType = "service-error";
+                    errorText = _("service-error");
                     break;
                 case Syncthing.Error.STREAM:
-                    errorType = "decoding-error";
+                    errorText = _("decoding-error");
                     break;
                 case Syncthing.Error.CONNECTION:
-                    errorType = "connection-error";
+                    errorText = _("connection-error");
                     break;
                 case Syncthing.Error.CONFIG:
-                    errorType = "config-error";
+                    errorText = _("config-error");
                     break;
             }
-            console.error(LOG_PREFIX, errorType, error);
-            Main.notifyError("Syncthing Indicator", _(errorType));
+            console.error(LOG_PREFIX, errorText, error);
+            Main.notifyError(_("syncthing-indicator"), errorText);
         });
 
         extension.manager.connect(
