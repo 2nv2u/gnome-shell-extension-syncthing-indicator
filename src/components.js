@@ -2,7 +2,7 @@
 	SyncthingIndicator 0.42
 ================================================================================================================
 
-	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
+	GJS syncthing gnome-shell panel indicator components.
 
 	Copyright (c) 2019-2025, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
@@ -12,6 +12,7 @@ import Gio from "gi://Gio";
 import GObject from "gi://GObject";
 import St from "gi://St";
 
+import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
 
