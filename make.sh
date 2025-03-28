@@ -19,6 +19,7 @@ for LANG_FILE in $SCRIPT_PATH/po/*.po; do
 done
 
 # Compile schemas
+[ -f $CUR_PATH/src/schemas/gschemas.compiled ] && rm -f $CUR_PATH/src/schemas/gschemas.compiled
 glib-compile-schemas $SCRIPT_PATH/src/schemas/
 
 # Zip extensions files
