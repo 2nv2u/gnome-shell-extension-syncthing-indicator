@@ -150,7 +150,7 @@ msgid "config-file-title"
 msgstr ""
 
 #: src/prefs.js:157 src/prefs.js:183
-msgid "service-address-title"
+msgid "service-uri-title"
 msgstr ""
 
 #: src/prefs.js:170 src/prefs.js:203
@@ -158,7 +158,7 @@ msgid "api-key-title"
 msgstr ""
 
 #: src/prefs.js:184
-msgid "service-address-tooltip"
+msgid "service-uri-tooltip"
 msgstr ""
 
 #: src/prefs.js:204

@@ -124,7 +124,7 @@ msgstr "Auto &amp; manual configuration"
 
 #: src/prefs.js:125
 msgid "auto-config-group-description"
-msgstr "By default the extension will search for the connection string by parsing 'syncthing --paths' command or look for the config.xml in the default locations. If this fails you can set the API key and URI yourself."
+msgstr "By default the extension will search for the connection string by parsing 'syncthing --paths' command or look for the config.xml in the default locations.\nIf this fails you can set the API key and URI yourself."
 
 #: src/prefs.js:131
 msgid "auto-config-title"
@@ -139,16 +139,16 @@ msgid "config-file-title"
 msgstr "Configuration file location"
 
 #: src/prefs.js:157 src/prefs.js:183
-msgid "service-address-title"
-msgstr "Service address &amp; port"
+msgid "service-uri-title"
+msgstr "Service URI &amp; port"
 
 #: src/prefs.js:170 src/prefs.js:203
 msgid "api-key-title"
 msgstr "API key"
 
 #: src/prefs.js:184
-msgid "service-address-tooltip"
-msgstr "Service address used to connect to the Syncthing API"
+msgid "service-uri-tooltip"
+msgstr "Service URI used to connect to the Syncthing API"
 
 #: src/prefs.js:204
 msgid "api-key-tooltip"
