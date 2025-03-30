@@ -16,14 +16,15 @@ import * as Signals from "resource:///org/gnome/shell/misc/signals.js";
 import * as Utils from "./utils.js";
 
 const LOG_PREFIX = "syncthing-indicator-manager:";
-const POLL_TIME = 5000;
+const POLL_TIME = 20000;
+const START_DELAY_TIME = 2000;
 const POLL_CONNECTION_HOOK_COUNT = 6; // Poll time * count =  every 2 minutes
 const POLL_CONFIG_HOOK_COUNT = 45; // Poll time * count =  every 15 minutes
 const CONNECTION_RETRY_DELAY = 1000;
 const DEVICE_STATE_DELAY = 600;
 const ITEM_STATE_DELAY = 200;
 const RESCHEDULE_EVENT_DELAY = 50;
-const HTTP_ERROR_RETRIES = 2;
+const HTTP_ERROR_RETRIES = 3;
 
 // Error constants
 export const Error = {
@@ -390,17 +391,17 @@ export const Manager = class Manager extends Signals.EventEmitter {
             switch (state) {
                 case ServiceState.USER_ACTIVE:
                 case ServiceState.SYSTEM_ACTIVE:
-                    this.openConnection(
+                    this._openConnection(
                         "GET",
                         "/rest/system/status",
                         (status) => {
                             this._hostID = status.myID;
                             this._callConfig((config) => {
                                 this._callEvents("limit=1");
+                                this._pollTimer.run(this._pollState.bind(this));
                             });
                         }
                     );
-                    this._pollTimer.run(this._pollState.bind(this));
                     break;
                 case ServiceState.USER_STOPPED:
                 case ServiceState.SYSTEM_STOPPED:
@@ -413,14 +414,14 @@ export const Manager = class Manager extends Signals.EventEmitter {
     }
 
     _callConfig(handler) {
-        this.openConnection("GET", "/rest/system/config", (config) => {
+        this._openConnection("GET", "/rest/system/config", (config) => {
             this._processConfig(config);
             if (handler) handler(config);
         });
     }
 
     _callEvents(options) {
-        this.openConnection("GET", "/rest/events?" + options, (events) => {
+        this._openConnection("GET", "/rest/events?" + options, (events) => {
             for (let i = 0; i < events.length; i++) {
                 console.debug(
                     LOG_PREFIX,
@@ -549,7 +550,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
     }
 
     _callConnections() {
-        this.openConnection("GET", "/rest/system/connections", (data) => {
+        this._openConnection("GET", "/rest/system/connections", (data) => {
             let devices = data.connections;
             for (let deviceID in devices) {
                 if (this.devices.exists(deviceID) && deviceID != this._hostID) {
@@ -587,7 +588,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
             if (config.folders[i].paused) {
                 this.folders.get(config.folders[i].id).setState(State.PAUSED);
             } else {
-                this.openConnection(
+                this._openConnection(
                     "GET",
                     "/rest/db/status?folder=" + config.folders[i].id,
                     (function (folder) {
@@ -641,7 +642,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
                                 device: device,
                             });
                             if (folder.getState() != State.PAUSED) {
-                                this.openConnection(
+                                this._openConnection(
                                     "GET",
                                     "/rest/db/completion?folder=" +
                                         proxy.id +
@@ -688,7 +689,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
                 this._isServiceEnabled();
                 this._callConnections();
             }
-            this.openConnection("GET", "/rest/system/error", (data) => {
+            this._openConnection("GET", "/rest/system/error", (data) => {
                 let errorTime;
                 let errors = data.errors;
                 if (errors != null) {
@@ -812,17 +813,17 @@ export const Manager = class Manager extends Signals.EventEmitter {
 
     _isServiceEnabled() {
         let state = this._serviceState();
-        console.info(
-            LOG_PREFIX,
-            "service enabled",
-            state.user,
-            state.enabled,
-            this._serviceEnabled
-        );
         if (
             (state.enabled || state.disabled) &&
             state.enabled != this._serviceEnabled
         ) {
+            console.debug(
+                LOG_PREFIX,
+                "service enabled",
+                state.user,
+                state.enabled,
+                this._serviceEnabled
+            );
             this._serviceEnabled = state.enabled;
             if (state.user) {
                 this.emit(
@@ -873,12 +874,12 @@ export const Manager = class Manager extends Signals.EventEmitter {
         return result;
     }
 
-    abortConnections() {
+    _abortConnections() {
         this._httpAborting = true;
         this._httpSession.abort();
     }
 
-    openConnection(method, path, callback) {
+    _openConnection(method, path, callback) {
         if (this._extensionConfig.exists()) {
             let msg = Soup.Message.new(
                 method,
@@ -888,11 +889,11 @@ export const Manager = class Manager extends Signals.EventEmitter {
                 "X-API-Key",
                 this._extensionConfig.getAPIKey()
             );
-            this.openConnectionMessage(msg, callback);
+            this._openConnectionMessage(msg, callback);
         }
     }
 
-    openConnectionMessage(msg, callback) {
+    _openConnectionMessage(msg, callback) {
         if (this._extensionConfig.exists() && this._serviceActive) {
             console.debug(
                 LOG_PREFIX,
@@ -923,7 +924,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
                                 );
                                 // Retry this connection attempt
                                 Utils.Timer.run(CONNECTION_RETRY_DELAY, () => {
-                                    this.openConnectionMessage(msg, callback);
+                                    this._openConnectionMessage(msg, callback);
                                 });
                             }
                         }
@@ -952,8 +953,9 @@ export const Manager = class Manager extends Signals.EventEmitter {
                         }
                     } else if (!this._httpAborting) {
                         this._httpErrorCount++;
-                        if (this._httpErrorCount > HTTP_ERROR_RETRIES) {
+                        if (this._httpErrorCount >= HTTP_ERROR_RETRIES) {
                             this._pollTimer.cancel();
+                            this._httpErrorCount = 0;
                             connected = false;
                         }
                         console.error(
@@ -1023,24 +1025,28 @@ export const Manager = class Manager extends Signals.EventEmitter {
     startService() {
         this._setService();
         this._serviceCommand("start");
+        Utils.Timer.run(START_DELAY_TIME, () => {
+            this._isServiceActive();
+        });
     }
 
     stopService() {
-        this.abortConnections();
+        this._abortConnections();
         this._serviceCommand("stop");
+        this._isServiceActive();
     }
 
     rescan(folder) {
         if (folder) {
-            this.openConnection("POST", "/rest/db/scan?folder=" + folder.id);
+            this._openConnection("POST", "/rest/db/scan?folder=" + folder.id);
         } else {
-            this.openConnection("POST", "/rest/db/scan");
+            this._openConnection("POST", "/rest/db/scan");
         }
     }
 
     resume(device) {
         if (device) {
-            this.openConnection(
+            this._openConnection(
                 "POST",
                 "/rest/system/resume?device=" + device.id
             );
@@ -1049,7 +1055,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
 
     pause(device) {
         if (device) {
-            this.openConnection(
+            this._openConnection(
                 "POST",
                 "/rest/system/pause?device=" + device.id
             );

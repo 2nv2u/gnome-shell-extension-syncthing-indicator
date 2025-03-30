@@ -207,6 +207,15 @@ export const SectionMenu = GObject.registerClass(
         addSectionItem(item) {
             this.section.addMenuItem(item);
         }
+
+        removeSectionItems() {
+            this.section.removeAll();
+        }
+
+        destroy() {
+            this.section.destroy();
+            super.destroy();
+        }
     }
 );
 
@@ -225,6 +234,7 @@ export const FolderMenu = GObject.registerClass(
                         case Syncthing.ServiceState.USER_STOPPED:
                         case Syncthing.ServiceState.SYSTEM_STOPPED:
                         case Syncthing.ServiceState.DISCONNECTED:
+                            this.removeSectionItems();
                             this.setSensitive(false);
                             this.visible = false;
                             break;
@@ -341,6 +351,7 @@ export const DeviceMenu = GObject.registerClass(
                         case Syncthing.ServiceState.USER_STOPPED:
                         case Syncthing.ServiceState.SYSTEM_STOPPED:
                         case Syncthing.ServiceState.DISCONNECTED:
+                            this.removeSectionItems();
                             this._toggleVisibility(false);
                             break;
                         case Syncthing.ServiceState.CONNECTED:
@@ -401,13 +412,7 @@ export const DeviceMenu = GObject.registerClass(
             let elementsVisible =
                 this._autoSwitch.visible ||
                 this._serviceSwitch.visible ||
-                this.section.length > 0;
-            console.error(
-                LOG_PREFIX,
-                "toggle visibilty",
-                elementsVisible,
-                toggle
-            );
+                this.section.numMenuItems > 0;
             if (toggle) {
                 this.setSensitive(toggle);
                 this.visible = toggle;
@@ -415,9 +420,15 @@ export const DeviceMenu = GObject.registerClass(
                 this.setSensitive(elementsVisible);
                 this.visible = elementsVisible;
             }
+            console.error(
+                LOG_PREFIX,
+                this._autoSwitch.visible,
+                this._serviceSwitch.visible,
+                this.section.numMenuItems
+            );
             this._deviceSeparator.visible =
                 (this._autoSwitch.visible || this._serviceSwitch.visible) &&
-                this.section.length > 0;
+                this.section.numMenuItems > 0;
         }
     }
 );
