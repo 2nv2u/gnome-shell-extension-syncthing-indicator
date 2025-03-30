@@ -1036,6 +1036,10 @@ export const Manager = class Manager extends Signals.EventEmitter {
         this._isServiceActive();
     }
 
+    getServiceURI() {
+        return this._extensionConfig.getURI();
+    }
+
     rescan(folder) {
         if (folder) {
             this._openConnection("POST", "/rest/db/scan?folder=" + folder.id);

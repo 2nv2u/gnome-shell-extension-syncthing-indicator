@@ -161,7 +161,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         // Service URI & port view
         const serviceAddressView = new Adw.ActionRow({
             title: _("service-uri-title"),
-            subtitle: config.fileUri != null ? config.fileUri : _("unknown"),
+            subtitle: config.fileURI != null ? config.fileURI : _("unknown"),
         });
         settings.bind(
             "auto-config",

@@ -30,9 +30,9 @@ export default class Config {
 
     clear() {
         this.filePath = null;
-        this.fileUri = null;
+        this.fileURI = null;
         this.fileApiKey = null;
-        this.prefUri = null;
+        this.prefURI = null;
         this.prefApiKey = null;
         this._autoConfig = true;
         this._exists = false;
@@ -97,7 +97,7 @@ export default class Config {
             if (reMatch[0]) {
                 let address = reMatch[1].fetch(2);
                 this.fileApiKey = reMatch[1].fetch(3);
-                this.fileUri =
+                this.fileURI =
                     "http" +
                     (reMatch[1].fetch(1) == "true" ? "s" : "") +
                     "://" +
@@ -106,7 +106,7 @@ export default class Config {
                 console.info(
                     LOG_PREFIX,
                     "found config from file",
-                    this.fileUri,
+                    this.fileURI,
                     this.fileApiKey,
                     this.filePath.get_path()
                 );
@@ -126,12 +126,12 @@ export default class Config {
                 .search("https?://[-a-zA-Z0-9.]{1,256}:[0-9]{2,5}") >= 0
         ) {
             this.prefApiKey = this.settings.get_string("api-key");
-            this.prefUri = this.settings.get_string("service-uri");
+            this.prefURI = this.settings.get_string("service-uri");
             this._exists = true;
             console.info(
                 LOG_PREFIX,
                 "found config from preferences",
-                this.prefUri,
+                this.prefURI,
                 this.prefApiKey
             );
         } else {
@@ -154,9 +154,9 @@ export default class Config {
 
     getURI() {
         if (this._autoConfig) {
-            return this.fileUri;
+            return this.fileURI;
         } else {
-            return this.prefUri;
+            return this.prefURI;
         }
     }
 }

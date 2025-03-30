@@ -706,7 +706,7 @@ export const AdvancedButton = GObject.registerClass(
 
             this.connect("clicked", () => {
                 Gio.AppInfo.launch_default_for_uri(
-                    this.extension.manager.config.getURI(),
+                    this.extension.manager.getServiceURI(),
                     null
                 );
                 this.extension.indicator.close();
