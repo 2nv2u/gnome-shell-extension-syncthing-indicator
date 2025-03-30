@@ -2,7 +2,7 @@
 	SyncthingManager 0.42
 ================================================================================================================
 
-	GJS syncthing systemd manager
+	GJS syncthing systemd manager.
 
 	Copyright (c) 2019-2025, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
@@ -13,13 +13,17 @@ import GLib from "gi://GLib";
 import Soup from "gi://Soup";
 
 import * as Signals from "resource:///org/gnome/shell/misc/signals.js";
+import * as Utils from "./utils.js";
 
 const LOG_PREFIX = "syncthing-indicator-manager:";
-const POLL_TIME = 20000;
+const POLL_TIME = 5000;
+const POLL_CONNECTION_HOOK_COUNT = 6; // Poll time * count =  every 2 minutes
+const POLL_CONFIG_HOOK_COUNT = 45; // Poll time * count =  every 15 minutes
 const CONNECTION_RETRY_DELAY = 1000;
 const DEVICE_STATE_DELAY = 600;
 const ITEM_STATE_DELAY = 200;
 const RESCHEDULE_EVENT_DELAY = 50;
+const HTTP_ERROR_RETRIES = 2;
 
 // Error constants
 export const Error = {
@@ -71,6 +75,8 @@ export const ServiceState = {
     SYSTEM_STOPPED: "systemStopped",
     SYSTEM_ENABLED: "systemEnabled",
     SYSTEM_DISABLED: "systemDisabled",
+    CONNECTED: "connected",
+    DISCONNECTED: "disconnected",
     ERROR: "error",
 };
 
@@ -108,63 +114,13 @@ export const EventType = {
     STATE_CHANGED: "StateChanged",
 };
 
-class Timer {
-    constructor(timeout, recurring = false, priority = GLib.PRIORITY_DEFAULT) {
-        this._timeout = timeout;
-        this._recurring = recurring;
-        this._priority = priority;
-    }
-
-    run(
-        callback,
-        timeout = this._timeout,
-        recurring = this._recurring,
-        priority = this._priority
-    ) {
-        this.cancel();
-        this._run(callback, timeout, recurring, priority);
-    }
-
-    _run(callback, timeout, recurring, priority) {
-        if (!this._source || recurring) {
-            this._source = GLib.timeout_source_new(timeout);
-            this._source.set_priority(priority);
-            this._source.set_callback(() => {
-                callback();
-                if (recurring) {
-                    this._run(callback, timeout, recurring, priority);
-                } else {
-                    return GLib.SOURCE_REMOVE;
-                }
-            });
-        }
-        this._source.attach(null);
-    }
-
-    cancel() {
-        if (this._source) {
-            this._source.destroy();
-            this._source = null;
-        }
-    }
-
-    static run(
-        timeout,
-        callback,
-        recurring = false,
-        priority = GLib.PRIORITY_DEFAULT
-    ) {
-        return new Timer(timeout, recurring, priority).run(callback);
-    }
-}
-
 // Abstract item used for folders and devices
 class Item extends Signals.EventEmitter {
     constructor(data, manager) {
         super();
         this._state = State.UNKNOWN;
         this._stateEmitted = State.UNKNOWN;
-        this._stateTimer = new Timer(ITEM_STATE_DELAY);
+        this._stateTimer = new Utils.Timer(ITEM_STATE_DELAY);
         this.id = data.id;
         this._name = data.name;
         this._manager = manager;
@@ -275,7 +231,7 @@ class ItemCollection extends Signals.EventEmitter {
 class Device extends Item {
     constructor(data, manager) {
         super(data, manager);
-        this._determineTimer = new Timer(DEVICE_STATE_DELAY);
+        this._determineTimer = new Utils.Timer(DEVICE_STATE_DELAY);
         this.folders = new ItemCollection();
         this.folders.connect(Signal.ADD, (collection, folder) => {
             folder.connect(
@@ -399,151 +355,9 @@ class FolderCompletionProxy extends Folder {
     }
 }
 
-// Synthing configuration
-class Config {
-    CONFIG_PATH_KEY = "Configuration file";
-
-    constructor(serviceFilePath) {
-        this.serviceFilePath = serviceFilePath;
-        this.clear();
-    }
-
-    destroy() {
-        this.clear();
-    }
-
-    clear() {
-        this._uri = "";
-        this._address = "";
-        this._apikey = "";
-        this._secure = false;
-        this._exists = false;
-    }
-
-    load() {
-        this._exists = false;
-        let configFile = Gio.File.new_for_path("");
-        // Extract syncthing config file location from the synthing path command
-        let result = GLib.spawn_sync(
-            null,
-            ["syncthing", "--paths"],
-            null,
-            GLib.SpawnFlags.SEARCH_PATH,
-            null
-        )[1];
-        let paths = {},
-            pathArray = new TextDecoder().decode(result).split("\n\n");
-        for (let i = 0; i < pathArray.length; i++) {
-            let items = pathArray[i].split(":\n\t");
-            if (items.length == 2) paths[items[0]] = items[1].split("\n\t");
-        }
-        if (this.CONFIG_PATH_KEY in paths) {
-            configFile = Gio.File.new_for_path(paths[this.CONFIG_PATH_KEY][0]);
-        }
-        // As alternative, extract syncthing configuration from the default user config file
-        if (!configFile.query_exists(null)) {
-            configFile = Gio.File.new_for_path(
-                GLib.get_user_state_dir() + "/syncthing/config.xml"
-            );
-        }
-        // As alternative, extract syncthing configuration from the deprecated user config file
-        if (!configFile.query_exists(null)) {
-            configFile = Gio.File.new_for_path(
-                GLib.get_user_config_dir() + "/syncthing/config.xml"
-            );
-        }
-        if (configFile.query_exists(null)) {
-            let configInputStream = configFile.read(null);
-            let configDataInputStream =
-                Gio.DataInputStream.new(configInputStream);
-            let config = configDataInputStream.read_until("", null).toString();
-            configInputStream.close(null);
-            let regExp = new GLib.Regex(
-                '<gui.*?tls="(true|false)".*?>.*?<address>(.*?)</address>.*?<apikey>(.*?)</apikey>.*?</gui>',
-                GLib.RegexCompileFlags.DOTALL,
-                0
-            );
-            let reMatch = regExp.match(config, 0);
-            if (reMatch[0]) {
-                this._address = reMatch[1].fetch(2);
-                this._apikey = reMatch[1].fetch(3);
-                this._uri =
-                    "http" +
-                    (reMatch[1].fetch(1) == "true" ? "s" : "") +
-                    "://" +
-                    this._address;
-                this._exists = true;
-                console.info(
-                    LOG_PREFIX,
-                    "found config",
-                    this._address,
-                    this._apikey,
-                    this._uri
-                );
-            } else {
-                console.error(LOG_PREFIX, "can't find gui xml node in config");
-            }
-        }
-    }
-
-    setService(force = false) {
-        // (Force) Copy systemd config file to systemd's configuration directory (if it doesn't exist)
-        let systemDConfigPath = GLib.get_user_config_dir() + "/systemd/user";
-        let systemDConfigFile = Service.NAME + ".service";
-        let systemDConfigFileTo = Gio.File.new_for_path(
-            systemDConfigPath + "/" + systemDConfigFile
-        );
-        if (force || !systemDConfigFileTo.query_exists(null)) {
-            let systemDConfigFileFrom = Gio.File.new_for_path(
-                this.serviceFilePath + "/" + systemDConfigFile
-            );
-            let systemdConfigDirectory =
-                Gio.File.new_for_path(systemDConfigPath);
-            if (!systemdConfigDirectory.query_exists(null)) {
-                systemdConfigDirectory.make_directory_with_parents(null);
-            }
-            let copyFlag = Gio.FileCopyFlags.NONE;
-            if (force) copyFlag = Gio.FileCopyFlags.OVERWRITE;
-            if (
-                systemDConfigFileFrom.copy(
-                    systemDConfigFileTo,
-                    copyFlag,
-                    null,
-                    null
-                )
-            ) {
-                console.info(
-                    LOG_PREFIX,
-                    "systemd configuration file copied to " +
-                        systemDConfigFileTo
-                );
-            } else {
-                console.warn(
-                    LOG_PREFIX,
-                    "couldn't copy systemd configuration file to " +
-                        systemDConfigFileTo
-                );
-            }
-        }
-    }
-
-    exists() {
-        if (!this._exists) this.load();
-        return this._exists;
-    }
-
-    getAPIKey() {
-        return this._apikey;
-    }
-
-    getURI() {
-        return this._uri;
-    }
-}
-
 // Main system manager
 export const Manager = class Manager extends Signals.EventEmitter {
-    constructor(serviceFilePath) {
+    constructor(extensionConfig, extensionPath) {
         super();
         this.folders = new ItemCollection();
         this.devices = new ItemCollection();
@@ -558,17 +372,17 @@ export const Manager = class Manager extends Signals.EventEmitter {
                 this.emit(Signal.DEVICE_ADD, device);
             }
         });
-        this.config = new Config(serviceFilePath);
         this._httpSession = new Soup.Session();
-        this._httpSession.ssl_strict = false; // Accept self signed certificates for now
+        this._httpSession.ssl_strict = false; // Accept self signed certificates (for now)
         this._httpAborting = false;
-        this._serviceFailed = false;
+        this._httpErrorCount = 0;
+        this._extensionConfig = extensionConfig;
+        this._extensionPath = extensionPath;
+        this._serviceConnected = false;
         this._serviceActive = false;
         this._serviceEnabled = false;
-        this._pollTimer = new Timer(POLL_TIME, true);
-        this._pollCount = 1; // Start at 1 to stop from recycling the hooks
-        this._pollConnectionHook = 6; // Every 2 minutes
-        this._pollConfigHook = 45; // Every 15 minutes
+        this._pollTimer = new Utils.Timer(POLL_TIME, true);
+        this._pollCount = 1; // Start at 1 to stop from cycling the hooks at init
         this._lastEventID = 1;
         this._hostID = "";
         this._lastErrorTime = Date.now();
@@ -592,6 +406,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
                 case ServiceState.SYSTEM_STOPPED:
                     this.destroy();
                     this._lastEventID = 1;
+                    this._httpErrorCount = 0;
                     break;
             }
         });
@@ -727,7 +542,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
                 }
             }
             // Reschedule this event stream
-            Timer.run(RESCHEDULE_EVENT_DELAY, () => {
+            Utils.Timer.run(RESCHEDULE_EVENT_DELAY, () => {
                 this._callEvents("since=" + this._lastEventID);
             });
         });
@@ -859,17 +674,17 @@ export const Manager = class Manager extends Signals.EventEmitter {
             LOG_PREFIX,
             "poll state",
             this._pollCount,
-            this._pollCount % this._pollConfigHook,
-            this._pollCount % this._pollConnectionHook
+            this._pollCount % POLL_CONFIG_HOOK_COUNT,
+            this._pollCount % POLL_CONNECTION_HOOK_COUNT
         );
-        if (this._isServiceActive() && this.config.exists()) {
-            if (this._pollCount % this._pollConfigHook == 0) {
+        if (this._extensionConfig.exists() && this._isServiceActive()) {
+            if (this._pollCount % POLL_CONFIG_HOOK_COUNT == 0) {
                 // TODO: this should not be necessary, we should remove old items
                 this.folders.destroy();
                 this.devices.destroy();
                 this._callConfig();
             }
-            if (this._pollCount % this._pollConnectionHook == 0) {
+            if (this._pollCount % POLL_CONNECTION_HOOK_COUNT == 0) {
                 this._isServiceEnabled();
                 this._callConnections();
             }
@@ -896,6 +711,47 @@ export const Manager = class Manager extends Signals.EventEmitter {
         this._pollCount++;
     }
 
+    _setService(force = false) {
+        // (Force) Copy systemd config file to systemd's configuration directory (if it doesn't exist)
+        let systemDConfigPath = GLib.get_user_config_dir() + "/systemd/user";
+        let systemDConfigFile = Service.NAME + ".service";
+        let systemDConfigFileTo = Gio.File.new_for_path(
+            systemDConfigPath + "/" + systemDConfigFile
+        );
+        if (force || !systemDConfigFileTo.query_exists(null)) {
+            let systemDConfigFileFrom = Gio.File.new_for_path(
+                this._extensionPath + "/" + systemDConfigFile
+            );
+            let systemdConfigDirectory =
+                Gio.File.new_for_path(systemDConfigPath);
+            if (!systemdConfigDirectory.query_exists(null)) {
+                systemdConfigDirectory.make_directory_with_parents(null);
+            }
+            let copyFlag = Gio.FileCopyFlags.NONE;
+            if (force) copyFlag = Gio.FileCopyFlags.OVERWRITE;
+            if (
+                systemDConfigFileFrom.copy(
+                    systemDConfigFileTo,
+                    copyFlag,
+                    null,
+                    null
+                )
+            ) {
+                console.info(
+                    LOG_PREFIX,
+                    "systemd configuration file copied to " +
+                        systemDConfigFileTo
+                );
+            } else {
+                console.warn(
+                    LOG_PREFIX,
+                    "couldn't copy systemd configuration file to " +
+                        systemDConfigFileTo
+                );
+            }
+        }
+    }
+
     _serviceState(user = false) {
         let command = this._serviceCommand("is-enabled", user),
             enabled = command == "enabled",
@@ -916,12 +772,10 @@ export const Manager = class Manager extends Signals.EventEmitter {
             let command = this._serviceCommand("is-active", state.user),
                 active = command == "active",
                 failed = command == "failed";
-            if (failed != this._serviceFailed) {
-                this._serviceActive = failed;
-                if (failed) {
-                    console.error(LOG_PREFIX, Error.DAEMON, Service.NAME);
-                    this.emit(Signal.ERROR, { type: Error.DAEMON });
-                }
+            if (failed) {
+                this._serviceActive = !failed;
+                console.error(LOG_PREFIX, Error.DAEMON, Service.NAME);
+                this.emit(Signal.ERROR, { type: Error.DAEMON });
             }
             console.info(
                 LOG_PREFIX,
@@ -1024,16 +878,22 @@ export const Manager = class Manager extends Signals.EventEmitter {
         this._httpSession.abort();
     }
 
-    openConnection(method, uri, callback) {
-        if (this.config.exists()) {
-            let msg = Soup.Message.new(method, this.config.getURI() + uri);
-            msg.request_headers.append("X-API-Key", this.config.getAPIKey());
+    openConnection(method, path, callback) {
+        if (this._extensionConfig.exists()) {
+            let msg = Soup.Message.new(
+                method,
+                this._extensionConfig.getURI() + path
+            );
+            msg.request_headers.append(
+                "X-API-Key",
+                this._extensionConfig.getAPIKey()
+            );
             this.openConnectionMessage(msg, callback);
         }
     }
 
     openConnectionMessage(msg, callback) {
-        if (this._serviceActive && this.config.exists()) {
+        if (this._extensionConfig.exists() && this._serviceActive) {
             console.debug(
                 LOG_PREFIX,
                 "opening connection",
@@ -1045,12 +905,14 @@ export const Manager = class Manager extends Signals.EventEmitter {
                 GLib.PRIORITY_DEFAULT,
                 null,
                 (session, result) => {
+                    let connected = false;
                     if (msg.status_code == Soup.Status.OK) {
                         let response;
                         try {
-                            let bytes = session.send_and_read_finish(result);
-                            let decoder = new TextDecoder("utf-8");
-                            response = decoder.decode(bytes.get_data());
+                            response = new TextDecoder("utf-8").decode(
+                                session.send_and_read_finish(result).get_data()
+                            );
+                            connected = true;
                         } catch (error) {
                             if (error.code == Gio.IOErrorEnum.TIMED_OUT) {
                                 console.info(
@@ -1060,7 +922,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
                                     msg.method + ":" + msg.uri.get_path()
                                 );
                                 // Retry this connection attempt
-                                Timer.run(CONNECTION_RETRY_DELAY, () => {
+                                Utils.Timer.run(CONNECTION_RETRY_DELAY, () => {
                                     this.openConnectionMessage(msg, callback);
                                 });
                             }
@@ -1089,12 +951,18 @@ export const Manager = class Manager extends Signals.EventEmitter {
                             });
                         }
                     } else if (!this._httpAborting) {
+                        this._httpErrorCount++;
+                        if (this._httpErrorCount > HTTP_ERROR_RETRIES) {
+                            this._pollTimer.cancel();
+                            connected = false;
+                        }
                         console.error(
                             LOG_PREFIX,
                             Error.CONNECTION,
                             msg.reason_phrase,
                             msg.method + ":" + msg.get_uri().get_path(),
-                            msg.status_code
+                            msg.status_code,
+                            this._httpErrorCount
                         );
                         this.emit(Signal.ERROR, {
                             type: Error.CONNECTION,
@@ -1106,6 +974,15 @@ export const Manager = class Manager extends Signals.EventEmitter {
                                 msg.get_uri().get_path(),
                         });
                     }
+                    if (connected != this._serviceConnected) {
+                        this._serviceConnected = connected;
+                        this.emit(
+                            Signal.SERVICE_CHANGE,
+                            connected
+                                ? ServiceState.CONNECTED
+                                : ServiceState.DISCONNECTED
+                        );
+                    }
                 }
             );
         }
@@ -1113,13 +990,13 @@ export const Manager = class Manager extends Signals.EventEmitter {
 
     destroy() {
         this._pollTimer.cancel();
+        this._extensionConfig.destroy();
         this.folders.destroy();
         this.devices.destroy();
-        this.config.destroy();
     }
 
     attach() {
-        if (!this.config.exists()) {
+        if (!this._extensionConfig.exists()) {
             console.error(LOG_PREFIX, Error.CONFIG);
             this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
             this.emit(Signal.ERROR, { type: Error.CONFIG });
@@ -1133,7 +1010,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
     }
 
     enableService() {
-        this.config.setService(true);
+        this._setService(true);
         this._serviceCommand("enable");
         this._isServiceEnabled();
     }
@@ -1144,9 +1021,8 @@ export const Manager = class Manager extends Signals.EventEmitter {
     }
 
     startService() {
-        this.config.setService();
+        this._setService();
         this._serviceCommand("start");
-        this._serviceFailed = false;
     }
 
     stopService() {
