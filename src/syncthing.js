@@ -975,15 +975,15 @@ export const Manager = class Manager extends Signals.EventEmitter {
                                 ":" +
                                 msg.get_uri().get_path(),
                         });
-                    }
-                    if (connected != this._serviceConnected) {
-                        this._serviceConnected = connected;
-                        this.emit(
-                            Signal.SERVICE_CHANGE,
-                            connected
-                                ? ServiceState.CONNECTED
-                                : ServiceState.DISCONNECTED
-                        );
+                        if (connected != this._serviceConnected) {
+                            this._serviceConnected = connected;
+                            this.emit(
+                                Signal.SERVICE_CHANGE,
+                                connected
+                                    ? ServiceState.CONNECTED
+                                    : ServiceState.DISCONNECTED
+                            );
+                        }
                     }
                 }
             );
