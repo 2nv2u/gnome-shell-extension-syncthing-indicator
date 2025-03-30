@@ -81,7 +81,7 @@ msgstr "Synchting Indicator settings"
 
 #: src/prefs.js:63
 msgid "settings-group-description"
-msgstr "You can change some settings on the location and / or look &amp; feel"
+msgstr "You can change some settings on the location and/or look &amp; feel"
 
 #: src/prefs.js:69
 msgid "quick-settings"
@@ -129,7 +129,7 @@ msgstr "Auto &amp; manual configuration"
 
 #: src/prefs.js:128
 msgid "auto-config-group-description"
-msgstr "By default the connection string will be resolved by parsing 'syncthing --paths' command or look for the config.xml in the default locations.\nIf this fails you can set the API key and URI yourself."
+msgstr "The connection will be extracted from the config by parsing the command 'syncthing --paths' or it will be searched in the default locations.\nIf this fails you can set the API key and URI yourself."
 
 #: src/prefs.js:134
 msgid "auto-config-title"
