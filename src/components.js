@@ -49,6 +49,18 @@ export const SyncthingPanelIcon = GObject.registerClass(
             } else {
                 this.setGIcon(this._idleGIcon);
             }
+
+            extension.manager.connect(
+                Syncthing.Signal.HOST_ADD,
+                (manager, device) => {
+                    device.connect(
+                        Syncthing.Signal.STATE_CHANGE,
+                        (device, state) => {
+                            this.setState(state);
+                        }
+                    );
+                }
+            );
         }
 
         setState(state) {
@@ -91,6 +103,10 @@ export class SyncthingPanel {
         this.menu = menu;
         this.icon = new SyncthingPanelIcon(extension);
 
+        // No config item
+        this._notConnectedItem = new NotConnectedItem(extension);
+        this.menu.addMenuItem(this._notConnectedItem);
+
         // Device & folder section
         this._deviceMenu = new DeviceMenu(extension);
         this.menu.addMenuItem(this._deviceMenu);
@@ -131,46 +147,6 @@ export class SyncthingPanel {
             console.error(LOG_PREFIX, errorText, error);
             Main.notifyError(_("syncthing-indicator"), errorText);
         });
-
-        extension.manager.connect(
-            Syncthing.Signal.SERVICE_CHANGE,
-            (manager, state) => {
-                switch (state) {
-                    case Syncthing.ServiceState.USER_STOPPED:
-                    case Syncthing.ServiceState.SYSTEM_STOPPED:
-                        this._folderMenu.setSensitive(false);
-                        break;
-                }
-            }
-        );
-
-        extension.manager.connect(
-            Syncthing.Signal.FOLDER_ADD,
-            (manager, folder) => {
-                this._folderMenu.setSensitive(true);
-                this._folderMenu.addSectionItem(new FolderMenuItem(folder));
-            }
-        );
-
-        extension.manager.connect(
-            Syncthing.Signal.DEVICE_ADD,
-            (manager, device) => {
-                this._deviceMenu.addSectionItem(new DeviceMenuItem(device));
-            }
-        );
-
-        extension.manager.connect(
-            Syncthing.Signal.HOST_ADD,
-            (manager, device) => {
-                this._deviceMenu.setHost(device);
-                device.connect(
-                    Syncthing.Signal.STATE_CHANGE,
-                    (device, state) => {
-                        this.icon.setState(state);
-                    }
-                );
-            }
-        );
     }
 
     showServiceSwitch(toggle) {
@@ -237,9 +213,35 @@ export const SectionMenu = GObject.registerClass(
 // Syncthing indicator fodler menu
 export const FolderMenu = GObject.registerClass(
     class FolderMenu extends SectionMenu {
-        _init() {
+        _init(extension) {
             super._init(_("folders"), "system-file-manager-symbolic");
             this.setSensitive(false);
+            this.visible = false;
+
+            extension.manager.connect(
+                Syncthing.Signal.SERVICE_CHANGE,
+                (manager, state) => {
+                    switch (state) {
+                        case Syncthing.ServiceState.USER_STOPPED:
+                        case Syncthing.ServiceState.SYSTEM_STOPPED:
+                        case Syncthing.ServiceState.DISCONNECTED:
+                            this.setSensitive(false);
+                            this.visible = false;
+                            break;
+                        case Syncthing.ServiceState.CONNECTED:
+                            this.setSensitive(true);
+                            this.visible = true;
+                            break;
+                    }
+                }
+            );
+
+            extension.manager.connect(
+                Syncthing.Signal.FOLDER_ADD,
+                (manager, folder) => {
+                    this.addSectionItem(new FolderMenuItem(folder));
+                }
+            );
         }
     }
 );
@@ -250,14 +252,11 @@ export const FolderMenuItem = GObject.registerClass(
         _init(folder) {
             super._init();
             this._folder = folder;
-
             let gicon;
-
             // Remove ~ from folders, resolving this doesn not work
             this.file = Gio.File.new_for_path(
                 this._folder.path.replace("~/", "")
             );
-
             try {
                 gicon = this.file
                     .query_info("standard::symbolic-icon", 0, null)
@@ -321,7 +320,6 @@ export const DeviceMenu = GObject.registerClass(
     class DeviceMenu extends SectionMenu {
         _init(extension) {
             super._init(_("this-device"), "computer-symbolic");
-
             this.label.style_class = "syncthing-state-label";
 
             // TODO: hide on no devices
@@ -333,6 +331,38 @@ export const DeviceMenu = GObject.registerClass(
 
             this._serviceSwitch = new ServiceSwitchMenuItem(extension);
             this.menu.addMenuItem(this._serviceSwitch, 0);
+
+            this._toggleVisibility(false);
+
+            extension.manager.connect(
+                Syncthing.Signal.SERVICE_CHANGE,
+                (manager, state) => {
+                    switch (state) {
+                        case Syncthing.ServiceState.USER_STOPPED:
+                        case Syncthing.ServiceState.SYSTEM_STOPPED:
+                        case Syncthing.ServiceState.DISCONNECTED:
+                            this._toggleVisibility(false);
+                            break;
+                        case Syncthing.ServiceState.CONNECTED:
+                            this._toggleVisibility(true);
+                            break;
+                    }
+                }
+            );
+
+            extension.manager.connect(
+                Syncthing.Signal.DEVICE_ADD,
+                (manager, device) => {
+                    this.addSectionItem(new DeviceMenuItem(device));
+                }
+            );
+
+            extension.manager.connect(
+                Syncthing.Signal.HOST_ADD,
+                (manager, device) => {
+                    this.setHost(device);
+                }
+            );
         }
 
         setHost(device) {
@@ -353,43 +383,41 @@ export const DeviceMenu = GObject.registerClass(
         }
 
         addSectionItem(item) {
-            this._deviceSeparator.visible =
-                this._autoSwitch.visible || this._serviceSwitch.visible;
             super.addSectionItem(item);
+            this._toggleVisibility(true);
         }
 
         showAutostartSwitch(toggle) {
             this._autoSwitch.visible = toggle;
-            this._deviceSeparator.visible =
-                this._autoSwitch.visible || this._serviceSwitch.visible;
+            this._toggleVisibility(toggle);
         }
 
         showServiceSwitch(toggle) {
             this._serviceSwitch.visible = toggle;
-            this._deviceSeparator.visible =
-                this._autoSwitch.visible || this._serviceSwitch.visible;
+            this._toggleVisibility(toggle);
         }
-    }
-);
 
-// Syncthing indicator device menu item
-export const DevicesMenuSeparator = GObject.registerClass(
-    class DevicesMenuSeparator extends PopupMenu.PopupMenuItem {
-        _init() {
-            super._init(_("devices"), {
-                can_focus: false,
-                hover: false,
-                reactive: false,
-                style_class: "separator",
-            });
-            this.visible = false;
-            this.icon = new St.Icon({
-                gicon: new Gio.ThemedIcon({
-                    name: "network-workgroup-symbolic",
-                }),
-                style_class: "popup-menu-icon syncthing-state-icon",
-            });
-            this.actor.insert_child_at_index(this.icon, 1);
+        _toggleVisibility(toggle) {
+            let elementsVisible =
+                this._autoSwitch.visible ||
+                this._serviceSwitch.visible ||
+                this.section.length > 0;
+            console.error(
+                LOG_PREFIX,
+                "toggle visibilty",
+                elementsVisible,
+                toggle
+            );
+            if (toggle) {
+                this.setSensitive(toggle);
+                this.visible = toggle;
+            } else {
+                this.setSensitive(elementsVisible);
+                this.visible = elementsVisible;
+            }
+            this._deviceSeparator.visible =
+                (this._autoSwitch.visible || this._serviceSwitch.visible) &&
+                this.section.length > 0;
         }
     }
 );
@@ -453,6 +481,55 @@ export const DeviceMenuItem = GObject.registerClass(
             } else {
                 this._device.pause();
             }
+        }
+    }
+);
+
+// Syncthing indicator device menu item
+export const DevicesMenuSeparator = GObject.registerClass(
+    class DevicesMenuSeparator extends PopupMenu.PopupMenuItem {
+        _init() {
+            super._init(_("devices"), {
+                can_focus: false,
+                hover: false,
+                reactive: false,
+                style_class: "separator",
+            });
+            this.visible = false;
+            this.icon = new St.Icon({
+                gicon: new Gio.ThemedIcon({
+                    name: "network-workgroup-symbolic",
+                }),
+                style_class: "popup-menu-icon syncthing-state-icon",
+            });
+            this.actor.insert_child_at_index(this.icon, 1);
+        }
+    }
+);
+
+// Syncthing indicator no config item
+export const NotConnectedItem = GObject.registerClass(
+    class NotConnectedItem extends PopupMenu.PopupMenuItem {
+        _init(extension) {
+            super._init(_("not-connected"), {
+                can_focus: false,
+                hover: false,
+                reactive: false,
+            });
+
+            extension.manager.connect(
+                Syncthing.Signal.SERVICE_CHANGE,
+                (manager, state) => {
+                    switch (state) {
+                        case Syncthing.ServiceState.DISCONNECTED:
+                            this.visible = true;
+                            break;
+                        case Syncthing.ServiceState.CONNECTED:
+                            this.visible = false;
+                            break;
+                    }
+                }
+            );
         }
     }
 );
@@ -588,14 +665,10 @@ export const RescanButton = GObject.registerClass(
                 Syncthing.Signal.SERVICE_CHANGE,
                 (manager, state) => {
                     switch (state) {
-                        case Syncthing.ServiceState.USER_ACTIVE:
-                        case Syncthing.ServiceState.SYSTEM_ACTIVE:
+                        case Syncthing.ServiceState.CONNECTED:
                             this.reactive = true;
                             break;
-                        case Syncthing.ServiceState.USER_STOPPED:
-                        case Syncthing.ServiceState.SYSTEM_STOPPED:
-                            this.reactive = false;
-                            break;
+                        case Syncthing.ServiceState.DISCONNECTED:
                         case Syncthing.ServiceState.ERROR:
                             this.reactive = false;
                             break;
@@ -632,14 +705,10 @@ export const AdvancedButton = GObject.registerClass(
                 Syncthing.Signal.SERVICE_CHANGE,
                 (manager, state) => {
                     switch (state) {
-                        case Syncthing.ServiceState.USER_ACTIVE:
-                        case Syncthing.ServiceState.SYSTEM_ACTIVE:
+                        case Syncthing.ServiceState.CONNECTED:
                             this.reactive = true;
                             break;
-                        case Syncthing.ServiceState.USER_STOPPED:
-                        case Syncthing.ServiceState.SYSTEM_STOPPED:
-                            this.reactive = false;
-                            break;
+                        case Syncthing.ServiceState.DISCONNECTED:
                         case Syncthing.ServiceState.ERROR:
                             this.reactive = false;
                             break;
