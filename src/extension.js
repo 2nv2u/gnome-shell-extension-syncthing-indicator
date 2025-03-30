@@ -19,18 +19,28 @@ import {
 import * as Syncthing from "./syncthing.js";
 import * as PanelMenu from "./panelMenu.js";
 import * as QuickSetting from "./quickSetting.js";
+import * as Utils from "./utils.js";
+import Config from "./config.js";
+
+const SETTINGS_DELAY = 500;
 
 // Syncthing indicator extension
 export default class SyncthingIndicatorExtension extends Extension {
     // Syncthing indicator enabler
     enable() {
+        this._settingTimer = new Utils.Timer(SETTINGS_DELAY);
         this.settings = this.getSettings();
         this.settings.connect("changed", () => {
-            this.indicator.close();
-            this.disable();
-            this.enable();
+            this._settingTimer.run(() => {
+                this.indicator.close();
+                this.disable();
+                this.enable();
+            });
         });
-        this.manager = new Syncthing.Manager(this.metadata.path);
+        this.manager = new Syncthing.Manager(
+            new Config(this.settings, false),
+            this.metadata.path
+        );
         switch (this.settings.get_int("menu")) {
             case 0:
                 this.indicator =

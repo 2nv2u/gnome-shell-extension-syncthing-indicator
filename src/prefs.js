@@ -2,7 +2,7 @@
 	SyncthingIndicator 0.42
 ================================================================================================================
 
-	GJS syncthing gnome-shell indicator preferences.
+	GJS syncthing gnome-shell panel indicator preferences.
 
 	Copyright (c) 2019-2025, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
@@ -16,6 +16,7 @@ import {
     ExtensionPreferences,
     gettext as _,
 } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
+import Config from "./config.js";
 
 export default class SyncthingIndicatorExtensionPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -53,13 +54,15 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         });
 
         let settings = this.getSettings("org.gnome.shell.extensions.syncthing");
+        let config = new Config(settings, true);
+        config.load();
 
         // Settings group
-        const mainGroup = new Adw.PreferencesGroup({
+        const settingsGroup = new Adw.PreferencesGroup({
             title: _("settings-group-title"),
             description: _("settings-group-description"),
         });
-        page.add(mainGroup);
+        page.add(settingsGroup);
 
         // Menu type model
         let menuTypesModel = new Gtk.StringList();
@@ -78,7 +81,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
             "selected",
             Gio.SettingsBindFlags.DEFAULT
         );
-        mainGroup.add(typeCombo);
+        settingsGroup.add(typeCombo);
 
         // Icon state switch
         const iconStateSwitch = new Adw.SwitchRow({
@@ -91,7 +94,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
             "active",
             Gio.SettingsBindFlags.DEFAULT
         );
-        mainGroup.add(iconStateSwitch);
+        settingsGroup.add(iconStateSwitch);
 
         // Settings button switch
         const autoStartItemSwitch = new Adw.SwitchRow({
@@ -104,7 +107,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
             "active",
             Gio.SettingsBindFlags.DEFAULT
         );
-        mainGroup.add(autoStartItemSwitch);
+        settingsGroup.add(autoStartItemSwitch);
 
         // Settings button switch
         const settingsButtonSwitch = new Adw.SwitchRow({
@@ -117,7 +120,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
             "active",
             Gio.SettingsBindFlags.DEFAULT
         );
-        mainGroup.add(settingsButtonSwitch);
+        settingsGroup.add(settingsButtonSwitch);
 
         // Automatic configuration group
         const autoGroup = new Adw.PreferencesGroup({
@@ -142,7 +145,10 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         // Config file view
         const configFileView = new Adw.ActionRow({
             title: _("config-file-title"),
-            subtitle: "%CONFIGVALUE%",
+            subtitle:
+                config.filePath != null
+                    ? config.filePath.get_path()
+                    : _("unknown"),
         });
         settings.bind(
             "auto-config",
@@ -152,10 +158,10 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         );
         autoGroup.add(configFileView);
 
-        // Service address & port view
+        // Service URI & port view
         const serviceAddressView = new Adw.ActionRow({
-            title: _("service-address-title"),
-            subtitle: "%CONFIGVALUE%",
+            title: _("service-uri-title"),
+            subtitle: config.fileUri != null ? config.fileUri : _("unknown"),
         });
         settings.bind(
             "auto-config",
@@ -168,7 +174,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         // API key view
         const apiKeyView = new Adw.ActionRow({
             title: _("api-key-title"),
-            subtitle: "%CONFIGVALUE%",
+            subtitle:
+                config.fileApiKey != null ? config.fileApiKey : _("unknown"),
         });
         settings.bind(
             "auto-config",
@@ -178,10 +185,10 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         );
         autoGroup.add(apiKeyView);
 
-        // Service address & port entry
+        // Service URI & port entry
         const serviceAddressEntry = new Adw.EntryRow({
-            title: _("service-address-title"),
-            tooltip_text: _("service-address-tooltip"),
+            title: _("service-uri-title"),
+            tooltip_text: _("service-uri-tooltip"),
             show_apply_button: true,
         });
         settings.bind(
@@ -191,7 +198,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
             Gio.SettingsBindFlags.INVERT_BOOLEAN
         );
         settings.bind(
-            "service-address",
+            "service-uri",
             serviceAddressEntry,
             "text",
             Gio.SettingsBindFlags.DEFAULT
