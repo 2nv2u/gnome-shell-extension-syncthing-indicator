@@ -231,16 +231,14 @@ export const FolderMenu = GObject.registerClass(
                 Syncthing.Signal.SERVICE_CHANGE,
                 (manager, state) => {
                     switch (state) {
-                        case Syncthing.ServiceState.USER_STOPPED:
-                        case Syncthing.ServiceState.SYSTEM_STOPPED:
+                        case Syncthing.ServiceState.CONNECTED:
+                            this.setSensitive(true);
+                            this.visible = true;
+                            break;
                         case Syncthing.ServiceState.DISCONNECTED:
                             this.removeSectionItems();
                             this.setSensitive(false);
                             this.visible = false;
-                            break;
-                        case Syncthing.ServiceState.CONNECTED:
-                            this.setSensitive(true);
-                            this.visible = true;
                             break;
                     }
                 }
@@ -348,14 +346,12 @@ export const DeviceMenu = GObject.registerClass(
                 Syncthing.Signal.SERVICE_CHANGE,
                 (manager, state) => {
                     switch (state) {
-                        case Syncthing.ServiceState.USER_STOPPED:
-                        case Syncthing.ServiceState.SYSTEM_STOPPED:
+                        case Syncthing.ServiceState.CONNECTED:
+                            this._toggleVisibility(true);
+                            break;
                         case Syncthing.ServiceState.DISCONNECTED:
                             this.removeSectionItems();
                             this._toggleVisibility(false);
-                            break;
-                        case Syncthing.ServiceState.CONNECTED:
-                            this._toggleVisibility(true);
                             break;
                     }
                 }
@@ -420,12 +416,6 @@ export const DeviceMenu = GObject.registerClass(
                 this.setSensitive(elementsVisible);
                 this.visible = elementsVisible;
             }
-            console.error(
-                LOG_PREFIX,
-                this._autoSwitch.visible,
-                this._serviceSwitch.visible,
-                this.section.numMenuItems
-            );
             this._deviceSeparator.visible =
                 (this._autoSwitch.visible || this._serviceSwitch.visible) &&
                 this.section.numMenuItems > 0;
@@ -532,11 +522,11 @@ export const NotConnectedItem = GObject.registerClass(
                 Syncthing.Signal.SERVICE_CHANGE,
                 (manager, state) => {
                     switch (state) {
-                        case Syncthing.ServiceState.DISCONNECTED:
-                            this.visible = true;
-                            break;
                         case Syncthing.ServiceState.CONNECTED:
                             this.visible = false;
+                            break;
+                        case Syncthing.ServiceState.DISCONNECTED:
+                            this.visible = true;
                             break;
                     }
                 }
@@ -680,7 +670,6 @@ export const RescanButton = GObject.registerClass(
                             this.reactive = true;
                             break;
                         case Syncthing.ServiceState.DISCONNECTED:
-                        case Syncthing.ServiceState.ERROR:
                             this.reactive = false;
                             break;
                     }
@@ -720,7 +709,6 @@ export const AdvancedButton = GObject.registerClass(
                             this.reactive = true;
                             break;
                         case Syncthing.ServiceState.DISCONNECTED:
-                        case Syncthing.ServiceState.ERROR:
                             this.reactive = false;
                             break;
                     }
