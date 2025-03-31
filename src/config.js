@@ -9,6 +9,9 @@
 ============================================================================================================= */
 
 import Gio from "gi://Gio";
+// Temporary promise fix Gio.Subprocess, it fails in prefs.js
+Gio._promisify(Gio.Subprocess.prototype, "communicate_utf8_async");
+
 import GLib from "gi://GLib";
 
 const LOG_PREFIX = "syncthing-indicator-config:";
