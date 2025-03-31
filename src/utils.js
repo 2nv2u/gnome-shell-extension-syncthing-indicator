@@ -11,7 +11,11 @@
 import GLib from "gi://GLib";
 
 export class Timer {
-    constructor(timeout, recurring = false, priority = GLib.PRIORITY_DEFAULT) {
+    constructor(
+        timeout,
+        recurring = false,
+        priority = GLib.PRIORITY_DEFAULT_IDLE
+    ) {
         this._timeout = timeout;
         this._recurring = recurring;
         this._priority = priority;
