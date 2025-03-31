@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-03-30 21:34+0200\n"
+"POT-Creation-Date: 2025-04-01 00:16+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -45,31 +45,31 @@ msgstr ""
 msgid "syncthing-indicator"
 msgstr ""
 
-#: src/components.js:217
+#: src/components.js:226
 msgid "folders"
 msgstr ""
 
-#: src/components.js:322
+#: src/components.js:330
 msgid "this-device"
 msgstr ""
 
-#: src/components.js:492
+#: src/components.js:493
 msgid "devices"
 msgstr ""
 
-#: src/components.js:514
+#: src/components.js:515
 msgid "not-connected"
 msgstr ""
 
-#: src/components.js:541
+#: src/components.js:542
 msgid "service"
 msgstr ""
 
-#: src/components.js:602
+#: src/components.js:603
 msgid "autostart"
 msgstr ""
 
-#: src/components.js:653
+#: src/components.js:654
 msgid "rescan"
 msgstr ""
 
@@ -77,7 +77,7 @@ msgstr ""
 msgid "web-interface"
 msgstr ""
 
-#: src/components.js:730
+#: src/components.js:729
 msgid "settings"
 msgstr ""
 

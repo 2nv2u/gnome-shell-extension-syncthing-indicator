@@ -1,8 +1,8 @@
 
 msgid ""
 msgstr ""
-"POT-Creation-Date: 2025-03-27 20:18+0100\n"
-"Language: English \n"
+"POT-Creation-Date: 2025-04-01 00:16+0200\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -35,31 +35,31 @@ msgstr "Cannot find Syncthing config, syncthing might not be installed, check lo
 msgid "syncthing-indicator"
 msgstr "Syncthing Indicator"
 
-#: src/components.js:217
+#: src/components.js:226
 msgid "folders"
 msgstr "Folders"
 
-#: src/components.js:322
+#: src/components.js:330
 msgid "this-device"
 msgstr "This Device"
 
-#: src/components.js:492
+#: src/components.js:493
 msgid "devices"
 msgstr "Remote Devices"
 
-#: src/components.js:514
+#: src/components.js:515
 msgid "not-connected"
 msgstr "Not connected..."
 
-#: src/components.js:541
+#: src/components.js:542
 msgid "service"
 msgstr "Service"
 
-#: src/components.js:602
+#: src/components.js:603
 msgid "autostart"
 msgstr "Autostart"
 
-#: src/components.js:653
+#: src/components.js:654
 msgid "rescan"
 msgstr "Rescan all folders"
 
@@ -67,7 +67,7 @@ msgstr "Rescan all folders"
 msgid "web-interface"
 msgstr "Open web interface"
 
-#: src/components.js:730
+#: src/components.js:729
 msgid "settings"
 msgstr "Settings"
 
@@ -81,7 +81,7 @@ msgstr "Synchting Indicator settings"
 
 #: src/prefs.js:63
 msgid "settings-group-description"
-msgstr "You can change some settings on the location and/or look &amp; feel"
+msgstr "You can change the location of the panel and/or hide some of the switches $amp; buttons"
 
 #: src/prefs.js:69
 msgid "quick-settings"
@@ -129,7 +129,7 @@ msgstr "Auto &amp; manual configuration"
 
 #: src/prefs.js:128
 msgid "auto-config-group-description"
-msgstr "The connection will be extracted from the config by parsing the command 'syncthing --paths' or it will be searched in the default locations.\nIf this fails you can set the API key and URI yourself."
+msgstr "The connection will be extracted from the config by parsing the command 'syncthing --paths' or it will be searched in the default locations.\nIf this fails you can change the API key and URI yourself"
 
 #: src/prefs.js:134
 msgid "auto-config-title"
