@@ -4,7 +4,7 @@ msgstr ""
 "POT-Creation-Date: 2025-04-01 00:16+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: src/components.js:129
