@@ -55,7 +55,6 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
         let settings = this.getSettings("org.gnome.shell.extensions.syncthing");
         let config = new Config(settings, true);
-        config.load();
 
         // Settings group
         const settingsGroup = new Adw.PreferencesGroup({
@@ -145,10 +144,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         // Config file view
         const configFileView = new Adw.ActionRow({
             title: _("config-file-title"),
-            subtitle:
-                config.filePath != null
-                    ? config.filePath.get_path()
-                    : _("unknown"),
+            subtitle: _("unknown"),
         });
         settings.bind(
             "auto-config",
@@ -161,7 +157,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         // Service URI & port view
         const serviceAddressView = new Adw.ActionRow({
             title: _("service-uri-title"),
-            subtitle: config.fileURI != null ? config.fileURI : _("unknown"),
+            subtitle: _("unknown"),
         });
         settings.bind(
             "auto-config",
@@ -174,8 +170,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         // API key view
         const apiKeyView = new Adw.ActionRow({
             title: _("api-key-title"),
-            subtitle:
-                config.fileApiKey != null ? config.fileApiKey : _("unknown"),
+            subtitle: _("unknown"),
         });
         settings.bind(
             "auto-config",
@@ -184,6 +179,26 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
             Gio.SettingsBindFlags.DEFAULT
         );
         autoGroup.add(apiKeyView);
+
+        // Load config and set fields
+        config
+            .load()
+            .then(() => {
+                console.log("dfg");
+                configFileView.subtitle =
+                    config.filePath != null
+                        ? config.filePath.get_path()
+                        : _("unknown");
+                serviceAddressView.subtitle =
+                    config.fileURI != null ? config.fileURI : _("unknown");
+                apiKeyView.subtitle =
+                    config.fileApiKey != null
+                        ? config.fileApiKey
+                        : _("unknown");
+            })
+            .catch((error) => {
+                console.log(error);
+            });
 
         // Service URI & port entry
         const serviceAddressEntry = new Adw.EntryRow({
