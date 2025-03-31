@@ -17,7 +17,7 @@ import * as Utils from "./utils.js";
 
 const LOG_PREFIX = "syncthing-indicator-manager:";
 const POLL_TIME = 20000;
-const START_DELAY_TIME = 2000;
+const START_DELAY_TIME = 1000;
 const POLL_CONNECTION_HOOK_COUNT = 6; // Poll time * count =  every 2 minutes
 const POLL_CONFIG_HOOK_COUNT = 45; // Poll time * count =  every 15 minutes
 const CONNECTION_RETRY_DELAY = 1000;
@@ -408,6 +408,13 @@ export const Manager = class Manager extends Signals.EventEmitter {
                     this.destroy();
                     this._lastEventID = 1;
                     this._httpErrorCount = 0;
+                    if (this._serviceConnected) {
+                        this._serviceConnected = false;
+                        this.emit(
+                            Signal.SERVICE_CHANGE,
+                            ServiceState.DISCONNECTED
+                        );
+                    }
                     break;
             }
         });
@@ -670,7 +677,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
         this._callConnections();
     }
 
-    _pollState() {
+    async _pollState() {
         console.debug(
             LOG_PREFIX,
             "poll state",
@@ -678,7 +685,10 @@ export const Manager = class Manager extends Signals.EventEmitter {
             this._pollCount % POLL_CONFIG_HOOK_COUNT,
             this._pollCount % POLL_CONNECTION_HOOK_COUNT
         );
-        if (this._extensionConfig.exists() && this._isServiceActive()) {
+        if (
+            (await this._extensionConfig.exists()) &&
+            (await this._isServiceActive())
+        ) {
             if (this._pollCount % POLL_CONFIG_HOOK_COUNT == 0) {
                 // TODO: this should not be necessary, we should remove old items
                 this.folders.destroy();
@@ -686,7 +696,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
                 this._callConfig();
             }
             if (this._pollCount % POLL_CONNECTION_HOOK_COUNT == 0) {
-                this._isServiceEnabled();
+                await this._isServiceEnabled();
                 this._callConnections();
             }
             this._openConnection("GET", "/rest/system/error", (data) => {
@@ -707,7 +717,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
                 }
             });
         } else {
-            this._isServiceEnabled();
+            await this._isServiceEnabled();
         }
         this._pollCount++;
     }
@@ -753,12 +763,12 @@ export const Manager = class Manager extends Signals.EventEmitter {
         }
     }
 
-    _serviceState(user = false) {
-        let command = this._serviceCommand("is-enabled", user),
+    async _serviceState(user = true) {
+        let command = await this._serviceCommand("is-enabled", user),
             enabled = command == "enabled",
             disabled = command == "disabled";
-        if (!enabled && !user) {
-            return this._serviceState(true);
+        if (!enabled && user) {
+            return await this._serviceState(false);
         }
         return {
             user: user,
@@ -767,10 +777,10 @@ export const Manager = class Manager extends Signals.EventEmitter {
         };
     }
 
-    _isServiceActive() {
-        let state = this._serviceState();
+    async _isServiceActive() {
+        let state = await this._serviceState();
         if (state.enabled || state.disabled) {
-            let command = this._serviceCommand("is-active", state.user),
+            let command = await this._serviceCommand("is-active", state.user),
                 active = command == "active",
                 failed = command == "failed";
             if (failed) {
@@ -811,8 +821,8 @@ export const Manager = class Manager extends Signals.EventEmitter {
         }
     }
 
-    _isServiceEnabled() {
-        let state = this._serviceState();
+    async _isServiceEnabled() {
+        let state = await this._serviceState();
         if (
             (state.enabled || state.disabled) &&
             state.enabled != this._serviceEnabled
@@ -844,7 +854,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
         return state.enabled;
     }
 
-    _serviceCommand(command, user = true) {
+    async _serviceCommand(command, user = true) {
         let args = ["systemctl", command];
         if (user) {
             args.push(Service.NAME);
@@ -852,17 +862,23 @@ export const Manager = class Manager extends Signals.EventEmitter {
         } else {
             args.push(Service.NAME + "@" + GLib.get_user_name());
         }
-        let result = new TextDecoder()
-            .decode(
-                GLib.spawn_sync(
-                    null,
-                    args,
-                    null,
-                    GLib.SpawnFlags.SEARCH_PATH,
-                    null
-                )[1]
-            )
-            .trim();
+        let proc = Gio.Subprocess.new(args, Gio.SubprocessFlags.STDOUT_PIPE);
+        let result;
+        try {
+            result = (await proc.communicate_utf8_async(null, null))
+                .toString()
+                .replace(/[^a-z].?/, "");
+        } catch (error) {
+            console.error(
+                LOG_PREFIX,
+                "calling systemd",
+                command,
+                user,
+                args.toString(),
+                error
+            );
+            result = "error";
+        }
         console.debug(
             LOG_PREFIX,
             "calling systemd",
@@ -879,8 +895,14 @@ export const Manager = class Manager extends Signals.EventEmitter {
         this._httpSession.abort();
     }
 
-    _openConnection(method, path, callback) {
-        if (this._extensionConfig.exists()) {
+    async _openConnection(method, path, callback) {
+        if (await this._extensionConfig.exists()) {
+            console.debug(
+                LOG_PREFIX,
+                "opening connection",
+                method,
+                this._extensionConfig.getURI() + path
+            );
             let msg = Soup.Message.new(
                 method,
                 this._extensionConfig.getURI() + path
@@ -893,8 +915,8 @@ export const Manager = class Manager extends Signals.EventEmitter {
         }
     }
 
-    _openConnectionMessage(msg, callback) {
-        if (this._extensionConfig.exists() && this._serviceActive) {
+    async _openConnectionMessage(msg, callback) {
+        if ((await this._extensionConfig.exists()) && this._serviceActive) {
             console.debug(
                 LOG_PREFIX,
                 "opening connection",
@@ -908,12 +930,12 @@ export const Manager = class Manager extends Signals.EventEmitter {
                 (session, result) => {
                     let connected = false;
                     if (msg.status_code == Soup.Status.OK) {
+                        connected = true;
                         let response;
                         try {
                             response = new TextDecoder("utf-8").decode(
                                 session.send_and_read_finish(result).get_data()
                             );
-                            connected = true;
                         } catch (error) {
                             if (error.code == Gio.IOErrorEnum.TIMED_OUT) {
                                 console.info(
@@ -957,6 +979,10 @@ export const Manager = class Manager extends Signals.EventEmitter {
                             this._pollTimer.cancel();
                             this._httpErrorCount = 0;
                             connected = false;
+                            this.emit(
+                                Signal.SERVICE_CHANGE,
+                                ServiceState.ERROR
+                            );
                         }
                         console.error(
                             LOG_PREFIX,
@@ -975,15 +1001,18 @@ export const Manager = class Manager extends Signals.EventEmitter {
                                 ":" +
                                 msg.get_uri().get_path(),
                         });
-                        if (connected != this._serviceConnected) {
-                            this._serviceConnected = connected;
-                            this.emit(
-                                Signal.SERVICE_CHANGE,
-                                connected
-                                    ? ServiceState.CONNECTED
-                                    : ServiceState.DISCONNECTED
-                            );
-                        }
+                    }
+                    if (
+                        !this._httpAborting &&
+                        connected != this._serviceConnected
+                    ) {
+                        this._serviceConnected = connected;
+                        this.emit(
+                            Signal.SERVICE_CHANGE,
+                            connected
+                                ? ServiceState.CONNECTED
+                                : ServiceState.DISCONNECTED
+                        );
                     }
                 }
             );
@@ -997,42 +1026,42 @@ export const Manager = class Manager extends Signals.EventEmitter {
         this.devices.destroy();
     }
 
-    attach() {
-        if (!this._extensionConfig.exists()) {
+    async attach() {
+        if (!(await this._extensionConfig.exists())) {
             console.error(LOG_PREFIX, Error.CONFIG);
             this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
             this.emit(Signal.ERROR, { type: Error.CONFIG });
         } else {
             console.info(
+                LOG_PREFIX,
                 "attach manager",
-                this._isServiceActive(),
-                this._isServiceEnabled()
+                await this._isServiceActive()
             );
         }
     }
 
-    enableService() {
+    async enableService() {
         this._setService(true);
-        this._serviceCommand("enable");
+        await this._serviceCommand("enable");
         this._isServiceEnabled();
     }
 
-    disableService() {
-        this._serviceCommand("disable");
+    async disableService() {
+        await this._serviceCommand("disable");
         this._isServiceEnabled();
     }
 
-    startService() {
+    async startService() {
         this._setService();
-        this._serviceCommand("start");
+        await this._serviceCommand("start");
         Utils.Timer.run(START_DELAY_TIME, () => {
             this._isServiceActive();
         });
     }
 
-    stopService() {
+    async stopService() {
         this._abortConnections();
-        this._serviceCommand("stop");
+        await this._serviceCommand("stop");
         this._isServiceActive();
     }
 

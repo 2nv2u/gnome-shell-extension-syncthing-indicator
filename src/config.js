@@ -38,29 +38,28 @@ export default class Config {
         this._exists = false;
     }
 
-    load() {
+    async load() {
         this.clear();
         this._autoConfig = this.settings.get_boolean("auto-config");
         if (this._parseAll || this._autoConfig) {
-            this.loadFromConfigFile();
+            await this.loadFromConfigFile();
         }
         if (this._parseAll || !this._autoConfig) {
             this.loadFromPreferences();
         }
     }
 
-    loadFromConfigFile() {
+    async loadFromConfigFile() {
         this.filePath = Gio.File.new_for_path("");
         // Extract syncthing config file location from the synthing path command
-        let result = GLib.spawn_sync(
-            null,
+        let proc = Gio.Subprocess.new(
             ["syncthing", "--paths"],
-            null,
-            GLib.SpawnFlags.SEARCH_PATH,
-            null
-        )[1];
-        let paths = {},
-            pathArray = new TextDecoder().decode(result).split("\n\n");
+            Gio.SubprocessFlags.STDOUT_PIPE
+        );
+        let pathArray = (await proc.communicate_utf8_async(null, null))
+            .toString()
+            .split("\n\n");
+        let paths = {};
         for (let i = 0; i < pathArray.length; i++) {
             let items = pathArray[i].split(":\n\t");
             if (items.length == 2) paths[items[0]] = items[1].split("\n\t");
@@ -139,8 +138,8 @@ export default class Config {
         }
     }
 
-    exists() {
-        if (!this._exists) this.load();
+    async exists() {
+        if (!this._exists) await this.load();
         return this._exists;
     }
 
