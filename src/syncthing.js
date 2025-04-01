@@ -374,7 +374,6 @@ export const Manager = class Manager extends Signals.EventEmitter {
             }
         });
         this._httpSession = new Soup.Session();
-        this._httpSession.ssl_strict = false; // Accept self signed certificates (for now)
         this._httpAborting = false;
         this._httpErrorCount = 0;
         this._extensionConfig = extensionConfig;
@@ -907,6 +906,10 @@ export const Manager = class Manager extends Signals.EventEmitter {
                 method,
                 this._extensionConfig.getURI() + path
             );
+            // Accept self signed certificates (for now)
+            msg.connect("accept-certificate", () => {
+                return true;
+            });
             msg.request_headers.append(
                 "X-API-Key",
                 this._extensionConfig.getAPIKey()
