@@ -381,6 +381,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
         this._serviceConnected = false;
         this._serviceActive = false;
         this._serviceEnabled = false;
+        this._serviceUserMode = true;
         this._pollTimer = new Utils.Timer(POLL_TIME, true);
         this._pollCount = 1; // Start at 1 to stop from cycling the hooks at init
         this._lastEventID = 1;
@@ -762,95 +763,84 @@ export const Manager = class Manager extends Signals.EventEmitter {
         }
     }
 
-    async _serviceState(user = true) {
+    async _isServiceActive() {
+        let command = await this._serviceCommand(
+                "is-active",
+                this._serviceUserMode
+            ),
+            active = command == "active",
+            failed = command == "failed";
+        if (failed) {
+            this._serviceActive = !failed;
+            console.error(LOG_PREFIX, Error.DAEMON, Service.NAME);
+            this.emit(Signal.ERROR, { type: Error.DAEMON });
+        }
+        console.info(
+            LOG_PREFIX,
+            "service active",
+            this._serviceUserMode,
+            active,
+            this._serviceActive
+        );
+        if (active != this._serviceActive) {
+            this._serviceActive = active;
+            if (this._serviceUserMode) {
+                this.emit(
+                    Signal.SERVICE_CHANGE,
+                    active
+                        ? ServiceState.USER_ACTIVE
+                        : ServiceState.USER_STOPPED
+                );
+            } else {
+                this.emit(
+                    Signal.SERVICE_CHANGE,
+                    active
+                        ? ServiceState.SYSTEM_ACTIVE
+                        : ServiceState.SYSTEM_STOPPED
+                );
+            }
+            if (this.host)
+                this.host.setState(active ? State.IDLE : State.DISCONNECTED);
+        }
+        return active;
+    }
+
+    async _isServiceEnabled(user = true) {
         let command = await this._serviceCommand("is-enabled", user),
             enabled = command == "enabled",
             disabled = command == "disabled";
         if (!enabled && user) {
-            return await this._serviceState(false);
+            return await this._isServiceEnabled(false);
         }
-        return {
-            user: user,
-            enabled: enabled,
-            disabled: disabled,
-        };
-    }
-
-    async _isServiceActive() {
-        let state = await this._serviceState();
-        if (state.enabled || state.disabled) {
-            let command = await this._serviceCommand("is-active", state.user),
-                active = command == "active",
-                failed = command == "failed";
-            if (failed) {
-                this._serviceActive = !failed;
-                console.error(LOG_PREFIX, Error.DAEMON, Service.NAME);
-                this.emit(Signal.ERROR, { type: Error.DAEMON });
-            }
-            console.info(
-                LOG_PREFIX,
-                "service active",
-                state.user,
-                active,
-                this._serviceActive
-            );
-            if (active != this._serviceActive) {
-                this._serviceActive = active;
-                if (state.user) {
-                    this.emit(
-                        Signal.SERVICE_CHANGE,
-                        active
-                            ? ServiceState.USER_ACTIVE
-                            : ServiceState.USER_STOPPED
-                    );
-                } else {
-                    this.emit(
-                        Signal.SERVICE_CHANGE,
-                        active
-                            ? ServiceState.SYSTEM_ACTIVE
-                            : ServiceState.SYSTEM_STOPPED
-                    );
-                }
-                if (this.host)
-                    this.host.setState(
-                        active ? State.IDLE : State.DISCONNECTED
-                    );
-            }
-            return active;
-        }
-    }
-
-    async _isServiceEnabled() {
-        let state = await this._serviceState();
-        if (
-            (state.enabled || state.disabled) &&
-            state.enabled != this._serviceEnabled
-        ) {
-            console.debug(
-                LOG_PREFIX,
-                "service enabled",
-                state.user,
-                state.enabled,
-                this._serviceEnabled
-            );
-            this._serviceEnabled = state.enabled;
-            if (state.user) {
+        console.debug(
+            LOG_PREFIX,
+            "service enabled",
+            user,
+            this._serviceUserMode,
+            enabled,
+            this._serviceEnabled,
+            disabled
+        );
+        if (enabled != this._serviceEnabled) {
+            this._serviceUserMode = user;
+            this._serviceEnabled = enabled;
+            if (this._serviceUserMode) {
                 this.emit(
                     Signal.SERVICE_CHANGE,
-                    state.enabled
+                    enabled
                         ? ServiceState.USER_ENABLED
                         : ServiceState.USER_DISABLED
                 );
             } else {
                 this.emit(
                     Signal.SERVICE_CHANGE,
-                    state.enabled
+                    enabled
                         ? ServiceState.SYSTEM_ENABLED
                         : ServiceState.SYSTEM_DISABLED
                 );
             }
         }
-        return state.enabled;
+        return enabled;
     }
 
     async _serviceCommand(command, user = true) {
@@ -1038,6 +1028,7 @@ export const Manager = class Manager extends Signals.EventEmitter {
             console.info(
                 LOG_PREFIX,
                 "attach manager",
+                await this._isServiceEnabled(),
                 await this._isServiceActive()
             );
         }
