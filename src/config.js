@@ -109,7 +109,7 @@ export default class Config {
                     LOG_PREFIX,
                     "found config from file",
                     this.fileURI,
-                    this.fileApiKey,
+                    this.fileApiKey.substr(0, 5) + "...",
                     this.filePath.get_path()
                 );
             } else {
@@ -134,7 +134,7 @@ export default class Config {
                 LOG_PREFIX,
                 "found config from preferences",
                 this.prefURI,
-                this.prefApiKey
+                this.prefApiKey.substr(0, 5) + "..."
             );
         } else {
             console.error(LOG_PREFIX, "can't find valid custom config");
