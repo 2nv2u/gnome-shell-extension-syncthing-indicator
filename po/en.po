@@ -81,7 +81,7 @@ msgstr "Synchting Indicator settings"
 
 #: src/prefs.js:63
 msgid "settings-group-description"
-msgstr "You can change the location of the panel and/or hide some of the switches $amp; buttons"
+msgstr "You can change the location of the panel and/or hide some of the switches &amp; buttons"
 
 #: src/prefs.js:69
 msgid "quick-settings"
