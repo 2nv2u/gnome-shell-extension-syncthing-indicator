@@ -246,7 +246,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
             transient_for: this._window,
             modal: true,
         });
-        about_window.set_application_icon("syncthing-idle-symbolic");
+        about_window.set_application_icon("syncthing-indicator");
         about_window.set_application_name(_("syncthing-indicator"));
         about_window.set_version(`${this.metadata.version}`);
         about_window.set_developer_name("2nv2u");
