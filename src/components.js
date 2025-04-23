@@ -33,17 +33,17 @@ export const SyncthingPanelIcon = GObject.registerClass(
 
             this._actors = [this];
             this._idleGIcon = Gio.icon_new_for_string(
-                iconPath + "syncthing-idle.svg"
+                iconPath + "syncthing-idle-symbolic.svg"
             );
             if (this._showState) {
                 this._workingGIcon = Gio.icon_new_for_string(
-                    iconPath + "syncthing-working.svg"
+                    iconPath + "syncthing-working-symbolic.svg"
                 );
                 this._pausedGIcon = Gio.icon_new_for_string(
-                    iconPath + "syncthing-paused.svg"
+                    iconPath + "syncthing-paused-symbolic.svg"
                 );
                 this._disconnectedGIcon = Gio.icon_new_for_string(
-                    iconPath + "syncthing-disconnected.svg"
+                    iconPath + "syncthing-disconnected-symbolic.svg"
                 );
                 this.setGIcon(this._disconnectedGIcon);
             } else {
