@@ -650,7 +650,7 @@ export const RescanButton = GObject.registerClass(
             super._init({
                 style_class: "icon-button",
                 can_focus: true,
-                icon_name: "feed-refresh-symbolic",
+                icon_name: "view-refresh-symbolic",
                 accessible_name: _("rescan"),
                 reactive: false,
             });
