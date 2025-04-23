@@ -112,6 +112,23 @@ export const SyncthingIndicatorPanel = GObject.registerClass(
             );
             this.panel.icon.addActor(this._headerIcon);
             this.add_child(this.panel.icon);
+
+            extension.manager.connect(
+                Syncthing.Signal.SERVICE_CHANGE,
+                (manager, state) => {
+                    switch (state) {
+                        case Syncthing.ServiceState.USER_ACTIVE:
+                        case Syncthing.ServiceState.SYSTEM_ACTIVE:
+                            this._headerIcon.add_style_class_name("active");
+                            break;
+                        case Syncthing.ServiceState.USER_STOPPED:
+                        case Syncthing.ServiceState.SYSTEM_STOPPED:
+                        case Syncthing.ServiceState.ERROR:
+                            this._headerIcon.remove_style_class_name("active");
+                            break;
+                    }
+                }
+            );
         }
 
         open(animate) {
