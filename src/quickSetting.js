@@ -154,7 +154,7 @@ export const SyncthingIndicatorQuickSetting = GObject.registerClass(
         }
 
         open(animate) {
-            this.panel.open(animate);
+            this.panel.open(false);
         }
 
         close() {
