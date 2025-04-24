@@ -81,7 +81,7 @@ msgstr "Synchting Indicator settings"
 
 #: src/prefs.js:63
 msgid "settings-group-description"
-msgstr "Je kunt de locatie van het paneel wijzigen en/of sommige schakelaars &amp; knoppen verbergen"
+msgstr "Locatie van het paneel wijzigen en/of schakelaars &amp; knoppen verbergen."
 
 #: src/prefs.js:69
 msgid "quick-settings"
@@ -129,7 +129,7 @@ msgstr "Auto &amp; handmatige configuratie"
 
 #: src/prefs.js:128
 msgid "auto-config-group-description"
-msgstr "De connectie zal uit de de config worden gehaald doormiddel van het commando 'syncthing --paths' of het zal worden opgezocht uit de standaard locaties.\nAls dit mislukt kun je de API key en URI zelf wijzigen"
+msgstr "De connectie zal uit de de config worden gehaald doormiddel van het commando 'syncthing --paths' of het zal worden opgezocht uit de standaard locaties.\nAls dit mislukt kun je de API key en URI zelf wijzigen."
 
 #: src/prefs.js:134
 msgid "auto-config-title"
@@ -137,7 +137,7 @@ msgstr "Gebruik automatische configuratie"
 
 #: src/prefs.js:135
 msgid "auto-config-subtitle"
-msgstr "Read API key from the Syncthing configuration by searching for the config file"
+msgstr "Lees API key uit de Syncthing configuratie door naar het config bestand te zoeken"
 
 #: src/prefs.js:147
 msgid "config-file-title"
