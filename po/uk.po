@@ -1,0 +1,182 @@
+#
+# Ihor Romanyshyn <>, 2025.
+#
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-04-01 00:16+0200\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Project-Id-Version: unnamed project\n"
+"Last-Translator: Ihor Romanyshyn <>\n"
+"Language-Team: Ukrainian\n"
+"Plural-Forms: nplurals=4; plural=n==1 ? 3 : n%10==1 && n%100!=11 ? 0 : "
+"n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"PO-Revision-Date: 2025-04-26 13:08+0300\n"
+"X-Generator: Gtranslator 47.1\n"
+
+#: src/components.js:129
+msgid "unknown-error"
+msgstr "Доповнення зазнало невідомої помилки, перевірте журнал для уточнення"
+
+#: src/components.js:132
+msgid "daemon-error"
+msgstr "Демон Syncthing не може запуститися, перегляньте журнал для уточнень"
+
+#: src/components.js:135
+msgid "service-error"
+msgstr "Демон Syncthing повідомив про помилку, перевірте журнал для уточнень"
+
+#: src/components.js:138
+msgid "decoding-error"
+msgstr "Не вдалося розкодувати з'єднання з Syncthing, перевірте журнал"
+
+#: src/components.js:141
+msgid "connection-error"
+msgstr "Помилка з'єднання із Syncthing, перегляньте журнал для уточнень"
+
+#: src/components.js:144
+msgid "config-error"
+msgstr ""
+"Не вдалося знайти конфігурацію Syncthing, або пакет syncthing не встановлений"
+
+#: src/components.js:148 src/prefs.js:235
+msgid "syncthing-indicator"
+msgstr "Індикатор Syncthing"
+
+#: src/components.js:226
+msgid "folders"
+msgstr "Каталоги"
+
+#: src/components.js:330
+msgid "this-device"
+msgstr "Цей пристрій"
+
+#: src/components.js:493
+msgid "devices"
+msgstr "Віддалені пристрої"
+
+#: src/components.js:515
+msgid "not-connected"
+msgstr "Немає з'єднання…"
+
+#: src/components.js:542
+msgid "service"
+msgstr "Сервіс"
+
+#: src/components.js:603
+msgid "autostart"
+msgstr "Автозапуск"
+
+#: src/components.js:654
+msgid "rescan"
+msgstr "Пересканувати каталоги"
+
+#: src/components.js:690
+msgid "web-interface"
+msgstr "Відкрити вебінтерфейс"
+
+#: src/components.js:729
+msgid "settings"
+msgstr "Налаштування"
+
+#: src/panelMenu.js:77 src/quickSetting.js:29 src/quickSetting.js:37
+msgid "syncthing"
+msgstr "Syncthing"
+
+#: src/prefs.js:62
+msgid "settings-group-title"
+msgstr "Налаштування Індикатора Synchting"
+
+#: src/prefs.js:63
+msgid "settings-group-description"
+msgstr "Змінити розташування панелі чи заховати перемикачі та кнопки."
+
+#: src/prefs.js:69
+msgid "quick-settings"
+msgstr "Швидкі налаштування"
+
+#: src/prefs.js:70
+msgid "main-panel"
+msgstr "Основна панель"
+
+#: src/prefs.js:74
+msgid "menu-type-title"
+msgstr "Тип меню"
+
+#: src/prefs.js:75
+msgid "menu-type-subtitle"
+msgstr "Оберіть тип інтеграції меню"
+
+#: src/prefs.js:88
+msgid "icon-state-title"
+msgstr "Статус у значку"
+
+#: src/prefs.js:89
+msgid "icon-state-subtitle"
+msgstr "Показувати стан Syncthing за допомогою різних іконок"
+
+#: src/prefs.js:101
+msgid "auto-start-item"
+msgstr "Перемикач автозапуску"
+
+#: src/prefs.js:102
+msgid "auto-start-item-subtitle"
+msgstr "Показувати перемикач автоматичного запуску"
+
+#: src/prefs.js:114
+msgid "setting-button-title"
+msgstr "Кнопка налаштувань"
+
+#: src/prefs.js:115
+msgid "setting-button-subtitle"
+msgstr "Показувати кнопку налаштувань доповнення"
+
+#: src/prefs.js:127
+msgid "auto-config-group-title"
+msgstr "Автоматичні та ручні налаштування"
+
+#: src/prefs.js:128
+msgid "auto-config-group-description"
+msgstr ""
+"Налаштування з'єднання будуть витягнуті з файлу конфігурації за допомогою "
+"парсингу результату команди 'syncthing --paths' або буде проведено пошук по "
+"типових шляхах.\n"
+"Якщо це не спрацює, ви все ще зможете вказати API ключ та URI самостійно."
+
+#: src/prefs.js:134
+msgid "auto-config-title"
+msgstr "Автоматична конфігурація"
+
+#: src/prefs.js:135
+msgid "auto-config-subtitle"
+msgstr "Знайти API ключ у конфігураційному файлі Syncthing"
+
+#: src/prefs.js:147
+msgid "config-file-title"
+msgstr "Розташування файлу конфігурації"
+
+#: src/prefs.js:151 src/prefs.js:164 src/prefs.js:178
+msgid "unknown"
+msgstr "Невідомо"
+
+#: src/prefs.js:163 src/prefs.js:190
+msgid "service-uri-title"
+msgstr "URI та порт сервісу"
+
+#: src/prefs.js:176 src/prefs.js:210
+msgid "api-key-title"
+msgstr "API ключ"
+
+#: src/prefs.js:191
+msgid "service-uri-tooltip"
+msgstr "URI сервісу використовується для приєднання до Syncthing API"
+
+#: src/prefs.js:211
+msgid "api-key-tooltip"
+msgstr "API ключ використовується для аутентифікації у Syncthing API"
+
+#: src/prefs.js:241
+msgid "copyright"
+msgstr "Авторське право"
