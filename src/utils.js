@@ -9,6 +9,7 @@
 ============================================================================================================= */
 
 import GLib from "gi://GLib";
+const Signals = imports.signals;
 
 export class Timer {
     constructor(
@@ -63,3 +64,6 @@ export class Timer {
         return new Timer(timeout, recurring, priority).run(callback);
     }
 }
+
+export class Emitter {}
+Signals.addSignalMethods(Emitter.prototype);
