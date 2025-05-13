@@ -12,7 +12,6 @@ import Gio from "gi://Gio";
 import GLib from "gi://GLib";
 import Soup from "gi://Soup";
 
-import * as Signals from "resource:///org/gnome/shell/misc/signals.js";
 import * as Utils from "./utils.js";
 
 const LOG_PREFIX = "syncthing-indicator-manager:";
@@ -116,7 +115,7 @@ export const EventType = {
 };
 
 // Abstract item used for folders and devices
-class Item extends Signals.EventEmitter {
+class Item extends Utils.Emitter {
     constructor(data, manager) {
         super();
         this._state = State.UNKNOWN;
@@ -178,7 +177,7 @@ class Item extends Signals.EventEmitter {
 }
 
 // Abstract item collection used for folders and devices
-class ItemCollection extends Signals.EventEmitter {
+class ItemCollection extends Utils.Emitter {
     constructor() {
         super();
         this._collection = {};
@@ -357,7 +356,7 @@ class FolderCompletionProxy extends Folder {
 }
 
 // Main system manager
-export const Manager = class Manager extends Signals.EventEmitter {
+export class Manager extends Utils.Emitter {
     constructor(extensionConfig, extensionPath) {
         super();
         this.folders = new ItemCollection();
@@ -1088,4 +1087,4 @@ export const Manager = class Manager extends Signals.EventEmitter {
             );
         }
     }
-};
+}
