@@ -1,4 +1,4 @@
-# ![image](src/icons/syncthing-indicator.svg =32x32) Gnome Shell - Syncthing Indicator 
+# <img src="src/icons/syncthing-indicator.svg" height="32"> Gnome Shell - Syncthing Indicator 
 
 ![screenshot](screenshot.png)
 
