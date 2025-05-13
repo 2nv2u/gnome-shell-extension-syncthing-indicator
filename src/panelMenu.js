@@ -23,9 +23,6 @@ const LOG_PREFIX = "syncthing-indicator-panel-menu:";
 
 // Syncthing indicator controller panel
 export const SyncthingIndicatorPanel = GObject.registerClass(
-    {
-        GTypeName: "SyncthingIndicatorPanel",
-    },
     class SyncthingIndicatorPanel extends PanelMenu.Button {
         _init(extension) {
             super._init(0.0, "SyncthingIndicatorPanel");
