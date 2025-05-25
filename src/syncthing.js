@@ -850,9 +850,12 @@ export class Manager extends Utils.Emitter {
         } else {
             args.push(Service.NAME + "@" + GLib.get_user_name());
         }
-        let proc = Gio.Subprocess.new(args, Gio.SubprocessFlags.STDOUT_PIPE);
         let result;
         try {
+            let proc = Gio.Subprocess.new(
+                args,
+                Gio.SubprocessFlags.STDOUT_PIPE
+            );
             result = (await proc.communicate_utf8_async(null, null))
                 .toString()
                 .replace(/[^a-z].?/, "");
@@ -865,6 +868,7 @@ export class Manager extends Utils.Emitter {
                 args.toString(),
                 error
             );
+            this.emit(Signal.ERROR, { type: Error.DAEMON });
             result = "error";
         }
         console.debug(
