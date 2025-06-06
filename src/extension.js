@@ -62,6 +62,7 @@ export default class SyncthingIndicatorExtension extends Extension {
 
     // Syncthing indicator disabler
     disable() {
+        this._settingTimer.cancel();
         this.settings = null;
         this.indicator.destroy();
         this.indicator = null;
