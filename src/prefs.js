@@ -184,7 +184,6 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         config
             .load()
             .then(() => {
-                console.log("dfg");
                 configFileView.subtitle =
                     config.filePath != null
                         ? config.filePath.get_path()
