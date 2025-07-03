@@ -144,6 +144,12 @@ export default class Config {
                 this.prefURI,
                 this.prefApiKey.substr(0, 5) + "..."
             );
+        } else if (this.settings.get_string("api-key").length >= 0) {
+            console.error(
+                LOG_PREFIX,
+                "can't find valid custom config URI",
+                this.prefURI
+            );
         } else {
             console.error(LOG_PREFIX, "can't find valid custom config");
         }
