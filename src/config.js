@@ -55,21 +55,29 @@ export default class Config {
     async loadFromConfigFile() {
         this.filePath = Gio.File.new_for_path("");
         // Extract syncthing config file location from the synthing path command
-        let proc = Gio.Subprocess.new(
-            ["syncthing", "--paths"],
-            Gio.SubprocessFlags.STDOUT_PIPE
-        );
-        let pathArray = (await proc.communicate_utf8_async(null, null))
-            .toString()
-            .split("\n\n");
-        let paths = {};
-        for (let i = 0; i < pathArray.length; i++) {
-            let items = pathArray[i].split(":\n\t");
-            if (items.length == 2) paths[items[0]] = items[1].split("\n\t");
-        }
-        if (this.CONFIG_PATH_KEY in paths) {
-            this.filePath = Gio.File.new_for_path(
-                paths[this.CONFIG_PATH_KEY][0]
+        try {
+            let proc = Gio.Subprocess.new(
+                ["syncthing", "--paths"],
+                Gio.SubprocessFlags.STDOUT_PIPE
+            );
+            let pathArray = (await proc.communicate_utf8_async(null, null))
+                .toString()
+                .split("\n\n");
+            let paths = {};
+            for (let i = 0; i < pathArray.length; i++) {
+                let items = pathArray[i].split(":\n\t");
+                if (items.length == 2) paths[items[0]] = items[1].split("\n\t");
+            }
+            if (this.CONFIG_PATH_KEY in paths) {
+                this.filePath = Gio.File.new_for_path(
+                    paths[this.CONFIG_PATH_KEY][0]
+                );
+            }
+        } catch (error) {
+            console.warn(
+                LOG_PREFIX,
+                "executing syncthing binary failed",
+                error.message
             );
         }
         // As alternative, extract syncthing configuration from the default user config file
