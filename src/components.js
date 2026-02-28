@@ -148,6 +148,13 @@ export class SyncthingPanel {
       }
       Main.notifyError(_("syncthing-indicator"), errorText);
     });
+
+    extension.manager.connect(Syncthing.Signal.PENDING_REQUEST, (manager, data) => {
+      Main.notify(
+        _("syncthing-indicator"),
+        _("pending-request-notification").replace("%s", data.message),
+      );
+    });
   }
 
   showServiceSwitch(toggle) {

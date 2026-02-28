@@ -33,6 +33,10 @@ msgstr "Kan Syncthing config niet vinden, syncthing is mogelijk niet geinstallee
 msgid "syncthing-indicator"
 msgstr "Syncthing Indicator"
 
+#: src/components.js:160
+msgid "pending-request-notification"
+msgstr "Nieuw verzoek: %s"
+
 #: src/components.js:219
 msgid "folders"
 msgstr "Mappen"

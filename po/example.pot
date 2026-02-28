@@ -45,6 +45,10 @@ msgstr ""
 msgid "syncthing-indicator"
 msgstr ""
 
+#: src/components.js:160
+msgid "pending-request-notification"
+msgstr ""
+
 #: src/components.js:219
 msgid "folders"
 msgstr ""

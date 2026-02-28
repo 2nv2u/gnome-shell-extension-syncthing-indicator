@@ -45,6 +45,10 @@ msgstr ""
 msgid "syncthing-indicator"
 msgstr "Індикатор Syncthing"
 
+#: src/components.js:160
+msgid "pending-request-notification"
+msgstr "Нове очікування запиту: %s"
+
 #: src/components.js:226
 msgid "folders"
 msgstr "Каталоги"
@@ -116,6 +120,14 @@ msgstr "Статус у значку"
 #: src/prefs.js:89
 msgid "icon-state-subtitle"
 msgstr "Показувати стан Syncthing за допомогою різних іконок"
+
+#: src/prefs.js:108
+msgid "use-sysd-item"
+msgstr "Підтримка SystemD"
+
+#: src/prefs.js:109
+msgid "use-sysd-item-subtitle"
+msgstr "Увімкнути керування демоном Syncthing через SystemD"
 
 #: src/prefs.js:101
 msgid "auto-start-item"

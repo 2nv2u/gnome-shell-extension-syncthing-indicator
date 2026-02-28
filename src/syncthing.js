@@ -55,6 +55,7 @@ export const Signal = {
   DEVICE_ADD: "deviceAdd",
   STATE_CHANGE: "stateChange",
   ERROR: "error",
+  PENDING_REQUEST: "pendingRequest",
 };
 
 // State constants
@@ -383,6 +384,7 @@ export class Manager extends Utils.Emitter {
     this._lastEventID = 1;
     this._hostID = "";
     this._lastErrorTime = Date.now();
+    this._lastPendingCount = 0;
     this.connect(Signal.SERVICE_CHANGE, (manager, state) => {
       switch (state) {
         case ServiceState.USER_ACTIVE:
@@ -392,6 +394,7 @@ export class Manager extends Utils.Emitter {
             this._callConfig((config) => {
               this._callEvents("limit=1");
               this._pollTimer.run(this._pollState.bind(this));
+              this._checkPendingRequests();
             });
           });
           break;
@@ -511,6 +514,12 @@ export class Manager extends Utils.Emitter {
             case EventType.PENDING_DEVICES_CHANGED:
               this.devices.destroy();
               this._callConfig();
+              this._checkPendingRequests();
+              break;
+            case EventType.PENDING_FOLDERS_CHANGED:
+              this.folders.destroy();
+              this._callConfig();
+              this._checkPendingRequests();
               break;
           }
           this._lastEventID = events[i].id;
@@ -540,6 +549,43 @@ export class Manager extends Utils.Emitter {
         }
       }
     });
+  }
+
+  _checkPendingRequests() {
+    let fetchPending = (path) => {
+      return new Promise((resolve) => {
+        this._openConnection("GET", path, resolve);
+      });
+    };
+    Promise.all([
+      fetchPending("/rest/cluster/pending/devices"),
+      fetchPending("/rest/cluster/pending/folders"),
+    ])
+      .then(([devices, folders]) => {
+        let deviceCount = Object.keys(devices || {}).length;
+        let folderCount = Object.keys(folders || {}).length;
+        let totalPending = deviceCount + folderCount;
+        if (totalPending > 0 && totalPending > this._lastPendingCount) {
+          let messages = [];
+          if (deviceCount > 0) {
+            let deviceLabel = deviceCount === 1 ? "device" : "devices";
+            messages.push(`${deviceCount} ${deviceLabel}`);
+          }
+          if (folderCount > 0) {
+            let folderLabel = folderCount === 1 ? "folder" : "folders";
+            messages.push(`${folderCount} ${folderLabel}`);
+          }
+          this.emit(Signal.PENDING_REQUEST, {
+            devices: devices,
+            folders: folders,
+            message: messages.join(", "),
+          });
+        }
+        this._lastPendingCount = totalPending;
+      })
+      .catch((error) => {
+        console.warn(LOG_PREFIX, "failed to check pending requests", error.message);
+      });
   }
 
   _processConfig(config) {
@@ -661,6 +707,7 @@ export class Manager extends Utils.Emitter {
         this.folders.destroy();
         this.devices.destroy();
         this._callConfig();
+        this._checkPendingRequests();
       }
       if (this._pollCount % POLL_CONNECTION_HOOK_COUNT == 0) {
         await this._isServiceEnabled();
