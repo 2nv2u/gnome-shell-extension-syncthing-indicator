@@ -25,6 +25,7 @@ export class Timer {
 
   static destroy() {
     for (let timer of Timer._timers) timer.destroy();
+    Timer._timers.clear();
   }
 
   constructor(
@@ -72,8 +73,10 @@ export class Timer {
   }
 
   destroy() {
-    Timer._timers.delete(this);
-    this.cancel();
+    if (Timer._timers.has(this)) {
+      Timer._timers.delete(this);
+      this.cancel();
+    }
   }
 }
 
