@@ -124,6 +124,7 @@ class Item extends Utils.Emitter {
     this._state = State.UNKNOWN;
     this._stateEmitted = State.UNKNOWN;
     this._stateTimer = new Utils.Timer(ITEM_STATE_DELAY);
+    this._destroyed = false;
     this.id = data.id;
     this._name = data.name;
     this._manager = manager;
@@ -136,13 +137,13 @@ class Item extends Utils.Emitter {
   }
 
   setState(state) {
-    if (state.length > 0 && this._state != state) {
+    if (state.length > 0 && this._state !== state) {
       this._stateTimer.cancel();
       console.info(LOG_PREFIX, "state change", this._name, state);
       this._state = state;
-      // Stop items from excessive state changes by only emitting 1 state per stateDelay
       this._stateTimer.run(() => {
-        if (this._stateEmitted != this._state) {
+        if (this._destroyed) return;
+        if (this._stateEmitted !== this._state) {
           console.debug(
             LOG_PREFIX,
             "emit state change",
@@ -173,6 +174,7 @@ class Item extends Utils.Emitter {
   }
 
   destroy() {
+    this._destroyed = true;
     this._stateTimer.destroy();
     this.emit(Signal.DESTROY);
   }

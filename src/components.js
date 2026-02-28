@@ -86,9 +86,11 @@ export const SyncthingPanelIcon = GObject.registerClass(
     }
 
     setGIcon(gicon) {
+      if (this.isDisposed()) return;
       this._activeIcon = gicon;
       for (let i = 0; i < this._actors.length; i++) {
-        this._actors[i].gicon = gicon;
+        let actor = this._actors[i];
+        if (actor && !actor.isDisposed()) actor.gicon = gicon;
       }
     }
   },
@@ -169,6 +171,11 @@ export class SyncthingPanel {
 // Syncthing suspendable switch menu item
 export const SwitchMenuItem = GObject.registerClass(
   class SwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
+    _init(title, active, menu) {
+      super._init(title, active, menu);
+      this._switchSignalID = 0;
+    }
+
     activate(event) {
       if (this._switch.mapped) this.toggle();
     }
@@ -178,7 +185,10 @@ export const SwitchMenuItem = GObject.registerClass(
     }
 
     _detachSwitchSignal() {
-      this.disconnect(this._switchSignalID);
+      if (this._switchSignalID > 0) {
+        this.disconnect(this._switchSignalID);
+        this._switchSignalID = 0;
+      }
     }
 
     _process(event, state) {
