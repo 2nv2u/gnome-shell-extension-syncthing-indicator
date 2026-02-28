@@ -374,8 +374,6 @@ export class Manager extends Utils.Emitter {
     this._httpAborting = false;
     this._httpErrorCount = 0;
     this._extensionConfig = extensionConfig;
-    this._extensionPath = extensionPath;
-    this._httpErrorCount = 0;
     this._serviceRetries = 0;
     this._serviceActive = false;
     this._serviceEnabled = false;
