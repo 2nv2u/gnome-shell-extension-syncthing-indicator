@@ -86,12 +86,15 @@ export const SyncthingPanelIcon = GObject.registerClass(
     }
 
     setGIcon(gicon) {
-      if (this.isDisposed()) return;
+      if (this.isDisposed() || this._activeIcon === gicon) return;
       this._activeIcon = gicon;
-      for (let i = 0; i < this._actors.length; i++) {
-        let actor = this._actors[i];
-        if (actor && !actor.isDisposed()) actor.gicon = gicon;
-      }
+      this._actors = this._actors.filter((actor) => {
+        if (actor && !actor.isDisposed()) {
+          actor.gicon = gicon;
+          return true;
+        }
+        return false;
+      });
     }
   },
 );
