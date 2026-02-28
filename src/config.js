@@ -14,8 +14,12 @@ Gio._promisify(Gio.Subprocess.prototype, "communicate_utf8_async");
 
 import GLib from "gi://GLib";
 
+import * as Utils from "./utils.js";
+
 const LOG_PREFIX = "syncthing-indicator-config:";
 const SYNCTHING_COMMAND = "syncthing";
+const LOAD_RETRY_COUNT = 5;
+const LOAD_RETRY_DELAY = 500;
 
 // Synthing configuration
 export default class Config {
@@ -45,12 +49,14 @@ export default class Config {
   async load() {
     this.clear();
     this._autoConfig = this.settings.get_boolean("auto-config");
+    console.debug(LOG_PREFIX, "loading config, auto-config:", this._autoConfig);
     if (this._parseAll || this._autoConfig) {
       await this.loadFromConfigFile();
     }
     if (this._parseAll || !this._autoConfig) {
       this.loadFromPreferences();
     }
+    console.debug(LOG_PREFIX, "config loaded, exists:", this._exists);
   }
 
   async loadFromConfigFile() {
@@ -125,14 +131,14 @@ export default class Config {
   }
 
   loadFromPreferences() {
+    let apiKey = this.settings.get_string("api-key");
+    let serviceUri = this.settings.get_string("service-uri");
     if (
-      this.settings.get_string("api-key").length >= 0 &&
-      this.settings
-        .get_string("service-uri")
-        .search("https?://[-a-zA-Z0-9.]{1,256}:[0-9]{2,5}") >= 0
+      apiKey.length > 0 &&
+      serviceUri.search("https?://[-a-zA-Z0-9.]{1,256}:[0-9]{2,5}") >= 0
     ) {
-      this.prefApiKey = this.settings.get_string("api-key");
-      this.prefURI = this.settings.get_string("service-uri");
+      this.prefApiKey = apiKey;
+      this.prefURI = serviceUri;
       this._exists = true;
       console.info(
         LOG_PREFIX,
@@ -140,7 +146,7 @@ export default class Config {
         this.prefURI,
         this.prefApiKey.substr(0, 5) + "...",
       );
-    } else if (this.settings.get_string("api-key").length >= 0) {
+    } else if (apiKey.length > 0) {
       console.error(
         LOG_PREFIX,
         "can't find valid custom config URI",
@@ -152,7 +158,18 @@ export default class Config {
   }
 
   async exists() {
-    if (!this._exists) await this.load();
+    if (!this._exists) {
+      await this.load();
+      let retries = 0;
+      while (!this._exists && retries < LOAD_RETRY_COUNT) {
+        console.warn(LOG_PREFIX, "config not found, retrying...", retries + 1);
+        await new Promise((resolve) => {
+          new Utils.Timer(LOAD_RETRY_DELAY).run(resolve);
+        });
+        await this.load();
+        retries++;
+      }
+    }
     return this._exists;
   }
 
