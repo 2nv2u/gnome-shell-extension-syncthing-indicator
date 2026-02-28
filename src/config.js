@@ -97,16 +97,17 @@ export default class Config {
       let config = configDataInputStream.read_until("", null).toString();
       configInputStream.close(null);
       let regExp = new GLib.Regex(
-        '<gui.*?tls="(true|false)".*?>.*?<address>(.*?)</address>.*?<apikey>(.*?)</apikey>.*?</gui>',
-        GLib.RegexCompileFlags.DOTALL,
+        '<gui\\s+[^>]*?tls="(true|false)"[^>]*>\\s*<address>([^<]*)</address>\\s*<apikey>([^<]*)</apikey>',
+        GLib.RegexCompileFlags.NONE,
         0,
       );
       let reMatch = regExp.match(config, 0);
       if (reMatch[0]) {
-        let address = reMatch[1].fetch(2);
-        this.fileApiKey = reMatch[1].fetch(3);
-        this.fileURI =
-          "http" + (reMatch[1].fetch(1) == "true" ? "s" : "") + "://" + address;
+        let tls = reMatch[1].fetch(0);
+        let address = reMatch[2].fetch(0);
+        let apiKey = reMatch[3].fetch(0);
+        this.fileApiKey = apiKey;
+        this.fileURI = "http" + (tls === "true" ? "s" : "") + "://" + address;
         this._exists = true;
         console.info(
           LOG_PREFIX,
