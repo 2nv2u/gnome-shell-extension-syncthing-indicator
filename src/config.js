@@ -59,7 +59,7 @@ export default class Config {
     try {
       let proc = Gio.Subprocess.new(
         [SYNCTHING_COMMAND, "--paths"],
-        Gio.SubprocessFlags.STDOUT_PIPE
+        Gio.SubprocessFlags.STDOUT_PIPE,
       );
       let pathArray = (await proc.communicate_utf8_async(null, null))
         .toString()
@@ -76,19 +76,19 @@ export default class Config {
       console.warn(
         LOG_PREFIX,
         "executing syncthing binary failed",
-        error.message
+        error.message,
       );
     }
     // As alternative, extract syncthing configuration from the default user config file
     if (!this.filePath.query_exists(null)) {
       this.filePath = Gio.File.new_for_path(
-        GLib.get_user_state_dir() + "/syncthing/config.xml"
+        GLib.get_user_state_dir() + "/syncthing/config.xml",
       );
     }
     // As alternative, extract syncthing configuration from the deprecated user config file
     if (!this.filePath.query_exists(null)) {
       this.filePath = Gio.File.new_for_path(
-        GLib.get_user_config_dir() + "/syncthing/config.xml"
+        GLib.get_user_config_dir() + "/syncthing/config.xml",
       );
     }
     if (this.filePath.query_exists(null)) {
@@ -99,7 +99,7 @@ export default class Config {
       let regExp = new GLib.Regex(
         '<gui.*?tls="(true|false)".*?>.*?<address>(.*?)</address>.*?<apikey>(.*?)</apikey>.*?</gui>',
         GLib.RegexCompileFlags.DOTALL,
-        0
+        0,
       );
       let reMatch = regExp.match(config, 0);
       if (reMatch[0]) {
@@ -113,7 +113,7 @@ export default class Config {
           "found config from file",
           this.fileURI,
           this.fileApiKey.substr(0, 5) + "...",
-          this.filePath.get_path()
+          this.filePath.get_path(),
         );
       } else {
         console.error(LOG_PREFIX, "can't find gui xml node in config");
@@ -137,13 +137,13 @@ export default class Config {
         LOG_PREFIX,
         "found config from preferences",
         this.prefURI,
-        this.prefApiKey.substr(0, 5) + "..."
+        this.prefApiKey.substr(0, 5) + "...",
       );
     } else if (this.settings.get_string("api-key").length >= 0) {
       console.error(
         LOG_PREFIX,
         "can't find valid custom config URI",
-        this.prefURI
+        this.prefURI,
       );
     } else {
       console.error(LOG_PREFIX, "can't find valid custom config");

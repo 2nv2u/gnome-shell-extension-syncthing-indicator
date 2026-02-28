@@ -18,7 +18,7 @@ export class Timer {
     timeout,
     callback,
     recurring = false,
-    priority = GLib.PRIORITY_DEFAULT
+    priority = GLib.PRIORITY_DEFAULT,
   ) {
     return new Timer(timeout, recurring, priority).run(callback);
   }
@@ -30,7 +30,7 @@ export class Timer {
   constructor(
     timeout,
     recurring = false,
-    priority = GLib.PRIORITY_DEFAULT_IDLE
+    priority = GLib.PRIORITY_DEFAULT_IDLE,
   ) {
     Timer._timers.add(this);
     this._timeout = timeout;
@@ -42,7 +42,7 @@ export class Timer {
     callback,
     timeout = this._timeout,
     recurring = this._recurring,
-    priority = this._priority
+    priority = this._priority,
   ) {
     this.cancel();
     this._run(callback, timeout, recurring, priority);

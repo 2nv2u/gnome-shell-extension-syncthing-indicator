@@ -86,7 +86,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       "icon-state",
       iconStateSwitch,
       "active",
-      Gio.SettingsBindFlags.DEFAULT
+      Gio.SettingsBindFlags.DEFAULT,
     );
     settingsGroup.add(iconStateSwitch);
 
@@ -99,7 +99,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       "settings-button",
       settingsButtonSwitch,
       "active",
-      Gio.SettingsBindFlags.DEFAULT
+      Gio.SettingsBindFlags.DEFAULT,
     );
     settingsGroup.add(settingsButtonSwitch);
 
@@ -112,7 +112,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       "use-systemd",
       useSysDItemSwitch,
       "active",
-      Gio.SettingsBindFlags.DEFAULT
+      Gio.SettingsBindFlags.DEFAULT,
     );
     settingsGroup.add(useSysDItemSwitch);
 
@@ -125,13 +125,13 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       "use-systemd",
       autoStartItemSwitch,
       "visible",
-      Gio.SettingsBindFlags.BOOLEAN
+      Gio.SettingsBindFlags.BOOLEAN,
     );
     settings.bind(
       "auto-start",
       autoStartItemSwitch,
       "active",
-      Gio.SettingsBindFlags.DEFAULT
+      Gio.SettingsBindFlags.DEFAULT,
     );
     settingsGroup.add(autoStartItemSwitch);
 
@@ -151,7 +151,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       "auto-config",
       autoConfigSwitch,
       "active",
-      Gio.SettingsBindFlags.DEFAULT
+      Gio.SettingsBindFlags.DEFAULT,
     );
     autoGroup.add(autoConfigSwitch);
 
@@ -164,7 +164,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       "auto-config",
       configFileView,
       "visible",
-      Gio.SettingsBindFlags.DEFAULT
+      Gio.SettingsBindFlags.DEFAULT,
     );
     autoGroup.add(configFileView);
 
@@ -177,7 +177,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       "auto-config",
       serviceAddressView,
       "visible",
-      Gio.SettingsBindFlags.DEFAULT
+      Gio.SettingsBindFlags.DEFAULT,
     );
     autoGroup.add(serviceAddressView);
 
@@ -190,7 +190,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       "auto-config",
       apiKeyView,
       "visible",
-      Gio.SettingsBindFlags.DEFAULT
+      Gio.SettingsBindFlags.DEFAULT,
     );
     autoGroup.add(apiKeyView);
 
@@ -219,13 +219,13 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       "auto-config",
       serviceAddressEntry,
       "visible",
-      Gio.SettingsBindFlags.INVERT_BOOLEAN
+      Gio.SettingsBindFlags.INVERT_BOOLEAN,
     );
     settings.bind(
       "service-uri",
       serviceAddressEntry,
       "text",
-      Gio.SettingsBindFlags.DEFAULT
+      Gio.SettingsBindFlags.DEFAULT,
     );
     autoGroup.add(serviceAddressEntry);
 
@@ -239,13 +239,13 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       "auto-config",
       apiKeyEntry,
       "visible",
-      Gio.SettingsBindFlags.INVERT_BOOLEAN
+      Gio.SettingsBindFlags.INVERT_BOOLEAN,
     );
     settings.bind(
       "api-key",
       apiKeyEntry,
       "text",
-      Gio.SettingsBindFlags.DEFAULT
+      Gio.SettingsBindFlags.DEFAULT,
     );
     autoGroup.add(apiKeyEntry);
   }

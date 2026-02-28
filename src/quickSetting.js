@@ -59,7 +59,7 @@ export const SyncthingIndicatorToggle = GObject.registerClass(
         rescanButton,
         Clutter.GridPosition.RIGHT,
         1,
-        1
+        1,
       );
       if (extension.settings.get_boolean("settings-button")) {
         const settingsButton = new Components.SettingsButton(extension);
@@ -68,7 +68,7 @@ export const SyncthingIndicatorToggle = GObject.registerClass(
           advancedButton,
           Clutter.GridPosition.RIGHT,
           1,
-          1
+          1,
         );
       }
 
@@ -90,7 +90,7 @@ export const SyncthingIndicatorToggle = GObject.registerClass(
         Syncthing.Signal.HOST_ADD,
         (manager, device) => {
           this.subtitle = device.getName();
-        }
+        },
       );
 
       extension.manager.connect(
@@ -115,7 +115,7 @@ export const SyncthingIndicatorToggle = GObject.registerClass(
               this.checked = false;
               break;
           }
-        }
+        },
       );
 
       extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
@@ -126,7 +126,7 @@ export const SyncthingIndicatorToggle = GObject.registerClass(
         }
       });
     }
-  }
+  },
 );
 
 export const SyncthingIndicatorQuickSetting = GObject.registerClass(
@@ -140,7 +140,7 @@ export const SyncthingIndicatorQuickSetting = GObject.registerClass(
       this.panel = new Components.SyncthingPanel(extension, this.toggle.menu);
       this.panel.showAutostartSwitch(
         extension.settings.get_boolean("use-systemd") &&
-          extension.settings.get_boolean("auto-start")
+          extension.settings.get_boolean("auto-start"),
       );
       this.panel.icon.addActor(this._addIndicator());
       this.panel.icon.addActor(this.toggle);
@@ -163,5 +163,5 @@ export const SyncthingIndicatorQuickSetting = GObject.registerClass(
     close() {
       this.panel.close();
     }
-  }
+  },
 );

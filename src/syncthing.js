@@ -147,7 +147,7 @@ class Item extends Utils.Emitter {
             LOG_PREFIX,
             "emit state change",
             this._name,
-            this._state
+            this._state,
           );
           this._stateEmitted = this._state;
           this.emit(Signal.STATE_CHANGE, this._state);
@@ -233,7 +233,7 @@ class Device extends Item {
     this.folders.connect(Signal.ADD, (collection, folder) => {
       folder.connect(
         Signal.STATE_CHANGE,
-        this.determineStateDelayed.bind(this)
+        this.determineStateDelayed.bind(this),
       );
     });
   }
@@ -259,7 +259,7 @@ class Device extends Item {
             "determine device state",
             this.getName(),
             folder.getName(),
-            folder.getState()
+            folder.getState(),
           );
           this.setState(folder.getState());
         }
@@ -288,13 +288,13 @@ class HostDevice extends Device {
     this._manager.connect(Signal.DEVICE_ADD, (manager, device) => {
       device.connect(
         Signal.STATE_CHANGE,
-        this.determineStateDelayed.bind(this)
+        this.determineStateDelayed.bind(this),
       );
     });
     this._manager.devices.foreach((device) => {
       device.connect(
         Signal.STATE_CHANGE,
-        this.determineStateDelayed.bind(this)
+        this.determineStateDelayed.bind(this),
       );
     });
     this.determineState();
@@ -309,7 +309,7 @@ class HostDevice extends Device {
           "determine host device state",
           this.getName(),
           device.getName(),
-          device.getState()
+          device.getState(),
         );
         this.setState(device.getState());
       }
@@ -423,7 +423,7 @@ export class Manager extends Utils.Emitter {
           LOG_PREFIX,
           "processing event",
           events[i].type,
-          events[i].data
+          events[i].data,
         );
         try {
           switch (events[i].type) {
@@ -555,7 +555,7 @@ export class Manager extends Utils.Emitter {
             name: name,
             path: config.folders[i].path,
           },
-          this
+          this,
         );
         this.folders.add(folder);
       } else {
@@ -571,7 +571,7 @@ export class Manager extends Utils.Emitter {
             return (data) => {
               folder.setState(data.state);
             };
-          })(this.folders.get(config.folders[i].id))
+          })(this.folders.get(config.folders[i].id)),
         );
       }
       for (let j = 0; j < config.folders[i].devices.length; j++) {
@@ -579,7 +579,7 @@ export class Manager extends Utils.Emitter {
           usedDevices[config.folders[i].devices[j].deviceID] = [];
         }
         usedDevices[config.folders[i].devices[j].deviceID].push(
-          this.folders.get(config.folders[i].id)
+          this.folders.get(config.folders[i].id),
         );
       }
     }
@@ -594,7 +594,7 @@ export class Manager extends Utils.Emitter {
                 id: config.devices[i].deviceID,
                 name: config.devices[i].name,
               },
-              this
+              this,
             );
           } else {
             device = new Device(
@@ -602,7 +602,7 @@ export class Manager extends Utils.Emitter {
                 id: config.devices[i].deviceID,
                 name: config.devices[i].name,
               },
-              this
+              this,
             );
           }
           this.devices.add(device);
@@ -628,7 +628,7 @@ export class Manager extends Utils.Emitter {
                     return (data) => {
                       proxy.setCompletion(data.completion);
                     };
-                  })(proxy)
+                  })(proxy),
                 );
               }
               folder = proxy;
@@ -650,7 +650,7 @@ export class Manager extends Utils.Emitter {
       "poll state",
       this._pollCount,
       this._pollCount % POLL_CONFIG_HOOK_COUNT,
-      this._pollCount % POLL_CONNECTION_HOOK_COUNT
+      this._pollCount % POLL_CONNECTION_HOOK_COUNT,
     );
     if (
       (await this._extensionConfig.exists()) &&
@@ -694,11 +694,11 @@ export class Manager extends Utils.Emitter {
     let systemDConfigPath = GLib.get_user_config_dir() + "/systemd/user";
     let systemDConfigFile = Service.NAME + ".service";
     let systemDConfigFileTo = Gio.File.new_for_path(
-      systemDConfigPath + "/" + systemDConfigFile
+      systemDConfigPath + "/" + systemDConfigFile,
     );
     if (force || !systemDConfigFileTo.query_exists(null)) {
       let systemDConfigFileFrom = Gio.File.new_for_path(
-        this._extensionPath + "/" + systemDConfigFile
+        this._extensionPath + "/" + systemDConfigFile,
       );
       let systemdConfigDirectory = Gio.File.new_for_path(systemDConfigPath);
       if (!systemdConfigDirectory.query_exists(null)) {
@@ -711,12 +711,12 @@ export class Manager extends Utils.Emitter {
       ) {
         console.info(
           LOG_PREFIX,
-          "systemd configuration file copied to " + systemDConfigFileTo
+          "systemd configuration file copied to " + systemDConfigFileTo,
         );
       } else {
         console.warn(
           LOG_PREFIX,
-          "couldn't copy systemd configuration file to " + systemDConfigFileTo
+          "couldn't copy systemd configuration file to " + systemDConfigFileTo,
         );
       }
     }
@@ -729,14 +729,14 @@ export class Manager extends Utils.Emitter {
     if (this._extensionConfig.useSystemD) {
       let command = await this._serviceCommand(
         "is-active",
-        this._serviceUserMode
+        this._serviceUserMode,
       );
       active = command == "active";
       error = command == "failed" || command == "error";
       if (error) {
         console.warn(
           LOG_PREFIX,
-          "systemd call failed, switching to API only mode"
+          "systemd call failed, switching to API only mode",
         );
         this._extensionConfig.useSystemD = !error;
       }
@@ -755,19 +755,19 @@ export class Manager extends Utils.Emitter {
       "service active",
       command,
       this._serviceUserMode,
-      this._serviceActive
+      this._serviceActive,
     );
     if (active != this._serviceActive) {
       this._serviceActive = active;
       if (this._serviceUserMode) {
         this.emit(
           Signal.SERVICE_CHANGE,
-          active ? ServiceState.USER_ACTIVE : ServiceState.USER_STOPPED
+          active ? ServiceState.USER_ACTIVE : ServiceState.USER_STOPPED,
         );
       } else {
         this.emit(
           Signal.SERVICE_CHANGE,
-          active ? ServiceState.SYSTEM_ACTIVE : ServiceState.SYSTEM_STOPPED
+          active ? ServiceState.SYSTEM_ACTIVE : ServiceState.SYSTEM_STOPPED,
         );
       }
       if (this.host)
@@ -790,7 +790,7 @@ export class Manager extends Utils.Emitter {
       command,
       user,
       this._serviceUserMode,
-      this._serviceEnabled
+      this._serviceEnabled,
     );
     if (enabled != this._serviceEnabled) {
       this._serviceUserMode = user;
@@ -798,12 +798,12 @@ export class Manager extends Utils.Emitter {
       if (this._serviceUserMode) {
         this.emit(
           Signal.SERVICE_CHANGE,
-          enabled ? ServiceState.USER_ENABLED : ServiceState.USER_DISABLED
+          enabled ? ServiceState.USER_ENABLED : ServiceState.USER_DISABLED,
         );
       } else {
         this.emit(
           Signal.SERVICE_CHANGE,
-          enabled ? ServiceState.SYSTEM_ENABLED : ServiceState.SYSTEM_DISABLED
+          enabled ? ServiceState.SYSTEM_ENABLED : ServiceState.SYSTEM_DISABLED,
         );
       }
     }
@@ -863,7 +863,7 @@ export class Manager extends Utils.Emitter {
       console.debug(
         LOG_PREFIX,
         "opening connection",
-        msg.method + ":" + msg.uri.get_path()
+        msg.method + ":" + msg.uri.get_path(),
       );
       this._httpSession.send_and_read_async(
         msg,
@@ -876,7 +876,7 @@ export class Manager extends Utils.Emitter {
             let response;
             try {
               response = new TextDecoder("utf-8").decode(
-                session.send_and_read_finish(result).get_data()
+                session.send_and_read_finish(result).get_data(),
               );
             } catch (error) {
               if (error.code == Gio.IOErrorEnum.TIMED_OUT) {
@@ -884,7 +884,7 @@ export class Manager extends Utils.Emitter {
                   LOG_PREFIX,
                   error.message,
                   "will retry",
-                  msg.method + ":" + msg.uri.get_path()
+                  msg.method + ":" + msg.uri.get_path(),
                 );
                 // Retry this connection attempt
                 Utils.Timer.run(CONNECTION_RETRY_DELAY, () => {
@@ -898,7 +898,7 @@ export class Manager extends Utils.Emitter {
                   LOG_PREFIX,
                   "callback",
                   msg.method + ":" + msg.uri.get_path(),
-                  response
+                  response,
                 );
                 callback(JSON.parse(response));
               }
@@ -908,7 +908,7 @@ export class Manager extends Utils.Emitter {
                 Error.STREAM,
                 msg.method + ":" + msg.uri.get_path(),
                 error.message,
-                response
+                response,
               );
               this.emit(Signal.ERROR, {
                 type: Error.STREAM,
@@ -929,7 +929,7 @@ export class Manager extends Utils.Emitter {
               msg.reason_phrase,
               msg.method + ":" + msg.get_uri().get_path(),
               msg.status_code,
-              this._httpErrorCount
+              this._httpErrorCount,
             );
             this.emit(Signal.ERROR, {
               type: Error.CONNECTION,
@@ -945,10 +945,10 @@ export class Manager extends Utils.Emitter {
             this._serviceConnected = connected;
             this.emit(
               Signal.SERVICE_CHANGE,
-              connected ? ServiceState.CONNECTED : ServiceState.DISCONNECTED
+              connected ? ServiceState.CONNECTED : ServiceState.DISCONNECTED,
             );
           }
-        }
+        },
       );
     }
   }
@@ -963,7 +963,7 @@ export class Manager extends Utils.Emitter {
         LOG_PREFIX,
         "attach manager",
         await this._isServiceEnabled(),
-        await this._isServiceActive()
+        await this._isServiceActive(),
       );
     }
   }

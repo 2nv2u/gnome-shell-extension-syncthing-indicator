@@ -61,14 +61,14 @@ export const SyncthingIndicatorPanel = GObject.registerClass(
         this._headerIcon,
         side,
         1,
-        1
+        1,
       );
       headerLayout.attach_next_to(
         this._headerSpacer,
         this._headerTitle,
         side,
         1,
-        1
+        1,
       );
       this._headerTitle.text = _("syncthing");
       // Header action bar section
@@ -88,7 +88,7 @@ export const SyncthingIndicatorPanel = GObject.registerClass(
         rescanButton,
         Clutter.GridPosition.RIGHT,
         1,
-        1
+        1,
       );
       if (extension.settings.get_boolean("settings-button")) {
         const settingsButton = new Components.SettingsButton(extension);
@@ -97,17 +97,17 @@ export const SyncthingIndicatorPanel = GObject.registerClass(
           advancedButton,
           Clutter.GridPosition.RIGHT,
           1,
-          1
+          1,
         );
       }
 
       this.panel = new Components.SyncthingPanel(extension, this.menu);
       this.panel.showServiceSwitch(
-        extension.settings.get_boolean("use-systemd")
+        extension.settings.get_boolean("use-systemd"),
       );
       this.panel.showAutostartSwitch(
         extension.settings.get_boolean("use-systemd") &&
-          extension.settings.get_boolean("auto-start")
+          extension.settings.get_boolean("auto-start"),
       );
       this.panel.icon.addActor(this._headerIcon);
       this.add_child(this.panel.icon);
@@ -126,7 +126,7 @@ export const SyncthingIndicatorPanel = GObject.registerClass(
               this._headerIcon.remove_style_class_name("active");
               break;
           }
-        }
+        },
       );
     }
 
@@ -137,5 +137,5 @@ export const SyncthingIndicatorPanel = GObject.registerClass(
     close() {
       this.panel.close();
     }
-  }
+  },
 );

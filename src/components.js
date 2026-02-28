@@ -33,17 +33,17 @@ export const SyncthingPanelIcon = GObject.registerClass(
 
       this._actors = [this];
       this._idleGIcon = Gio.icon_new_for_string(
-        iconPath + "syncthing-idle-symbolic.svg"
+        iconPath + "syncthing-idle-symbolic.svg",
       );
       if (this._showState) {
         this._workingGIcon = Gio.icon_new_for_string(
-          iconPath + "syncthing-working-symbolic.svg"
+          iconPath + "syncthing-working-symbolic.svg",
         );
         this._pausedGIcon = Gio.icon_new_for_string(
-          iconPath + "syncthing-paused-symbolic.svg"
+          iconPath + "syncthing-paused-symbolic.svg",
         );
         this._disconnectedGIcon = Gio.icon_new_for_string(
-          iconPath + "syncthing-disconnected-symbolic.svg"
+          iconPath + "syncthing-disconnected-symbolic.svg",
         );
         this.setGIcon(this._disconnectedGIcon);
       } else {
@@ -56,7 +56,7 @@ export const SyncthingPanelIcon = GObject.registerClass(
           device.connect(Syncthing.Signal.STATE_CHANGE, (device, state) => {
             this.setState(state);
           });
-        }
+        },
       );
     }
 
@@ -91,7 +91,7 @@ export const SyncthingPanelIcon = GObject.registerClass(
         this._actors[i].gicon = gicon;
       }
     }
-  }
+  },
 );
 
 // Syncthing indicator menu
@@ -184,7 +184,7 @@ export const SwitchMenuItem = GObject.registerClass(
     _process(event, state) {
       // Process action when toggle signal is attached
     }
-  }
+  },
 );
 
 // Syncthing indicator section menu
@@ -209,7 +209,7 @@ export const SectionMenu = GObject.registerClass(
       this.section.destroy();
       super.destroy();
     }
-  }
+  },
 );
 
 // Syncthing indicator fodler menu
@@ -234,17 +234,17 @@ export const FolderMenu = GObject.registerClass(
               this.visible = false;
               break;
           }
-        }
+        },
       );
 
       extension.manager.connect(
         Syncthing.Signal.FOLDER_ADD,
         (manager, folder) => {
           this.addSectionItem(new FolderMenuItem(folder));
-        }
+        },
       );
     }
-  }
+  },
 );
 
 // Syncthing indicator fodler menu item
@@ -304,7 +304,7 @@ export const FolderMenuItem = GObject.registerClass(
       Gio.AppInfo.launch_default_for_uri(this.file.get_uri(), null);
       super.activate(event);
     }
-  }
+  },
 );
 
 // Syncthing indicator device menu
@@ -338,21 +338,21 @@ export const DeviceMenu = GObject.registerClass(
               this._toggleVisibility(false);
               break;
           }
-        }
+        },
       );
 
       extension.manager.connect(
         Syncthing.Signal.DEVICE_ADD,
         (manager, device) => {
           this.addSectionItem(new DeviceMenuItem(device));
-        }
+        },
       );
 
       extension.manager.connect(
         Syncthing.Signal.HOST_ADD,
         (manager, device) => {
           this.setHost(device);
-        }
+        },
       );
     }
 
@@ -400,7 +400,7 @@ export const DeviceMenu = GObject.registerClass(
         (this._autoSwitch.visible || this._serviceSwitch.visible) &&
         this.section.numMenuItems > 0;
     }
-  }
+  },
 );
 
 // Syncthing indicator device menu item
@@ -459,7 +459,7 @@ export const DeviceMenuItem = GObject.registerClass(
         this._device.pause();
       }
     }
-  }
+  },
 );
 
 // Syncthing indicator device menu item
@@ -481,7 +481,7 @@ export const DevicesMenuSeparator = GObject.registerClass(
       });
       this.actor.insert_child_at_index(this.icon, 1);
     }
-  }
+  },
 );
 
 // Syncthing indicator no config item
@@ -505,10 +505,10 @@ export const NotConnectedItem = GObject.registerClass(
               this.visible = true;
               break;
           }
-        }
+        },
       );
     }
-  }
+  },
 );
 
 // Syncthing service switch menu item
@@ -543,7 +543,7 @@ export const ServiceSwitchMenuItem = GObject.registerClass(
               break;
           }
           this._attachSwitchSignal();
-        }
+        },
       );
 
       extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
@@ -566,7 +566,7 @@ export const ServiceSwitchMenuItem = GObject.registerClass(
         this.extension.manager.stopService();
       }
     }
-  }
+  },
 );
 
 // Syncthing service switch menu item
@@ -601,7 +601,7 @@ export const AutoSwitchMenuItem = GObject.registerClass(
               break;
           }
           this._attachSwitchSignal();
-        }
+        },
       );
     }
 
@@ -613,7 +613,7 @@ export const AutoSwitchMenuItem = GObject.registerClass(
         this.extension.manager.disableService();
       }
     }
-  }
+  },
 );
 
 // Syncthing service rescan button
@@ -646,10 +646,10 @@ export const RescanButton = GObject.registerClass(
               this.reactive = false;
               break;
           }
-        }
+        },
       );
     }
-  }
+  },
 );
 
 // Syncthing advanced service settings button (web interface)
@@ -669,7 +669,7 @@ export const AdvancedButton = GObject.registerClass(
       this.connect("clicked", () => {
         Gio.AppInfo.launch_default_for_uri(
           this.extension.manager.getServiceURI(),
-          null
+          null,
         );
         this.extension.indicator.close();
       });
@@ -685,10 +685,10 @@ export const AdvancedButton = GObject.registerClass(
               this.reactive = false;
               break;
           }
-        }
+        },
       );
     }
-  }
+  },
 );
 
 // Syncthing extension settings button
@@ -709,5 +709,5 @@ export const SettingsButton = GObject.registerClass(
         this.extension.indicator.close();
       });
     }
-  }
+  },
 );

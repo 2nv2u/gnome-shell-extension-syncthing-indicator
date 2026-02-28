@@ -39,13 +39,13 @@ export default class SyncthingIndicatorExtension extends Extension {
     });
     this.manager = new Syncthing.Manager(
       new Config(this.settings, false),
-      this.metadata.path
+      this.metadata.path,
     );
     switch (this.settings.get_int("menu")) {
       case 0:
         this.indicator = new QuickSetting.SyncthingIndicatorQuickSetting(this);
         Main.panel.statusArea.quickSettings.addExternalIndicator(
-          this.indicator
+          this.indicator,
         );
         break;
       case 1:
