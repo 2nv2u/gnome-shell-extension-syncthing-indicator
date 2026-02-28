@@ -116,7 +116,7 @@ msgstr "Show extension settings button"
 
 #: src/prefs.js:108
 msgid "use-sysd-item"
-msgstr "Use SystemD"
+msgstr "SystemD support"
 
 #: src/prefs.js:109
 msgid "use-sysd-item-subtitle"

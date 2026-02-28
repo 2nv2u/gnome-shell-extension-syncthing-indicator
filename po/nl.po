@@ -115,7 +115,7 @@ msgstr "Geef extensie settings knop weer"
 
 #: src/prefs.js:108
 msgid "use-sysd-item"
-msgstr "Gebruik SystemD"
+msgstr "SystemD ondersteuning"
 
 #: src/prefs.js:109
 msgid "use-sysd-item-subtitle"
@@ -123,7 +123,7 @@ msgstr "Activeer Syncthing daemon knoppen voor SystemD"
 
 #: src/prefs.js:121
 msgid "auto-start-item"
-msgstr "Autostart switch"
+msgstr "Autostart schakelaar"
 
 #: src/prefs.js:122
 msgid "auto-start-item-subtitle"
