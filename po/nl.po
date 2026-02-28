@@ -119,7 +119,7 @@ msgstr "Gebruik SystemD"
 
 #: src/prefs.js:109
 msgid "use-sysd-item-subtitle"
-msgstr "Activeer Syncthing daemon knoppen voor SystemD""
+msgstr "Activeer Syncthing daemon knoppen voor SystemD"
 
 #: src/prefs.js:121
 msgid "auto-start-item"
