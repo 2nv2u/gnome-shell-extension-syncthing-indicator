@@ -21,4 +21,4 @@ https://extensions.gnome.org/extension/1070/syncthing-indicator/
 
 ## Debugging during development
 
-`clear && export G_MESSAGES_DEBUG=all && dbus-run-session -- gnome-shell --nested --wayland | grep syncthing-indicator`
+`clear && export G_MESSAGES_DEBUG=all && dbus-run-session -- gnome-shell --devkit --wayland | grep syncthing-indicator`
