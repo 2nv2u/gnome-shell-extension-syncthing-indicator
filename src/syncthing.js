@@ -221,9 +221,7 @@ class ItemCollection extends Utils.Emitter {
   }
 
   foreach(handler) {
-    for (let itemID in this._collection) {
-      handler(this._collection[itemID]);
-    }
+    Object.values(this._collection).forEach(handler);
   }
 }
 
