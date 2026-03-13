@@ -50,18 +50,19 @@ export class Timer {
   }
 
   _run(callback, timeout, recurring, priority) {
-    if (!this._source || recurring) {
-      this._source = GLib.timeout_source_new(timeout);
-      this._source.set_priority(priority);
-      this._source.set_callback(() => {
-        callback();
-        if (recurring) {
-          this._run(callback, timeout, recurring, priority);
-        } else {
-          return GLib.SOURCE_REMOVE;
-        }
-      });
+    if (this._source) {
+      this._source.destroy();
     }
+    this._source = GLib.timeout_source_new(timeout);
+    this._source.set_priority(priority);
+    this._source.set_callback(() => {
+      callback();
+      if (recurring) {
+        this._run(callback, timeout, recurring, priority);
+      } else {
+        return GLib.SOURCE_REMOVE;
+      }
+    });
     this._source.attach(null);
   }
 
