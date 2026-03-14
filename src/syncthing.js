@@ -132,12 +132,10 @@ class Item extends Utils.Emitter {
   }
 
   isBusy() {
-    return (
-      this.getState() == State.SYNCING || this.getState() == State.SCANNING
-    );
+    return this.state === State.SYNCING || this.state === State.SCANNING;
   }
 
-  setState(state) {
+  set state(state) {
     if (state.length > 0 && this._state !== state) {
       this._stateTimer.cancel();
       console.info(LOG_PREFIX, "state change", this._name, state);
@@ -158,11 +156,11 @@ class Item extends Utils.Emitter {
     }
   }
 
-  getState() {
+  get state() {
     return this._state;
   }
 
-  setName(name) {
+  set name(name) {
     if (name.length > 0 && this._name != name) {
       console.info(LOG_PREFIX, "emit name change", this._name, name);
       this._name = name;
@@ -170,7 +168,7 @@ class Item extends Utils.Emitter {
     }
   }
 
-  getName() {
+  get name() {
     return this._name;
   }
 
@@ -190,13 +188,17 @@ class ItemCollection extends Utils.Emitter {
 
   add(item) {
     if (item instanceof Item) {
-      console.info(LOG_PREFIX, "add", item.constructor.name, item.getName());
+      console.info(LOG_PREFIX, "add", item.constructor.name, item.name);
       this._collection[item.id] = item;
       item.connect(Signal.DESTROY, (_item) => {
         delete this._collection[_item.id];
       });
       this.emit(Signal.ADD, item);
     }
+  }
+
+  get ids() {
+    return Object.keys(this._collection);
   }
 
   destroy(id) {
@@ -240,9 +242,7 @@ class Device extends Item {
   }
 
   isOnline() {
-    return (
-      this.getState() != State.DISCONNECTED && this.getState() != State.PAUSED
-    );
+    return this.state != State.DISCONNECTED && this.state != State.PAUSED;
   }
 
   determineStateDelayed() {
@@ -252,17 +252,17 @@ class Device extends Item {
 
   determineState() {
     if (this.isOnline()) {
-      this.setState(State.PAUSED);
+      this.state = State.PAUSED;
       this.folders.foreach((folder) => {
         if (!this.isBusy()) {
           console.info(
             LOG_PREFIX,
             "determine device state",
-            this.getName(),
-            folder.getName(),
-            folder.getState(),
+            this.name,
+            folder.name,
+            folder.state,
           );
-          this.setState(folder.getState());
+          this.state = folder.state;
         }
       });
     }
@@ -302,17 +302,17 @@ class HostDevice extends Device {
   }
 
   determineState() {
-    this.setState(State.PAUSED);
+    this.state = State.PAUSED;
     this._manager.devices.foreach((device) => {
       if (this != device && !this.isBusy() && device.isOnline()) {
         console.info(
           LOG_PREFIX,
           "determine host device state",
-          this.getName(),
-          device.getName(),
-          device.getState(),
+          this.name,
+          device.name,
+          device.state,
         );
-        this.setState(device.getState());
+        this.state = device.state;
       }
     });
     if (!this.isBusy()) {
@@ -338,16 +338,16 @@ class Folder extends Item {
 class FolderCompletionProxy extends Folder {
   constructor(data) {
     super(data.folder);
-    this._name = data.folder.getName() + " (" + data.device.getName() + ")";
+    this._name = data.folder.name + " (" + data.device.name + ")";
     this._folder = data.folder;
     this._device = data.device;
   }
 
   setCompletion(percentage) {
     if (percentage < 100) {
-      this.setState(State.SYNCING);
+      this.state = State.SYNCING;
     } else {
-      this.setState(State.IDLE);
+      this.state = State.IDLE;
     }
   }
 }
@@ -383,6 +383,7 @@ export class Manager extends Utils.Emitter {
     this._hostID = "";
     this._lastErrorTime = Date.now();
     this._lastPendingCount = 0;
+    this._extensionPath = extensionPath;
     this.connect(Signal.SERVICE_CHANGE, async (manager, state) => {
       switch (state) {
         case ServiceState.USER_ACTIVE:
@@ -449,7 +450,7 @@ export class Manager extends Utils.Emitter {
           break;
         case EventType.FOLDER_ERRORS:
           if (this.folders.exists(event.data.folder)) {
-            this.folders.get(event.data.folder).setState(State.ERRONEOUS);
+            this.folders.get(event.data.folder).state = State.ERRONEOUS;
           }
           break;
         case EventType.FOLDER_COMPLETION:
@@ -459,7 +460,7 @@ export class Manager extends Utils.Emitter {
           ) {
             let device = this.devices.get(event.data.device);
             if (device.folders.exists(event.data.folder)) {
-              if (device.isOnline()) device.setState(State.SCANNING);
+              if (device.isOnline()) device.state = State.SCANNING;
               device.folders
                 .get(event.data.folder)
                 .setCompletion(event.data.completion);
@@ -468,39 +469,38 @@ export class Manager extends Utils.Emitter {
           break;
         case EventType.FOLDER_SUMMARY:
           if (this.folders.exists(event.data.folder)) {
-            this.folders
-              .get(event.data.folder)
-              .setState(event.data.summary.state);
+            this.folders.get(event.data.folder).state =
+              event.data.summary.state;
           }
           break;
         case EventType.FOLDER_PAUSED:
           if (this.folders.exists(event.data.id)) {
-            this.folders.get(event.data.id).setState(State.PAUSED);
+            this.folders.get(event.data.id).state = State.PAUSED;
           }
           break;
         case EventType.STATE_CHANGED:
           if (this.folders.exists(event.data.folder)) {
-            this.folders.get(event.data.folder).setState(event.data.to);
+            this.folders.get(event.data.folder).state = event.data.to;
           }
           break;
         case EventType.DEVICE_RESUMED:
           if (this.devices.exists(event.data.device)) {
-            this.devices.get(event.data.device).setState(State.DISCONNECTED);
+            this.devices.get(event.data.device).state = State.DISCONNECTED;
           }
           break;
         case EventType.DEVICE_PAUSED:
           if (this.devices.exists(event.data.device)) {
-            this.devices.get(event.data.device).setState(State.PAUSED);
+            this.devices.get(event.data.device).state = State.PAUSED;
           }
           break;
         case EventType.DEVICE_CONNECTED:
           if (this.devices.exists(event.data.id)) {
-            this.devices.get(event.data.id).setState(State.IDLE);
+            this.devices.get(event.data.id).state = State.IDLE;
           }
           break;
         case EventType.DEVICE_DISCONNECTED:
           if (this.devices.exists(event.data.id)) {
-            this.devices.get(event.data.id).setState(State.DISCONNECTED);
+            this.devices.get(event.data.id).state = State.DISCONNECTED;
           }
           break;
         case EventType.PENDING_DEVICES_CHANGED:
@@ -528,11 +528,11 @@ export class Manager extends Utils.Emitter {
     for (let deviceID in devices) {
       if (this.devices.exists(deviceID) && deviceID != this._hostID) {
         if (devices[deviceID].connected) {
-          this.devices.get(deviceID).setState(State.IDLE);
+          this.devices.get(deviceID).state = State.IDLE;
         } else if (devices[deviceID].paused) {
-          this.devices.get(deviceID).setState(State.PAUSED);
+          this.devices.get(deviceID).state = State.PAUSED;
         } else {
-          this.devices.get(deviceID).setState(State.DISCONNECTED);
+          this.devices.get(deviceID).state = State.DISCONNECTED;
         }
       }
     }
@@ -579,8 +579,8 @@ export class Manager extends Utils.Emitter {
 
   async _processConfig(config) {
     // Track existing items to remove old ones
-    const existingFolderIDs = new Set(Object.keys(this.folders._collection));
-    const existingDeviceIDs = new Set(Object.keys(this.devices._collection));
+    const existingFolderIDs = new Set(this.folders.ids);
+    const existingDeviceIDs = new Set(this.devices.ids);
     const configFolderIDs = new Set();
     const configDeviceIDs = new Set();
     // Only include devices which shares folders with this host
@@ -606,14 +606,14 @@ export class Manager extends Utils.Emitter {
         this.folders.get(folderID).setName(name);
       }
       if (config.folders[i].paused) {
-        this.folders.get(folderID).setState(State.PAUSED);
+        this.folders.get(folderID).state = State.PAUSED;
       } else {
         this._openConnection(
           "GET",
           "/rest/db/status?folder=" + folderID,
           (function (folder) {
             return (data) => {
-              folder.setState(data.state);
+              folder.state = data.state;
             };
           })(this.folders.get(folderID)),
         );
@@ -669,7 +669,7 @@ export class Manager extends Utils.Emitter {
                 folder: folder,
                 device: device,
               });
-              if (folder.getState() != State.PAUSED) {
+              if (folder.state != State.PAUSED) {
                 this._openConnection(
                   "GET",
                   "/rest/db/completion?folder=" +
@@ -826,8 +826,7 @@ export class Manager extends Utils.Emitter {
           active ? ServiceState.SYSTEM_ACTIVE : ServiceState.SYSTEM_STOPPED,
         );
       }
-      if (this.host)
-        this.host.setState(active ? State.IDLE : State.DISCONNECTED);
+      if (this.host) this.host.state = active ? State.IDLE : State.DISCONNECTED;
     }
     return active;
   }
@@ -1063,7 +1062,7 @@ export class Manager extends Utils.Emitter {
     this._httpAborting = false;
   }
 
-  getServiceURI() {
+  get serviceURI() {
     return this._extensionConfig.URI;
   }
 

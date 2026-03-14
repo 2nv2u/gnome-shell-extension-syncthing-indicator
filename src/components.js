@@ -307,7 +307,7 @@ export const FolderMenuItem = GObject.registerClass(
       this.actor.add_child(this.icon);
 
       this.label = new St.Label({
-        text: folder.getName(),
+        text: folder.name,
         style_class: "syncthing-state-label",
       });
       this.actor.add_child(this.label);
@@ -384,7 +384,7 @@ export const DeviceMenu = GObject.registerClass(
 
     setHost(device) {
       this._host = device;
-      this.label.text = device.getName();
+      this.label.text = device.name;
 
       this._host.connect(Syncthing.Signal.STATE_CHANGE, (device, state) => {
         this.icon.style_class = "popup-menu-icon syncthing-state-icon " + state;
@@ -433,7 +433,7 @@ export const DeviceMenu = GObject.registerClass(
 export const DeviceMenuItem = GObject.registerClass(
   class DeviceMenuItem extends SwitchMenuItem {
     _init(device) {
-      super._init(device.getName(), false, null);
+      super._init(device.name, false, null);
       this._device = device;
       // let icon = new Gio.ThemedIcon({ name: 'network-computer-symbolic' });
       let icon = new Gio.ThemedIcon({ name: "network-server-symbolic" });
@@ -448,7 +448,7 @@ export const DeviceMenuItem = GObject.registerClass(
       this.setSensitive(false);
 
       this._device.connect(Syncthing.Signal.STATE_CHANGE, (device) => {
-        let state = device.getState();
+        let state = device.state;
         this._detachSwitchSignal();
         switch (state) {
           case Syncthing.State.DISCONNECTED:
@@ -694,7 +694,7 @@ export const AdvancedButton = GObject.registerClass(
 
       this.connect("clicked", () => {
         Gio.AppInfo.launch_default_for_uri(
-          this.extension.manager.getServiceURI(),
+          this.extension.manager.serviceURI,
           null,
         );
         this.extension.indicator.close();

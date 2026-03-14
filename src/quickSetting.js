@@ -89,7 +89,7 @@ export const SyncthingIndicatorToggle = GObject.registerClass(
       extension.manager.connect(
         Syncthing.Signal.HOST_ADD,
         (manager, device) => {
-          this.subtitle = device.getName();
+          this.subtitle = device.name;
         },
       );
 
