@@ -383,18 +383,16 @@ export class Manager extends Utils.Emitter {
     this._hostID = "";
     this._lastErrorTime = Date.now();
     this._lastPendingCount = 0;
-    this.connect(Signal.SERVICE_CHANGE, (manager, state) => {
+    this.connect(Signal.SERVICE_CHANGE, async (manager, state) => {
       switch (state) {
         case ServiceState.USER_ACTIVE:
         case ServiceState.SYSTEM_ACTIVE:
-          this._openConnection("GET", "/rest/system/status", (status) => {
-            this._hostID = status.myID;
-            this._callConfig((config) => {
-              this._callEvents("limit=1");
-              this._pollTimer.run(this._pollState.bind(this));
-              this._checkPendingRequests();
-            });
-          });
+          const status = await this._serviceCall("GET", "/rest/system/status");
+          this._hostID = status.myID;
+          await this._callConfig();
+          this._callEvents("limit=1");
+          this._pollTimer.run(this._pollState.bind(this));
+          await this._checkPendingRequests();
           break;
         case ServiceState.USER_STOPPED:
         case ServiceState.SYSTEM_STOPPED:
@@ -410,11 +408,10 @@ export class Manager extends Utils.Emitter {
     });
   }
 
-  _callConfig(handler) {
-    this._openConnection("GET", "/rest/system/config", (config) => {
-      this._processConfig(config);
-      if (handler) handler(config);
-    });
+  async _callConfig() {
+    const config = await this._serviceCall("GET", "/rest/system/config");
+    await this._processConfig(config);
+    return config;
   }
 
   _callEvents(options) {
@@ -433,15 +430,15 @@ export class Manager extends Utils.Emitter {
     });
   }
 
-  _processEvent(event) {
+  async _processEvent(event) {
     console.debug(LOG_PREFIX, "processing event", event.type, event.data);
     try {
       switch (event.type) {
         case EventType.STARTUP_COMPLETE:
-          this._callConfig();
+          await this._callConfig();
           break;
         case EventType.CONFIG_SAVED:
-          this._processConfig(event.data);
+          await this._processConfig(event.data);
           break;
         case EventType.LOGIN_ATTEMPT:
           if (event.data.success) {
@@ -481,10 +478,6 @@ export class Manager extends Utils.Emitter {
             this.folders.get(event.data.id).setState(State.PAUSED);
           }
           break;
-        case EventType.PENDING_FOLDERS_CHANGED:
-          this.folders.destroy();
-          this._callConfig();
-          break;
         case EventType.STATE_CHANGED:
           if (this.folders.exists(event.data.folder)) {
             this.folders.get(event.data.folder).setState(event.data.to);
@@ -512,13 +505,13 @@ export class Manager extends Utils.Emitter {
           break;
         case EventType.PENDING_DEVICES_CHANGED:
           this.devices.destroy();
-          this._callConfig();
-          this._checkPendingRequests();
+          await this._callConfig();
+          await this._checkPendingRequests();
           break;
         case EventType.PENDING_FOLDERS_CHANGED:
           this.folders.destroy();
-          this._callConfig();
-          this._checkPendingRequests();
+          await this._callConfig();
+          await this._checkPendingRequests();
           break;
       }
       if (event.id) {
@@ -529,81 +522,78 @@ export class Manager extends Utils.Emitter {
     }
   }
 
-  _callConnections() {
-    this._openConnection("GET", "/rest/system/connections", (data) => {
-      let devices = data.connections;
-      for (let deviceID in devices) {
-        if (this.devices.exists(deviceID) && deviceID != this._hostID) {
-          if (devices[deviceID].connected) {
-            this.devices.get(deviceID).setState(State.IDLE);
-          } else if (devices[deviceID].paused) {
-            this.devices.get(deviceID).setState(State.PAUSED);
-          } else {
-            this.devices.get(deviceID).setState(State.DISCONNECTED);
-          }
+  async _callConnections() {
+    const data = await this._serviceCall("GET", "/rest/system/connections");
+    const devices = data.connections;
+    for (let deviceID in devices) {
+      if (this.devices.exists(deviceID) && deviceID != this._hostID) {
+        if (devices[deviceID].connected) {
+          this.devices.get(deviceID).setState(State.IDLE);
+        } else if (devices[deviceID].paused) {
+          this.devices.get(deviceID).setState(State.PAUSED);
+        } else {
+          this.devices.get(deviceID).setState(State.DISCONNECTED);
         }
       }
-    });
+    }
   }
 
-  _checkPendingRequests() {
-    let fetchPending = (path) => {
-      return new Promise((resolve) => {
-        this._openConnection("GET", path, resolve);
-      });
-    };
-    Promise.all([
-      fetchPending("/rest/cluster/pending/devices"),
-      fetchPending("/rest/cluster/pending/folders"),
-    ])
-      .then(([devices, folders]) => {
-        let deviceCount = Object.keys(devices || {}).length;
-        let folderCount = Object.keys(folders || {}).length;
-        let totalPending = deviceCount + folderCount;
-        if (totalPending > 0 && totalPending > this._lastPendingCount) {
-          let messages = [];
-          if (deviceCount > 0) {
-            let deviceLabel = deviceCount === 1 ? "device" : "devices";
-            messages.push(`${deviceCount} ${deviceLabel}`);
-          }
-          if (folderCount > 0) {
-            let folderLabel = folderCount === 1 ? "folder" : "folders";
-            messages.push(`${folderCount} ${folderLabel}`);
-          }
-          this.emit(Signal.PENDING_REQUEST, {
-            devices: devices,
-            folders: folders,
-            message: messages.join(", "),
-          });
+  async _checkPendingRequests() {
+    try {
+      const devices = await this._serviceCall(
+        "GET",
+        "/rest/cluster/pending/devices",
+      );
+      const folders = await this._serviceCall(
+        "GET",
+        "/rest/cluster/pending/folders",
+      );
+      const deviceCount = Object.keys(devices || {}).length;
+      const folderCount = Object.keys(folders || {}).length;
+      const totalPending = deviceCount + folderCount;
+      if (totalPending > 0 && totalPending > this._lastPendingCount) {
+        const messages = [];
+        if (deviceCount > 0) {
+          const deviceLabel = deviceCount === 1 ? "device" : "devices";
+          messages.push(`${deviceCount} ${deviceLabel}`);
         }
-        this._lastPendingCount = totalPending;
-      })
-      .catch((error) => {
-        console.warn(
-          LOG_PREFIX,
-          "failed to check pending requests",
-          error.message,
-        );
-      });
+        if (folderCount > 0) {
+          const folderLabel = folderCount === 1 ? "folder" : "folders";
+          messages.push(`${folderCount} ${folderLabel}`);
+        }
+        this.emit(Signal.PENDING_REQUEST, {
+          devices: devices,
+          folders: folders,
+          message: messages.join(", "),
+        });
+      }
+      this._lastPendingCount = totalPending;
+    } catch (error) {
+      console.warn(
+        LOG_PREFIX,
+        "failed to check pending requests",
+        error.message,
+      );
+    }
   }
 
-  _processConfig(config) {
+  async _processConfig(config) {
     // Track existing items to remove old ones
-    let existingFolderIDs = new Set(Object.keys(this.folders._collection));
-    let existingDeviceIDs = new Set(Object.keys(this.devices._collection));
-    let configFolderIDs = new Set();
-    let configDeviceIDs = new Set();
+    const existingFolderIDs = new Set(Object.keys(this.folders._collection));
+    const existingDeviceIDs = new Set(Object.keys(this.devices._collection));
+    const configFolderIDs = new Set();
+    const configDeviceIDs = new Set();
     // Only include devices which shares folders with this host
-    let usedDevices = {};
+    const usedDevices = {};
     for (let i = 0; i < config.folders.length; i++) {
-      let folderID = config.folders[i].id;
+      const folderID = config.folders[i].id;
       configFolderIDs.add(folderID);
       existingFolderIDs.delete(folderID);
 
       let name = config.folders[i].label;
       if (name.length == 0) name = folderID;
       if (!this.folders.exists(folderID)) {
-        let folder = new Folder(
+        const folder = new Folder(
           {
             id: folderID,
             name: name,
@@ -675,7 +665,7 @@ export class Manager extends Utils.Emitter {
           ) {
             let folder = usedDevices[config.devices[i].deviceID][j];
             if (device != this.host) {
-              let proxy = new FolderCompletionProxy({
+              const proxy = new FolderCompletionProxy({
                 folder: folder,
                 device: device,
               });
@@ -709,7 +699,7 @@ export class Manager extends Utils.Emitter {
       this.devices.destroy(deviceID);
     }
 
-    this._callConnections();
+    await this._callConnections();
   }
 
   async _pollState() {
@@ -725,16 +715,16 @@ export class Manager extends Utils.Emitter {
       (await this._isServiceActive())
     ) {
       if (this._pollCount % POLL_CONFIG_HOOK_COUNT == 0) {
-        this._callConfig();
-        this._checkPendingRequests();
+        await this._callConfig();
+        await this._checkPendingRequests();
       }
       if (this._pollCount % POLL_CONNECTION_HOOK_COUNT == 0) {
         await this._isServiceEnabled();
-        this._callConnections();
+        await this._callConnections();
       }
       this._openConnection("GET", "/rest/system/error", (data) => {
         let errorTime;
-        let errors = data.errors;
+        const errors = data.errors;
         if (errors != null) {
           for (let i = 0; i < errors.length; i++) {
             errorTime = new Date(errors[i].when);
@@ -808,7 +798,7 @@ export class Manager extends Utils.Emitter {
       }
     }
     if (!this._extensionConfig.useSystemD) {
-      let result = await this._serviceCall("GET", "/rest/system/ping");
+      const result = await this._serviceCall("GET", "/rest/system/ping");
       active = result["ping"] == "pong" ? "ping" in result : false;
       error = !active ? active : error;
     }

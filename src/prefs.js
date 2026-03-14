@@ -53,8 +53,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       this.showAbout();
     });
 
-    let settings = this.getSettings("org.gnome.shell.extensions.syncthing");
-    let config = new Config(settings, true);
+    const settings = this.getSettings("org.gnome.shell.extensions.syncthing");
+    const config = new Config(settings, true);
 
     // Settings group
     const settingsGroup = new Adw.PreferencesGroup({
@@ -64,7 +64,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
     page.add(settingsGroup);
 
     // Menu type model
-    let menuTypesModel = new Gtk.StringList();
+    const menuTypesModel = new Gtk.StringList();
     menuTypesModel.append(_("quick-settings"));
     menuTypesModel.append(_("main-panel"));
 
@@ -199,7 +199,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       .load()
       .then(() => {
         configFileView.subtitle =
-          config.filePath != null ? config.filePath.get_path() : _("unknown");
+          config.filePath != null ? config.filePath.path : _("unknown");
         serviceAddressView.subtitle =
           config.fileURI != null ? config.fileURI : _("unknown");
         apiKeyView.subtitle =
