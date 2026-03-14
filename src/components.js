@@ -28,7 +28,8 @@ export const SyncthingPanelIcon = GObject.registerClass(
         icon_size: 18,
       });
 
-      let iconPath = extension.metadata.path + "/icons/";
+      this._destroyed = false;
+      const iconPath = extension.metadata.path + "/icons/";
       this._showState = extension.settings.get_boolean("icon-state");
 
       this._actors = [this];
@@ -86,15 +87,20 @@ export const SyncthingPanelIcon = GObject.registerClass(
     }
 
     setGIcon(gicon) {
-      if (this.isDisposed() || this._activeIcon === gicon) return;
+      if (this._destroyed || this._activeIcon === gicon) return;
       this._activeIcon = gicon;
       this._actors = this._actors.filter((actor) => {
-        if (actor && !actor.isDisposed()) {
+        if (actor) {
           actor.gicon = gicon;
           return true;
         }
         return false;
       });
+    }
+
+    destroy() {
+      this._destroyed = true;
+      super.destroy();
     }
   },
 );
