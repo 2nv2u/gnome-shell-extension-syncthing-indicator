@@ -21,6 +21,39 @@ const SYNCTHING_COMMAND = "syncthing";
 const LOAD_RETRY_COUNT = 5;
 const LOAD_RETRY_DELAY = 500;
 
+class File {
+  #paths = [];
+  #index = 0;
+
+  addPath(path) {
+    this.#paths.push(path);
+  }
+
+  exists() {
+    if (this.#paths.length === 0) return false;
+    while (this.#index < this.#paths.length) {
+      const gioFile = Gio.File.new_for_path(this.#paths[this.#index]);
+      if (gioFile.query_exists(null)) {
+        return true;
+      }
+      this.#index++;
+    }
+    return false;
+  }
+
+  get path() {
+    if (this.#index < this.#paths.length) {
+      return this.#paths[this.#index];
+    }
+    return null;
+  }
+
+  read() {
+    const gioFile = Gio.File.new_for_path(this.#paths[this.#index]);
+    return gioFile.read(null);
+  }
+}
+
 // Synthing configuration
 export default class Config {
   CONFIG_PATH_KEY = "Configuration file";
@@ -37,7 +70,6 @@ export default class Config {
   }
 
   clear() {
-    this.filePath = null;
     this.fileURI = null;
     this.fileApiKey = null;
     this.prefURI = null;
@@ -60,23 +92,22 @@ export default class Config {
   }
 
   async loadFromConfigFile() {
-    this.filePath = Gio.File.new_for_path("");
-    // Extract syncthing config file location from the synthing path command
+    const filePath = new File();
     try {
-      let proc = Gio.Subprocess.new(
-        [SYNCTHING_COMMAND, "--paths"],
+      const proc = Gio.Subprocess.new(
+        [SYNCTHING_COMMAND, "paths"],
         Gio.SubprocessFlags.STDOUT_PIPE,
       );
-      let pathArray = (await proc.communicate_utf8_async(null, null))
+      const pathArray = (await proc.communicate_utf8_async(null, null))
         .toString()
         .split("\n\n");
-      let paths = {};
+      const cmdPaths = {};
       for (let i = 0; i < pathArray.length; i++) {
-        let items = pathArray[i].split(":\n\t");
-        if (items.length == 2) paths[items[0]] = items[1].split("\n\t");
+        const items = pathArray[i].split(":\n\t");
+        if (items.length == 2) cmdPaths[items[0]] = items[1].split("\n\t");
       }
-      if (this.CONFIG_PATH_KEY in paths) {
-        this.filePath = Gio.File.new_for_path(paths[this.CONFIG_PATH_KEY][0]);
+      if (this.CONFIG_PATH_KEY in cmdPaths) {
+        filePath.addPath(cmdPaths[this.CONFIG_PATH_KEY][0]);
       }
     } catch (error) {
       console.warn(
@@ -85,33 +116,22 @@ export default class Config {
         error.message,
       );
     }
-    // As alternative, extract syncthing configuration from the default user config file
-    if (!this.filePath.query_exists(null)) {
-      this.filePath = Gio.File.new_for_path(
-        GLib.get_user_state_dir() + "/syncthing/config.xml",
-      );
-    }
-    // As alternative, extract syncthing configuration from the deprecated user config file
-    if (!this.filePath.query_exists(null)) {
-      this.filePath = Gio.File.new_for_path(
-        GLib.get_user_config_dir() + "/syncthing/config.xml",
-      );
-    }
-    if (this.filePath.query_exists(null)) {
-      let configInputStream = this.filePath.read(null);
-      let configDataInputStream = Gio.DataInputStream.new(configInputStream);
-      let config = configDataInputStream.read_until("", null).toString();
+
+    filePath.addPath(GLib.get_user_config_dir() + "/syncthing/config.xml");
+    filePath.addPath(GLib.get_user_state_dir() + "/syncthing/config.xml");
+
+    if (filePath.exists()) {
+      console.info(LOG_PREFIX, "found config file", filePath.path);
+      const configInputStream = filePath.read();
+      const configDataInputStream = Gio.DataInputStream.new(configInputStream);
+      const config = configDataInputStream.read_until("", null).toString();
       configInputStream.close(null);
-      let regExp = new GLib.Regex(
-        '<gui\\s+[^>]*?tls="(true|false)"[^>]*>\\s*<address>([^<]*)</address>\\s*<apikey>([^<]*)</apikey>',
-        GLib.RegexCompileFlags.NONE,
-        0,
-      );
-      let reMatch = regExp.match(config, 0);
-      if (reMatch[0]) {
-        let tls = reMatch[1].fetch(0);
-        let address = reMatch[2].fetch(0);
-        let apiKey = reMatch[3].fetch(0);
+      const parser = new Utils.XMLParser();
+      const gui = parser.parse(config)?.configuration?.gui;
+      const tls = gui?.tls;
+      const address = gui?.address;
+      const apiKey = gui?.apikey;
+      if (tls && address && apiKey) {
         this.fileApiKey = apiKey;
         this.fileURI = "http" + (tls === "true" ? "s" : "") + "://" + address;
         this._exists = true;
@@ -120,19 +140,21 @@ export default class Config {
           "found config from file",
           this.fileURI,
           this.fileApiKey.substr(0, 5) + "...",
-          this.filePath.get_path(),
+          filePath.path,
         );
       } else {
-        console.error(LOG_PREFIX, "can't find gui xml node in config");
+        console.error(
+          LOG_PREFIX,
+          "no valid config found in file",
+          filePath.path,
+        );
       }
-    } else {
-      console.error(LOG_PREFIX, "can't find config file");
     }
   }
 
   loadFromPreferences() {
-    let apiKey = this.settings.get_string("api-key");
-    let serviceUri = this.settings.get_string("service-uri");
+    const apiKey = this.settings.get_string("api-key");
+    const serviceUri = this.settings.get_string("service-uri");
     if (
       apiKey.length > 0 &&
       serviceUri.search("https?://[-a-zA-Z0-9.]{1,256}:[0-9]{2,5}") >= 0
