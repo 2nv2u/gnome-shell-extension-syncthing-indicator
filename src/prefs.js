@@ -1,10 +1,10 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.48
+	SyncthingIndicator 0.49
 ================================================================================================================
 
 	GJS syncthing gnome-shell panel indicator preferences.
 
-	Copyright (c) 2019-2025, 2nv2u <info@2nv2u.com>
+	Copyright (c) 2019-2026, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
 ============================================================================================================= */
 
@@ -262,7 +262,7 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
     about_window.set_issue_url(this.metadata.url + "/issues");
     about_window.set_website(this.metadata.url);
     about_window.set_license_type(Gtk.License.GPL_3_0);
-    about_window.set_copyright(_("copyright") + " © 2025 2nv2u");
+    about_window.set_copyright(_("copyright") + " © 2026 2nv2u");
     about_window.show();
   }
 }
