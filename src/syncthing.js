@@ -420,116 +420,113 @@ export class Manager extends Utils.Emitter {
   _callEvents(options) {
     this._openConnection("GET", "/rest/events?" + options, (events) => {
       for (let i = 0; i < events.length; i++) {
-        console.debug(
-          LOG_PREFIX,
-          "processing event",
-          events[i].type,
-          events[i].data,
-        );
-        try {
-          switch (events[i].type) {
-            case EventType.STARTUP_COMPLETE:
-              this._callConfig();
-              break;
-            case EventType.CONFIG_SAVED:
-              this._processConfig(events[i].data);
-              break;
-            case EventType.LOGIN_ATTEMPT:
-              if (events[i].data.success) {
-                this.emit(Signal.LOGIN, events[i].data.username);
-              } else {
-                this.emit(Error.LOGIN, events[i].data.username);
-              }
-              break;
-            case EventType.FOLDER_ERRORS:
-              if (this.folders.exists(events[i].data.folder)) {
-                this.folders
-                  .get(events[i].data.folder)
-                  .setState(State.ERRONEOUS);
-              }
-              break;
-            case EventType.FOLDER_COMPLETION:
-              if (
-                this.folders.exists(events[i].data.folder) &&
-                this.devices.exists(events[i].data.device)
-              ) {
-                let device = this.devices.get(events[i].data.device);
-                if (device.folders.exists(events[i].data.folder)) {
-                  if (device.isOnline()) device.setState(State.SCANNING);
-                  device.folders
-                    .get(events[i].data.folder)
-                    .setCompletion(events[i].data.completion);
-                }
-              }
-              break;
-            case EventType.FOLDER_SUMMARY:
-              if (this.folders.exists(events[i].data.folder)) {
-                this.folders
-                  .get(events[i].data.folder)
-                  .setState(events[i].data.summary.state);
-              }
-              break;
-            case EventType.FOLDER_PAUSED:
-              if (this.folders.exists(events[i].data.id)) {
-                this.folders.get(events[i].data.id).setState(State.PAUSED);
-              }
-              break;
-            case EventType.PENDING_FOLDERS_CHANGED:
-              this.folders.destroy();
-              this._callConfig();
-              break;
-            case EventType.STATE_CHANGED:
-              if (this.folders.exists(events[i].data.folder)) {
-                this.folders
-                  .get(events[i].data.folder)
-                  .setState(events[i].data.to);
-              }
-              break;
-            case EventType.DEVICE_RESUMED:
-              if (this.devices.exists(events[i].data.device)) {
-                this.devices
-                  .get(events[i].data.device)
-                  .setState(State.DISCONNECTED);
-              }
-              break;
-            case EventType.DEVICE_PAUSED:
-              if (this.devices.exists(events[i].data.device)) {
-                this.devices.get(events[i].data.device).setState(State.PAUSED);
-              }
-              break;
-            case EventType.DEVICE_CONNECTED:
-              if (this.devices.exists(events[i].data.id)) {
-                this.devices.get(events[i].data.id).setState(State.IDLE);
-              }
-              break;
-            case EventType.DEVICE_DISCONNECTED:
-              if (this.devices.exists(events[i].data.id)) {
-                this.devices
-                  .get(events[i].data.id)
-                  .setState(State.DISCONNECTED);
-              }
-              break;
-            case EventType.PENDING_DEVICES_CHANGED:
-              this.devices.destroy();
-              this._callConfig();
-              this._checkPendingRequests();
-              break;
-            case EventType.PENDING_FOLDERS_CHANGED:
-              this.folders.destroy();
-              this._callConfig();
-              this._checkPendingRequests();
-              break;
-          }
-          this._lastEventID = events[i].id;
-        } catch (error) {
-          console.warn(LOG_PREFIX, "event processing failed", error.message);
-        }
+        this._processEvent({
+          type: events[i].type,
+          data: events[i].data,
+          id: events[i].id,
+        });
       }
       // Reschedule this event stream
       Utils.Timer.run(RESCHEDULE_EVENT_DELAY, () => {
         this._callEvents("since=" + this._lastEventID);
       });
     });
+  }
+
+  _processEvent(event) {
+    console.debug(LOG_PREFIX, "processing event", event.type, event.data);
+    try {
+      switch (event.type) {
+        case EventType.STARTUP_COMPLETE:
+          this._callConfig();
+          break;
+        case EventType.CONFIG_SAVED:
+          this._processConfig(event.data);
+          break;
+        case EventType.LOGIN_ATTEMPT:
+          if (event.data.success) {
+            this.emit(Signal.LOGIN, event.data.username);
+          } else {
+            this.emit(Error.LOGIN, event.data.username);
+          }
+          break;
+        case EventType.FOLDER_ERRORS:
+          if (this.folders.exists(event.data.folder)) {
+            this.folders.get(event.data.folder).setState(State.ERRONEOUS);
+          }
+          break;
+        case EventType.FOLDER_COMPLETION:
+          if (
+            this.folders.exists(event.data.folder) &&
+            this.devices.exists(event.data.device)
+          ) {
+            let device = this.devices.get(event.data.device);
+            if (device.folders.exists(event.data.folder)) {
+              if (device.isOnline()) device.setState(State.SCANNING);
+              device.folders
+                .get(event.data.folder)
+                .setCompletion(event.data.completion);
+            }
+          }
+          break;
+        case EventType.FOLDER_SUMMARY:
+          if (this.folders.exists(event.data.folder)) {
+            this.folders
+              .get(event.data.folder)
+              .setState(event.data.summary.state);
+          }
+          break;
+        case EventType.FOLDER_PAUSED:
+          if (this.folders.exists(event.data.id)) {
+            this.folders.get(event.data.id).setState(State.PAUSED);
+          }
+          break;
+        case EventType.PENDING_FOLDERS_CHANGED:
+          this.folders.destroy();
+          this._callConfig();
+          break;
+        case EventType.STATE_CHANGED:
+          if (this.folders.exists(event.data.folder)) {
+            this.folders.get(event.data.folder).setState(event.data.to);
+          }
+          break;
+        case EventType.DEVICE_RESUMED:
+          if (this.devices.exists(event.data.device)) {
+            this.devices.get(event.data.device).setState(State.DISCONNECTED);
+          }
+          break;
+        case EventType.DEVICE_PAUSED:
+          if (this.devices.exists(event.data.device)) {
+            this.devices.get(event.data.device).setState(State.PAUSED);
+          }
+          break;
+        case EventType.DEVICE_CONNECTED:
+          if (this.devices.exists(event.data.id)) {
+            this.devices.get(event.data.id).setState(State.IDLE);
+          }
+          break;
+        case EventType.DEVICE_DISCONNECTED:
+          if (this.devices.exists(event.data.id)) {
+            this.devices.get(event.data.id).setState(State.DISCONNECTED);
+          }
+          break;
+        case EventType.PENDING_DEVICES_CHANGED:
+          this.devices.destroy();
+          this._callConfig();
+          this._checkPendingRequests();
+          break;
+        case EventType.PENDING_FOLDERS_CHANGED:
+          this.folders.destroy();
+          this._callConfig();
+          this._checkPendingRequests();
+          break;
+      }
+      if (event.id) {
+        this._lastEventID = event.id;
+      }
+    } catch (error) {
+      console.warn(LOG_PREFIX, "event processing failed", error.message);
+    }
   }
 
   _callConnections() {
@@ -582,20 +579,33 @@ export class Manager extends Utils.Emitter {
         this._lastPendingCount = totalPending;
       })
       .catch((error) => {
-        console.warn(LOG_PREFIX, "failed to check pending requests", error.message);
+        console.warn(
+          LOG_PREFIX,
+          "failed to check pending requests",
+          error.message,
+        );
       });
   }
 
   _processConfig(config) {
+    // Track existing items to remove old ones
+    let existingFolderIDs = new Set(Object.keys(this.folders._collection));
+    let existingDeviceIDs = new Set(Object.keys(this.devices._collection));
+    let configFolderIDs = new Set();
+    let configDeviceIDs = new Set();
     // Only include devices which shares folders with this host
     let usedDevices = {};
     for (let i = 0; i < config.folders.length; i++) {
+      let folderID = config.folders[i].id;
+      configFolderIDs.add(folderID);
+      existingFolderIDs.delete(folderID);
+
       let name = config.folders[i].label;
-      if (name.length == 0) name = config.folders[i].id;
-      if (!this.folders.exists(config.folders[i].id)) {
+      if (name.length == 0) name = folderID;
+      if (!this.folders.exists(folderID)) {
         let folder = new Folder(
           {
-            id: config.folders[i].id,
+            id: folderID,
             name: name,
             path: config.folders[i].path,
           },
@@ -603,33 +613,41 @@ export class Manager extends Utils.Emitter {
         );
         this.folders.add(folder);
       } else {
-        this.folders.get(config.folders[i].id).setName(name);
+        this.folders.get(folderID).setName(name);
       }
       if (config.folders[i].paused) {
-        this.folders.get(config.folders[i].id).setState(State.PAUSED);
+        this.folders.get(folderID).setState(State.PAUSED);
       } else {
         this._openConnection(
           "GET",
-          "/rest/db/status?folder=" + config.folders[i].id,
+          "/rest/db/status?folder=" + folderID,
           (function (folder) {
             return (data) => {
               folder.setState(data.state);
             };
-          })(this.folders.get(config.folders[i].id)),
+          })(this.folders.get(folderID)),
         );
       }
       for (let j = 0; j < config.folders[i].devices.length; j++) {
-        if (!(config.folders[i].devices[j].deviceID in usedDevices)) {
-          usedDevices[config.folders[i].devices[j].deviceID] = [];
+        let deviceID = config.folders[i].devices[j].deviceID;
+        if (!(deviceID in usedDevices)) {
+          usedDevices[deviceID] = [];
         }
-        usedDevices[config.folders[i].devices[j].deviceID].push(
-          this.folders.get(config.folders[i].id),
-        );
+        usedDevices[deviceID].push(this.folders.get(folderID));
       }
     }
-    // TODO: remove / update old devices & folders, current destroy is way to invasive
+
+    // Remove old folders
+    for (const folderID of existingFolderIDs) {
+      this.folders.destroy(folderID);
+    }
+
     for (let i = 0; i < config.devices.length; i++) {
-      if (config.devices[i].deviceID in usedDevices) {
+      let deviceID = config.devices[i].deviceID;
+      configDeviceIDs.add(deviceID);
+      existingDeviceIDs.delete(deviceID);
+
+      if (deviceID in usedDevices) {
         let device;
         if (!this.devices.exists(config.devices[i].deviceID)) {
           if (this._hostID == config.devices[i].deviceID) {
@@ -685,6 +703,12 @@ export class Manager extends Utils.Emitter {
         }
       }
     }
+
+    // Remove old devices
+    for (const deviceID of existingDeviceIDs) {
+      this.devices.destroy(deviceID);
+    }
+
     this._callConnections();
   }
 
@@ -701,9 +725,6 @@ export class Manager extends Utils.Emitter {
       (await this._isServiceActive())
     ) {
       if (this._pollCount % POLL_CONFIG_HOOK_COUNT == 0) {
-        // TODO: this should not be necessary, we should remove old items
-        this.folders.destroy();
-        this.devices.destroy();
         this._callConfig();
         this._checkPendingRequests();
       }
