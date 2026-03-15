@@ -75,6 +75,7 @@ export default class Config {
   }
 
   clear() {
+    this.filePath = null;
     this.fileURI = null;
     this.fileApiKey = null;
     this.prefURI = null;
@@ -97,7 +98,7 @@ export default class Config {
   }
 
   async loadFromConfigFile() {
-    const filePath = new File();
+    this.filePath = new File();
     try {
       const proc = Gio.Subprocess.new(
         [SYNCTHING_COMMAND, "paths"],
@@ -112,7 +113,7 @@ export default class Config {
         if (items.length == 2) cmdPaths[items[0]] = items[1].split("\n\t");
       }
       if (this.CONFIG_PATH_KEY in cmdPaths) {
-        filePath.addPath(cmdPaths[this.CONFIG_PATH_KEY][0]);
+        this.filePath.addPath(cmdPaths[this.CONFIG_PATH_KEY][0]);
       }
     } catch (error) {
       console.warn(
@@ -122,12 +123,12 @@ export default class Config {
       );
     }
 
-    filePath.addPath(GLib.get_user_config_dir() + "/syncthing/config.xml");
-    filePath.addPath(GLib.get_user_state_dir() + "/syncthing/config.xml");
+    this.filePath.addPath(GLib.get_user_config_dir() + "/syncthing/config.xml");
+    this.filePath.addPath(GLib.get_user_state_dir() + "/syncthing/config.xml");
 
-    if (filePath.exists()) {
-      console.info(LOG_PREFIX, "found config file", filePath.path);
-      const configInputStream = filePath.read();
+    if (this.filePath.exists()) {
+      console.info(LOG_PREFIX, "found config file", this.filePath.path);
+      const configInputStream = this.filePath.read();
       const configDataInputStream = Gio.DataInputStream.new(configInputStream);
       const config = configDataInputStream.read_until("", null).toString();
       configInputStream.close(null);
