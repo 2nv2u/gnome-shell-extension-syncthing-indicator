@@ -9,9 +9,40 @@
 ============================================================================================================= */
 
 import GLib from "gi://GLib";
-import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
-import FALLBACK from "./locale/fallback.json";
+import {
+  gettext as _,
+  Extension,
+} from "resource:///org/gnome/shell/extensions/extension.js";
+
 const Signals = imports.signals;
+
+class I18NFallback {
+  constructor() {
+    if (I18NFallback._instance) return I18NFallback._instance;
+    I18NFallback._instance = this;
+    this._data = null;
+    const ext = Extension.getCurrentExtension();
+    const path = ext.path + "/locale/fallback.json";
+    const file = GLib.File.new_for_path(path);
+    const [ok, contents] = file.load_contents(null);
+    if (ok) {
+      this._data = JSON.parse(new TextDecoder().decode(contents));
+    }
+    this._data = this._data || {};
+  }
+
+  lookup(str) {
+    return this._data[str] || null;
+  }
+}
+
+export function gettext(str) {
+  let translated = _(str);
+  if (translated === str) {
+    translated = new I18NFallback().lookup(str);
+  }
+  return translated;
+}
 
 export class Timer {
   static _timers = new Set();
@@ -258,10 +289,4 @@ export class XMLParser {
 
     return result;
   }
-}
-
-export function gettext(str) {
-  const translated = _(str);
-  if (translated === str && FALLBACK[str]) return FALLBACK[str];
-  return translated;
 }
