@@ -146,13 +146,13 @@ export default class Config {
           "found config from file",
           this.fileURI,
           this.fileApiKey.substr(0, 5) + "...",
-          filePath.path,
+          this.filePath.path,
         );
       } else {
         console.error(
           LOG_PREFIX,
           "no valid config found in file",
-          filePath.path,
+          this.filePath.path,
         );
       }
     }
