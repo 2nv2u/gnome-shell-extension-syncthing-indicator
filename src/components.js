@@ -14,8 +14,8 @@ import St from "gi://St";
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
-import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
 
+import { gettext as _ } from "./utils.js";
 import * as Syncthing from "./syncthing.js";
 
 const LOG_PREFIX = "syncthing-indicator-components:";
@@ -155,12 +155,15 @@ export class SyncthingPanel {
       Main.notifyError(_("syncthing-indicator"), errorText);
     });
 
-    extension.manager.connect(Syncthing.Signal.PENDING_REQUEST, (manager, data) => {
-      Main.notify(
-        _("syncthing-indicator"),
-        _("pending-request-notification").replace("%s", data.message),
-      );
-    });
+    extension.manager.connect(
+      Syncthing.Signal.PENDING_REQUEST,
+      (manager, data) => {
+        Main.notify(
+          _("syncthing-indicator"),
+          _("pending-request-notification").replace("%s", data.message),
+        );
+      },
+    );
   }
 
   showServiceSwitch(toggle) {

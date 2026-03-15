@@ -6,171 +6,128 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/components.js:126
 msgid "unknown-error"
 msgstr "Die Erweiterung hat einen unbekannten Fehler festgestellt, siehe Protokoll für weitere Details"
 
-#: src/components.js:129
 msgid "daemon-error"
 msgstr "Syncthing-Daemon kann nicht gefunden oder erreicht werden, siehe Protokoll für weitere Details"
 
-#: src/components.js:132
 msgid "service-error"
 msgstr "Syncthing-Dienst hat einen Fehler gemeldet, siehe Protokoll für weitere Details"
 
-#: src/components.js:135
 msgid "decoding-error"
 msgstr "Syncthing-Verbindung Dekodierungsfehler, siehe Protokoll für weitere Details"
 
-#: src/components.js:138
 msgid "connection-error"
 msgstr "Syncthing-Verbindungsstatus Fehler, siehe Protokoll für weitere Details"
 
-#: src/components.js:141
 msgid "config-error"
 msgstr "Syncthing-Konfiguration kann nicht gefunden werden, Syncthing ist möglicherweise nicht installiert, siehe Protokoll für weitere Details"
 
-#: src/components.js:144 src/prefs.js:259
 msgid "syncthing-indicator"
 msgstr "Syncthing-Indikator"
 
-#: src/components.js:219
 msgid "folders"
 msgstr "Ordner"
 
-#: src/components.js:314
 msgid "this-device"
 msgstr "Dieses Gerät"
 
-#: src/components.js:469
 msgid "devices"
 msgstr "Externe Geräte"
 
-#: src/components.js:491
 msgid "not-connected"
 msgstr "Nicht verbunden..."
 
-#: src/components.js:518
 msgid "service"
 msgstr "Dienst"
 
-#: src/components.js:576
 msgid "autostart"
 msgstr "Autostart"
 
-#: src/components.js:627
 msgid "rescan"
 msgstr "Alle Ordner erneut scannen"
 
-#: src/components.js:663
 msgid "web-interface"
 msgstr "Weboberfläche öffnen"
 
-#: src/components.js:702
 msgid "settings"
 msgstr "Einstellungen"
 
-#: src/panelMenu.js:73 src/quickSetting.js:29 src/quickSetting.js:41
 msgid "syncthing"
 msgstr "Syncthing"
 
-#: src/prefs.js:61
 msgid "settings-group-title"
 msgstr "Syncthing-Indikator Einstellungen"
 
-#: src/prefs.js:62
 msgid "settings-group-description"
 msgstr "Ändere die Position des Panels und/oder blende Schalter &amp; Schaltflächen aus."
 
-#: src/prefs.js:68
 msgid "quick-settings"
 msgstr "Schnelleinstellungen"
 
-#: src/prefs.js:69
 msgid "main-panel"
 msgstr "Hauptpanel"
 
-#: src/prefs.js:73
 msgid "menu-type-title"
 msgstr "Menütyp"
 
-#: src/prefs.js:74
 msgid "menu-type-subtitle"
 msgstr "Wähle den Menüintegrationstyp"
 
-#: src/prefs.js:82
 msgid "icon-state-title"
 msgstr "Symbol-Status"
 
-#: src/prefs.js:83
 msgid "icon-state-subtitle"
 msgstr "Syncthing-Status mit verschiedenen Symbolen anzeigen"
 
-#: src/prefs.js:95
 msgid "setting-button-title"
 msgstr "Einstellungen-Schaltfläche"
 
-#: src/prefs.js:96
 msgid "setting-button-subtitle"
 msgstr "Erweiterungseinstellungen-Schaltfläche anzeigen"
 
-#: src/prefs.js:108
 msgid "use-sysd-item"
 msgstr "SystemD verwenden"
 
-#: src/prefs.js:109
 msgid "use-sysd-item-subtitle"
 msgstr "Syncthing-Daemon-Steuerung mit SystemD aktivieren"
 
-#: src/prefs.js:121
 msgid "auto-start-item"
 msgstr "Autostart-Schalter"
 
-#: src/prefs.js:122
 msgid "auto-start-item-subtitle"
 msgstr "Erweiterungs-Autostart-Schalter anzeigen"
 
-#: src/prefs.js:140
 msgid "auto-config-group-title"
 msgstr "Automatische &amp; manuelle Konfiguration"
 
-#: src/prefs.js:141
 msgid "auto-config-group-description"
-msgstr "Die Verbindung wird aus der Konfiguration durch Parsen des Befehls 'syncthing --paths' extrahiert oder an den Standardorten gesucht.\nWenn dies fehlschlägt, kannst du den API-Schlüssel und die URI selbst ändern."
+msgstr "Die Verbindung wird aus der Konfiguration durch Parsen des Befehls 'syncthing paths' extrahiert oder an den Standardorten gesucht.\nWenn dies fehlschlägt, kannst du den API-Schlüssel und die URI selbst ändern."
 
-#: src/prefs.js:147
 msgid "auto-config-title"
 msgstr "Automatische Konfiguration verwenden"
 
-#: src/prefs.js:148
 msgid "auto-config-subtitle"
 msgstr "API-Schlüssel aus der Syncthing-Konfiguration lesen, indem nach der Konfigurationsdatei gesucht wird"
 
-#: src/prefs.js:160
 msgid "config-file-title"
 msgstr "Speicherort der Konfigurationsdatei"
 
-#: src/prefs.js:161 src/prefs.js:174 src/prefs.js:187 src/prefs.js:202
-#: src/prefs.js:204 src/prefs.js:206
 msgid "unknown"
 msgstr "Unbekannt"
 
-#: src/prefs.js:173 src/prefs.js:214
 msgid "service-uri-title"
 msgstr "Dienst-URI &amp; Port"
 
-#: src/prefs.js:186 src/prefs.js:234
 msgid "api-key-title"
 msgstr "API-Schlüssel"
 
-#: src/prefs.js:215
 msgid "service-uri-tooltip"
 msgstr "Dienst-URI zur Verbindung mit der Syncthing-API"
 
-#: src/prefs.js:235
 msgid "api-key-tooltip"
 msgstr "API-Schlüssel zur Authentifizierung bei der Syncthing-API"
 
-#: src/prefs.js:265
 msgid "copyright"
 msgstr "Copyright"

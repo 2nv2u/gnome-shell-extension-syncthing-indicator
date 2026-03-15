@@ -1,5 +1,6 @@
 msgid ""
 msgstr ""
+
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-09-22 22:21+0200\n"
@@ -12,180 +13,131 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.7\n"
 
-#: src/components.js:126
 msgid "unknown-error"
 msgstr "擴充套件遇到了未知的錯誤，請檢視紀錄檔取得更多資訊。"
 
-#: src/components.js:129
 msgid "daemon-error"
 msgstr "找不到或無法啟動 Syncthing 伺服程式，檢視紀錄檔取得更多資訊。"
 
-#: src/components.js:132
 msgid "service-error"
 msgstr "Syncthing 服務回報了錯誤，檢視紀錄檔取得更多資訊。"
 
-#: src/components.js:135
 msgid "decoding-error"
 msgstr "Syncthing 連線解碼失敗，檢視紀錄檔取得更多資訊。"
 
-#: src/components.js:138
 msgid "connection-error"
 msgstr "Syncthing 連線狀態錯誤，檢視紀錄檔取得更多資訊。"
 
-#: src/components.js:141
 msgid "config-error"
 msgstr "無法找到 Syncthing 設定檔，可能沒有安裝？檢視紀錄檔取得更多資訊。"
 
-#: src/components.js:144 src/prefs.js:259
 msgid "syncthing-indicator"
 msgstr "Syncthing 指示器"
 
-#: src/components.js:160
 msgid "pending-request-notification"
 msgstr "新的待處理請求: %s"
 
-#: src/components.js:219
 msgid "folders"
 msgstr "資料夾"
 
-#: src/components.js:314
 msgid "this-device"
 msgstr "這個設備"
 
-#: src/components.js:469
 msgid "devices"
 msgstr "遠端設備"
 
-#: src/components.js:491
 msgid "not-connected"
 msgstr "沒有連線…"
 
-#: src/components.js:518
 msgid "service"
 msgstr "服務"
 
-#: src/components.js:576
 msgid "autostart"
 msgstr "自動啟動"
 
-#: src/components.js:627
 msgid "rescan"
 msgstr "重新掃描所有資料夾"
 
-#: src/components.js:663
 msgid "web-interface"
 msgstr "打開網頁界面"
 
-#: src/components.js:702
 msgid "settings"
 msgstr "設定"
 
-#: src/panelMenu.js:73 src/quickSetting.js:29 src/quickSetting.js:41
 msgid "syncthing"
 msgstr "Syncthing"
 
-#: src/prefs.js:61
 msgid "settings-group-title"
 msgstr "Syncthing 指示器設定"
 
-#: src/prefs.js:62
 msgid "settings-group-description"
 msgstr "更改面板的位置、隱藏開關及按鈕。"
 
-#: src/prefs.js:68
 msgid "quick-settings"
 msgstr "快速設定"
 
-#: src/prefs.js:69
 msgid "main-panel"
 msgstr "主面板"
 
-#: src/prefs.js:73
 msgid "menu-type-title"
 msgstr "選單類型"
 
-#: src/prefs.js:74
 msgid "menu-type-subtitle"
 msgstr "選擇選單整合模式"
 
-#: src/prefs.js:82
 msgid "icon-state-title"
 msgstr "圖示模式"
 
-#: src/prefs.js:83
 msgid "icon-state-subtitle"
 msgstr "以不同的圖示顯示 Syncthing 目前狀態"
 
-#: src/prefs.js:95
 msgid "setting-button-title"
 msgstr "設定按鈕"
 
-#: src/prefs.js:96
 msgid "setting-button-subtitle"
 msgstr "顯示擴充套件設定按鈕"
 
-#: src/prefs.js:108
 msgid "use-sysd-item"
 msgstr "使用 SystemD"
 
-#: src/prefs.js:109
 msgid "use-sysd-item-subtitle"
 msgstr "透過 SystemD 控制 Syncthing 服務程式"
 
-#: src/prefs.js:121
 msgid "auto-start-item"
 msgstr "自動啟動開關"
 
-#: src/prefs.js:122
 msgid "auto-start-item-subtitle"
 msgstr "顯示自動啟動開關"
 
-#: src/prefs.js:140
 msgid "auto-config-group-title"
 msgstr "自動 &amp; 手動設定"
 
-#: src/prefs.js:141
 msgid "auto-config-group-description"
-msgstr ""
-"擴充套件會自動從 'syncthing --paths' 或預設位置尋找並載入連線設置。\n"
-"若上述辦法失敗，您可以手動設定 URI 位置與 API 金鑰。"
+msgstr "擴充套件會自動從 'syncthing paths' 或預設位置尋找並載入連線設置。\n若上述辦法失敗，您可以手動設定 URI 位置與 API 金鑰。"
 
-#: src/prefs.js:147
 msgid "auto-config-title"
 msgstr "使用自動設定"
 
-#: src/prefs.js:148
 msgid "auto-config-subtitle"
 msgstr "使用自動找到的 Syncthing 設定檔中的 API 金鑰"
 
-#: src/prefs.js:160
 msgid "config-file-title"
 msgstr "設定檔案位置"
 
-#: src/prefs.js:161 src/prefs.js:174 src/prefs.js:187 src/prefs.js:202
-#: src/prefs.js:204 src/prefs.js:206
 msgid "unknown"
 msgstr "未知"
 
-#: src/prefs.js:173 src/prefs.js:214
 msgid "service-uri-title"
 msgstr "服務 URI &amp; 連接埠"
 
-#: src/prefs.js:186 src/prefs.js:234
 msgid "api-key-title"
 msgstr "API 金鑰"
 
-#: src/prefs.js:215
 msgid "service-uri-tooltip"
 msgstr "與 Syncthing API 服務連線時使用的 URI"
 
-#: src/prefs.js:235
 msgid "api-key-tooltip"
 msgstr "與 Syncthing API 服務連線時使用的金鑰"
 
-#: src/prefs.js:265
 msgid "copyright"
 msgstr "著作權"
-
-#~ msgid "failed-URI"
-#~ msgstr "無法開啟 URI"

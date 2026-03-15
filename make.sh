@@ -18,6 +18,36 @@ for LANG_FILE in $SCRIPT_PATH/po/*.po; do
     msgfmt $LANG_FILE -o $MO_PATH/$EXT_NAME.mo
 done
 
+# Generate fallback.json from en.po
+echo "{" > $SCRIPT_PATH/src/locale/fallback.json
+FIRST=1
+while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ $line == msgid\ \"* ]]; then
+        msgid="${line#msgid \"}"
+        msgid="${msgid%\"}"
+    elif [[ $line == msgstr\ \"* ]]; then
+        msgstr="${line#msgstr \"}"
+        msgstr="${msgstr%\"}"
+    elif [[ $line == \"*\" ]] && [[ -n "$msgstr" ]]; then
+        cont="${line%\"}"
+        cont="${cont#\"}"
+        msgstr="$msgstr$cont"
+    elif [[ -z "$line" ]] && [[ -n "$msgid" ]] && [[ -n "$msgstr" ]]; then
+        if [[ -n "$msgid" ]] && [[ "$msgid" != "\"\"" ]]; then
+            if [[ $FIRST == 1 ]]; then
+                FIRST=0
+            else
+                echo "," >> $SCRIPT_PATH/src/locale/fallback.json
+            fi
+            printf '  "%s": "%s"' "$msgid" "$msgstr" >> $SCRIPT_PATH/src/locale/fallback.json
+        fi
+        msgid=""
+        msgstr=""
+    fi
+done < $SCRIPT_PATH/po/en.po
+        echo "" >> $SCRIPT_PATH/src/locale/fallback.json
+echo "}" >> $SCRIPT_PATH/src/locale/fallback.json
+
 # Compile schemas
 [ -f $CUR_PATH/src/schemas/gschemas.compiled ] && rm -f $CUR_PATH/src/schemas/gschemas.compiled
 glib-compile-schemas $SCRIPT_PATH/src/schemas/

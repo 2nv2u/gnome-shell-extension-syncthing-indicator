@@ -9,6 +9,8 @@
 ============================================================================================================= */
 
 import GLib from "gi://GLib";
+import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
+import FALLBACK from "./locale/fallback.json";
 const Signals = imports.signals;
 
 export class Timer {
@@ -256,4 +258,10 @@ export class XMLParser {
 
     return result;
   }
+}
+
+export function gettext(str) {
+  const translated = _(str);
+  if (translated === str && FALLBACK[str]) return FALLBACK[str];
+  return translated;
 }

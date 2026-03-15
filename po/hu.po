@@ -1,6 +1,6 @@
-# Gellert Gyuris <bubu@ujevangelizacio.hu>, 2021.
 msgid ""
 msgstr ""
+
 "Last-Translator: Gellert Gyuris <bubu@ujevangelizacio.hu>\n"
 "Language-Team: Hungarian <kde-l10n-hu@kde.org>\n"
 "Language: hu_HU\n"
@@ -11,175 +11,131 @@ msgstr ""
 "Project-Id-Version: \n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/components.js:126
 msgid "unknown-error"
 msgstr "Ismeretlen hiba történt, részletek a naplóban"
 
-#: src/components.js:129
 msgid "daemon-error"
 msgstr "A Syncthing daemon nem található vagy nem érhető el, részletek a naplóban"
 
-#: src/components.js:132
 msgid "service-error"
 msgstr "A Syncthing szolgáltatás hibát jelentett, részletek a naplóban"
 
-#: src/components.js:135
 msgid "decoding-error"
 msgstr "Syncthing kapcsolat dekódolási hiba, részletek a naplóban"
 
-#: src/components.js:138
 msgid "connection-error"
 msgstr "Syncthing kapcsolati állapot hiba, részletek a naplóban"
 
-#: src/components.js:141
 msgid "config-error"
 msgstr "A Syncthing konfiguráció nem található, a Syncthing nincs telepítve, részletek a naplóban"
 
-#: src/components.js:144 src/prefs.js:259
 msgid "syncthing-indicator"
 msgstr "Syncthing Indicator"
 
-#: src/components.js:160
 msgid "pending-request-notification"
 msgstr "Új függő kérés: %s"
 
-#: src/components.js:219
 msgid "folders"
 msgstr "Mappák"
 
-#: src/components.js:314
 msgid "this-device"
 msgstr "Ez az eszköz"
 
-#: src/components.js:469
 msgid "devices"
 msgstr "Távoli eszközök"
 
-#: src/components.js:491
 msgid "not-connected"
 msgstr "Nincs csatlakoztatva..."
 
-#: src/components.js:518
 msgid "service"
 msgstr "Szolgáltatás"
 
-#: src/components.js:576
 msgid "autostart"
 msgstr "Automatikus indítás"
 
-#: src/components.js:627
 msgid "rescan"
 msgstr "Minden mappa újraolvasása"
 
-#: src/components.js:663
 msgid "web-interface"
 msgstr "Webes felület megnyitása"
 
-#: src/components.js:702
 msgid "settings"
 msgstr "Beállítások"
 
-#: src/panelMenu.js:73 src/quickSetting.js:29 src/quickSetting.js:41
 msgid "syncthing"
 msgstr "Syncthing"
 
-#: src/prefs.js:61
 msgid "settings-group-title"
 msgstr "Syncthing Indicator beállítások"
 
-#: src/prefs.js:62
 msgid "settings-group-description"
 msgstr "A panel helyének módosítása és/vagy kapcsolók és gombok elrejtése."
 
-#: src/prefs.js:68
 msgid "quick-settings"
 msgstr "Gyors beállítások"
 
-#: src/prefs.js:69
 msgid "main-panel"
 msgstr "Fő panel"
 
-#: src/prefs.js:73
 msgid "menu-type-title"
 msgstr "Menü típusa"
 
-#: src/prefs.js:74
 msgid "menu-type-subtitle"
 msgstr "Válassza ki a menü integráció típusát"
 
-#: src/prefs.js:82
 msgid "icon-state-title"
 msgstr "Ikon állapot"
 
-#: src/prefs.js:83
 msgid "icon-state-subtitle"
 msgstr "Syncthing állapot megjelenítése különböző ikonokkal"
 
-#: src/prefs.js:95
 msgid "setting-button-title"
 msgstr "Beállítások gomb"
 
-#: src/prefs.js:96
 msgid "setting-button-subtitle"
 msgstr "Bővítmény beállítások gomb megjelenítése"
 
-#: src/prefs.js:108
 msgid "use-sysd-item"
 msgstr "SystemD támogatás"
 
-#: src/prefs.js:109
 msgid "use-sysd-item-subtitle"
 msgstr "Syncthing daemon vezérlés engedélyezése SystemD használatával"
 
-#: src/prefs.js:121
 msgid "auto-start-item"
 msgstr "Automatikus indítás kapcsoló"
 
-#: src/prefs.js:122
 msgid "auto-start-item-subtitle"
 msgstr "Bővítmény automatikus indítás kapcsoló megjelenítése"
 
-#: src/prefs.js:140
 msgid "auto-config-group-title"
 msgstr "Automatikus és kézi konfiguráció"
 
-#: src/prefs.js:141
 msgid "auto-config-group-description"
-msgstr "A kapcsolat a konfigurációs fájlból lesz kinyerve a 'syncthing --paths' parancs elemzésével, vagy az alapértelmezett helyeken keresi.\nHa ez nem sikerül, megadhatja az API kulcsot és az URI-t."
+msgstr "A kapcsolat a konfigurációs fájlból lesz kinyerve a 'syncthing paths' parancs elemzésével, vagy az alapértelmezett helyeken keresi.\nHa ez nem sikerül, megadhatja az API kulcsot és az URI-t."
 
-#: src/prefs.js:147
 msgid "auto-config-title"
 msgstr "Automatikus konfiguráció használata"
 
-#: src/prefs.js:148
 msgid "auto-config-subtitle"
 msgstr "API kulcs beolvasása a Syncthing konfigurációs fájlból"
 
-#: src/prefs.js:160
 msgid "config-file-title"
 msgstr "Konfigurációs fájl helye"
 
-#: src/prefs.js:161 src/prefs.js:174 src/prefs.js:187 src/prefs.js:202
-#: src/prefs.js:204 src/prefs.js:206
 msgid "unknown"
 msgstr "Ismeretlen"
 
-#: src/prefs.js:173 src/prefs.js:214
 msgid "service-uri-title"
 msgstr "Szolgáltatás URI és port"
 
-#: src/prefs.js:186 src/prefs.js:234
 msgid "api-key-title"
 msgstr "API kulcs"
 
-#: src/prefs.js:215
 msgid "service-uri-tooltip"
 msgstr "A Syncthing API-hoz való csatlakozáshoz használt URI"
 
-#: src/prefs.js:235
 msgid "api-key-tooltip"
 msgstr "A Syncthing API-hoz való hitelesítéshez használt API kulcs"
 
-#: src/prefs.js:265
 msgid "copyright"
 msgstr "Szerzői jog"

@@ -14,8 +14,8 @@ import St from "gi://St";
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
-import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
 
+import { gettext as _ } from "./utils.js";
 import * as Components from "./components.js";
 import * as Syncthing from "./syncthing.js";
 

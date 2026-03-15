@@ -1,0 +1,136 @@
+msgid ""
+msgstr ""
+
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "unknown-error"
+msgstr "L'estensione ha riscontrato un errore sconosciuto, controlla il log per maggiori dettagli"
+
+msgid "daemon-error"
+msgstr "Il demone Syncthing non può essere trovato o raggiunto, controlla il log per maggiori dettagli"
+
+msgid "service-error"
+msgstr "Il servizio Syncthing ha segnalato un errore, controlla il log per maggiori dettagli"
+
+msgid "decoding-error"
+msgstr "Errore di decodifica della connessione Syncthing, controlla il log per maggiori dettagli"
+
+msgid "connection-error"
+msgstr "Errore di stato della connessione Syncthing, controlla il log per maggiori dettagli"
+
+msgid "config-error"
+msgstr "Impossibile trovare la configurazione di Syncthing, Syncthing potrebbe non essere installato, controlla il log per maggiori dettagli"
+
+msgid "syncthing-indicator"
+msgstr "Indicatore Syncthing"
+
+msgid "pending-request-notification"
+msgstr "Nuova richiesta in sospeso: %s"
+
+msgid "folders"
+msgstr "Cartelle"
+
+msgid "this-device"
+msgstr "Questo Dispositivo"
+
+msgid "devices"
+msgstr "Dispositivi Remoti"
+
+msgid "not-connected"
+msgstr "Non connesso..."
+
+msgid "service"
+msgstr "Servizio"
+
+msgid "autostart"
+msgstr "Avvio automatico"
+
+msgid "rescan"
+msgstr "Ricontrolla tutte le cartelle"
+
+msgid "web-interface"
+msgstr "Apri interfaccia web"
+
+msgid "settings"
+msgstr "Impostazioni"
+
+msgid "syncthing"
+msgstr "Syncthing"
+
+msgid "settings-group-title"
+msgstr "Impostazioni indicatore Syncthing"
+
+msgid "settings-group-description"
+msgstr "Cambia la posizione del pannello e/o nascondi interruttori e pulsanti."
+
+msgid "quick-settings"
+msgstr "Impostazioni rapide"
+
+msgid "main-panel"
+msgstr "Pannello principale"
+
+msgid "menu-type-title"
+msgstr "Tipo di menu"
+
+msgid "menu-type-subtitle"
+msgstr "Seleziona il tipo di integrazione del menu"
+
+msgid "icon-state-title"
+msgstr "Stato icona"
+
+msgid "icon-state-subtitle"
+msgstr "Mostra lo stato di Syncthing con icone diverse"
+
+msgid "setting-button-title"
+msgstr "Pulsante Impostazioni"
+
+msgid "setting-button-subtitle"
+msgstr "Mostra pulsante impostazioni estensione"
+
+msgid "use-sysd-item"
+msgstr "Supporto SystemD"
+
+msgid "use-sysd-item-subtitle"
+msgstr "Abilita controlli demone Syncthing usando SystemD"
+
+msgid "auto-start-item"
+msgstr "Interruttore avvio automatico"
+
+msgid "auto-start-item-subtitle"
+msgstr "Mostra interruttore avvio automatico estensione"
+
+msgid "auto-config-group-title"
+msgstr "Configurazione automatica e manuale"
+
+msgid "auto-config-group-description"
+msgstr "La connessione verrà estratta dalla configurazione analizzando il comando 'syncthing --paths' oppure cercata nelle posizioni predefinite.\nSe questo fallisce, puoi cambiare la chiave API e l'URI."
+
+msgid "auto-config-title"
+msgstr "Usa configurazione automatica"
+
+msgid "auto-config-subtitle"
+msgstr "Leggi chiave API dalla configurazione Syncthing cercando il file di configurazione"
+
+msgid "config-file-title"
+msgstr "Posizione file di configurazione"
+
+msgid "unknown"
+msgstr "Sconosciuto"
+
+msgid "service-uri-title"
+msgstr "URI e porta servizio"
+
+msgid "api-key-title"
+msgstr "Chiave API"
+
+msgid "service-uri-tooltip"
+msgstr "URI del servizio usato per connettersi all'API Syncthing"
+
+msgid "api-key-tooltip"
+msgstr "Chiave API usata per autenticarsi all'API Syncthing"
+
+msgid "copyright"
+msgstr "Copyright"

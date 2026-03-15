@@ -12,10 +12,9 @@ import Adw from "gi://Adw";
 import Gio from "gi://Gio";
 import Gtk from "gi://Gtk";
 
-import {
-  ExtensionPreferences,
-  gettext as _,
-} from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
+import { ExtensionPreferences } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
+
+import { gettext as _ } from "./utils.js";
 import Config from "./config.js";
 
 export default class SyncthingIndicatorExtensionPreferences extends ExtensionPreferences {

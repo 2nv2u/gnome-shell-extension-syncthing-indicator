@@ -1,0 +1,136 @@
+msgid ""
+msgstr ""
+
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "unknown-error"
+msgstr "L'extension a rencontré une erreur inconnue, consultez le journal pour plus de détails"
+
+msgid "daemon-error"
+msgstr "Le démon Syncthing ne peut pas être trouvé ou atteint, consultez le journal pour plus de détails"
+
+msgid "service-error"
+msgstr "Le service Syncthing a signalé une erreur, consultez le journal pour plus de détails"
+
+msgid "decoding-error"
+msgstr "Erreur de décodage de la connexion Syncthing, consultez le journal pour plus de détails"
+
+msgid "connection-error"
+msgstr "Erreur d'état de connexion Syncthing, consultez le journal pour plus de détails"
+
+msgid "config-error"
+msgstr "Impossible de trouver la configuration Syncthing, syncthing n'est peut-être pas installé, consultez le journal pour plus de détails"
+
+msgid "syncthing-indicator"
+msgstr "Indicateur Syncthing"
+
+msgid "pending-request-notification"
+msgstr "Nouvelle demande en attente: %s"
+
+msgid "folders"
+msgstr "Dossiers"
+
+msgid "this-device"
+msgstr "Cet appareil"
+
+msgid "devices"
+msgstr "Appareils distants"
+
+msgid "not-connected"
+msgstr "Non connecté..."
+
+msgid "service"
+msgstr "Service"
+
+msgid "autostart"
+msgstr "Démarrage automatique"
+
+msgid "rescan"
+msgstr "Rescanner tous les dossiers"
+
+msgid "web-interface"
+msgstr "Ouvrir l'interface web"
+
+msgid "settings"
+msgstr "Paramètres"
+
+msgid "syncthing"
+msgstr "Syncthing"
+
+msgid "settings-group-title"
+msgstr "Paramètres de l'indicateur Syncthing"
+
+msgid "settings-group-description"
+msgstr "Modifiez l'emplacement du panneau et/ou masquez les interrupteurs et boutons."
+
+msgid "quick-settings"
+msgstr "Paramètres rapides"
+
+msgid "main-panel"
+msgstr "Panneau principal"
+
+msgid "menu-type-title"
+msgstr "Type de menu"
+
+msgid "menu-type-subtitle"
+msgstr "Sélectionnez le type d'intégration du menu"
+
+msgid "icon-state-title"
+msgstr "État de l'icône"
+
+msgid "icon-state-subtitle"
+msgstr "Afficher l'état de Syncthing avec différentes icônes"
+
+msgid "setting-button-title"
+msgstr "Bouton Paramètres"
+
+msgid "setting-button-subtitle"
+msgstr "Afficher le bouton Paramètres de l'extension"
+
+msgid "use-sysd-item"
+msgstr "Support SystemD"
+
+msgid "use-sysd-item-subtitle"
+msgstr "Activer les contrôles du démon Syncthing via SystemD"
+
+msgid "auto-start-item"
+msgstr "Interrupteur de démarrage automatique"
+
+msgid "auto-start-item-subtitle"
+msgstr "Afficher l'interrupteur de démarrage automatique de l'extension"
+
+msgid "auto-config-group-title"
+msgstr "Configuration automatique et manuelle"
+
+msgid "auto-config-group-description"
+msgstr "La connexion sera extraite de la configuration en analysant la commande 'syncthing paths' ou recherchée dans les emplacements par défaut.\nSi cela échoue, vous pouvez modifier la clé API et l'URI vous-même."
+
+msgid "auto-config-title"
+msgstr "Utiliser la configuration automatique"
+
+msgid "auto-config-subtitle"
+msgstr "Lire la clé API depuis la configuration Syncthing en recherchant le fichier de configuration"
+
+msgid "config-file-title"
+msgstr "Emplacement du fichier de configuration"
+
+msgid "unknown"
+msgstr "Inconnu"
+
+msgid "service-uri-title"
+msgstr "URI et port du service"
+
+msgid "api-key-title"
+msgstr "Clé API"
+
+msgid "service-uri-tooltip"
+msgstr "URI du service utilisée pour se connecter à l'API Syncthing"
+
+msgid "api-key-tooltip"
+msgstr "Clé API utilisée pour s'authentifier auprès de l'API Syncthing"
+
+msgid "copyright"
+msgstr "Droits d'auteur"

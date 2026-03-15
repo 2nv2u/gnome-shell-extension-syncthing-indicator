@@ -1,179 +1,136 @@
 msgid ""
 msgstr ""
+
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/components.js:126
 msgid "unknown-error"
 msgstr "Extensie ondervond een onbekende error, controleer log voor meer details"
 
-#: src/components.js:129
 msgid "daemon-error"
 msgstr "Syncthing daemon kon niet worden gevonden or bereikt, controleer log voor meer details"
 
-#: src/components.js:132
 msgid "service-error"
 msgstr "Syncthing service heeft een fout gerapporteerd, controleer log voor meer details"
 
-#: src/components.js:135
 msgid "decoding-error"
 msgstr "Syncthing connectie decodeer fout, controleer log voor meer details"
 
-#: src/components.js:138
 msgid "connection-error"
 msgstr "Syncthing connectie status fout, controleer log voor meer details"
 
-#: src/components.js:141
 msgid "config-error"
 msgstr "Kan Syncthing config niet vinden, syncthing is mogelijk niet geinstalleerd, controleer log voor meer details"
 
-#: src/components.js:144 src/prefs.js:259
 msgid "syncthing-indicator"
 msgstr "Syncthing Indicator"
 
-#: src/components.js:160
 msgid "pending-request-notification"
 msgstr "Nieuw verzoek: %s"
 
-#: src/components.js:219
 msgid "folders"
 msgstr "Mappen"
 
-#: src/components.js:314
 msgid "this-device"
 msgstr "Dit Apparaat"
 
-#: src/components.js:469
 msgid "devices"
 msgstr "Apparaten Op Afstand"
 
-#: src/components.js:491
 msgid "not-connected"
 msgstr "Niet verbonden..."
 
-#: src/components.js:518
 msgid "service"
 msgstr "Service"
 
-#: src/components.js:576
 msgid "autostart"
 msgstr "Autostart"
 
-#: src/components.js:627
 msgid "rescan"
 msgstr "Alle mappen scannen"
 
-#: src/components.js:663
 msgid "web-interface"
 msgstr "Open web beheer"
 
-#: src/components.js:702
 msgid "settings"
 msgstr "Settings"
 
-#: src/panelMenu.js:73 src/quickSetting.js:29 src/quickSetting.js:41
 msgid "syncthing"
 msgstr "Syncthing"
 
-#: src/prefs.js:61
 msgid "settings-group-title"
 msgstr "Synchting Indicator settings"
 
-#: src/prefs.js:62
 msgid "settings-group-description"
 msgstr "Locatie van het paneel wijzigen en/of schakelaars &amp; knoppen verbergen."
 
-#: src/prefs.js:68
 msgid "quick-settings"
 msgstr "Quick settings"
 
-#: src/prefs.js:69
 msgid "main-panel"
 msgstr "Main paneel"
 
-#: src/prefs.js:73
 msgid "menu-type-title"
 msgstr "Menu type"
 
-#: src/prefs.js:74
 msgid "menu-type-subtitle"
 msgstr "Selecteer de menu integratie type"
 
-#: src/prefs.js:82
 msgid "icon-state-title"
 msgstr "Icoon status"
 
-#: src/prefs.js:83
 msgid "icon-state-subtitle"
 msgstr "Geef Syncthing status weer met verschillende iconen"
 
-#: src/prefs.js:95
 msgid "setting-button-title"
 msgstr "Settings knop"
 
-#: src/prefs.js:96
 msgid "setting-button-subtitle"
 msgstr "Geef extensie settings knop weer"
 
-#: src/prefs.js:108
 msgid "use-sysd-item"
 msgstr "SystemD ondersteuning"
 
-#: src/prefs.js:109
 msgid "use-sysd-item-subtitle"
 msgstr "Activeer Syncthing daemon knoppen voor SystemD"
 
-#: src/prefs.js:121
 msgid "auto-start-item"
 msgstr "Autostart schakelaar"
 
-#: src/prefs.js:122
 msgid "auto-start-item-subtitle"
 msgstr "Geef extensie autostart schakelaar weer"
 
-#: src/prefs.js:140
 msgid "auto-config-group-title"
 msgstr "Auto &amp; handmatige configuratie"
 
-#: src/prefs.js:141
 msgid "auto-config-group-description"
-msgstr "De connectie zal uit de de config worden gehaald doormiddel van het commando 'syncthing --paths' of het zal worden opgezocht uit de standaard locaties.\nAls dit mislukt kun je de API key en URI zelf wijzigen."
+msgstr "De connectie zal uit de de config worden gehaald doormiddel van het commando 'syncthing paths' of het zal worden opgezocht uit de standaard locaties.\nAls dit mislukt kun je de API key en URI zelf wijzigen."
 
-#: src/prefs.js:147
 msgid "auto-config-title"
 msgstr "Gebruik automatische configuratie"
 
-#: src/prefs.js:148
 msgid "auto-config-subtitle"
 msgstr "Lees API key uit de Syncthing configuratie door naar het config bestand te zoeken"
 
-#: src/prefs.js:160
 msgid "config-file-title"
 msgstr "Configuratie bestandslocatie"
 
-#: src/prefs.js:161 src/prefs.js:174 src/prefs.js:187 src/prefs.js:202
-#: src/prefs.js:204 src/prefs.js:206
 msgid "unknown"
 msgstr "Onbekend"
 
-#: src/prefs.js:173 src/prefs.js:214
 msgid "service-uri-title"
 msgstr "Service URI &amp; poort"
 
-#: src/prefs.js:186 src/prefs.js:234
 msgid "api-key-title"
 msgstr "API key"
 
-#: src/prefs.js:215
 msgid "service-uri-tooltip"
 msgstr "Service URI gebruikt om aan de Syncthing API te verbinden"
 
-#: src/prefs.js:235
 msgid "api-key-tooltip"
 msgstr "API key gebruikt om aan de Syncthing API te authenticeren"
 
-#: src/prefs.js:265
 msgid "copyright"
 msgstr "Copyright"

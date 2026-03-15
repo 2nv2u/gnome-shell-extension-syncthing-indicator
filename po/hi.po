@@ -1,0 +1,136 @@
+msgid ""
+msgstr ""
+
+"Language: hi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "unknown-error"
+msgstr "एक्सटेंशन को एक अज्ञात त्रुटि का सामना करना पड़ा, अधिक विवरण के लिए लॉग देखें"
+
+msgid "daemon-error"
+msgstr "Syncthing डेमन नहीं मिल सका या पहुंचा नहीं जा सका, अधिक विवरण के लिए लॉग देखें"
+
+msgid "service-error"
+msgstr "Syncthing सेवा ने एक त्रुटि की सूचना दी, अधिक विवरण के लिए लॉग देखें"
+
+msgid "decoding-error"
+msgstr "Syncthing कनेक्शन डिकोडिंग त्रुटि, अधिक विवरण के लिए लॉग देखें"
+
+msgid "connection-error"
+msgstr "Syncthing कनेक्शन स्थिति त्रुटि, अधिक विवरण के लिए लॉग देखें"
+
+msgid "config-error"
+msgstr "Syncthing कॉन्फ़िगरेशन नहीं मिल सका, Syncthing इंस्टॉल नहीं हो सकता है, अधिक विवरण के लिए लॉग देखें"
+
+msgid "syncthing-indicator"
+msgstr "Syncthing इंडिकेटर"
+
+msgid "pending-request-notification"
+msgstr "नई लंबित अनुरोध: %s"
+
+msgid "folders"
+msgstr "फ़ोल्डर"
+
+msgid "this-device"
+msgstr "यह डिवाइस"
+
+msgid "devices"
+msgstr "रिमोट डिवाइस"
+
+msgid "not-connected"
+msgstr "कनेक्ट नहीं है..."
+
+msgid "service"
+msgstr "सेवा"
+
+msgid "autostart"
+msgstr "ऑटोस्टार्ट"
+
+msgid "rescan"
+msgstr "सभी फ़ोल्डर पुनः स्कैन करें"
+
+msgid "web-interface"
+msgstr "वेब इंटरफ़ेस खोलें"
+
+msgid "settings"
+msgstr "सेटिंग्स"
+
+msgid "syncthing"
+msgstr "Syncthing"
+
+msgid "settings-group-title"
+msgstr "Syncthing इंडिकेटर सेटिंग्स"
+
+msgid "settings-group-description"
+msgstr "पैनल का स्थान बदलें और/या स्विच और बटन छुपाएं।"
+
+msgid "quick-settings"
+msgstr "त्वरित सेटिंग्स"
+
+msgid "main-panel"
+msgstr "मुख्य पैनल"
+
+msgid "menu-type-title"
+msgstr "मेनू प्रकार"
+
+msgid "menu-type-subtitle"
+msgstr "मेनू एकीकरण प्रकार चुनें"
+
+msgid "icon-state-title"
+msgstr "आइकन स्थिति"
+
+msgid "icon-state-subtitle"
+msgstr "विभिन्न आइकन के साथ Syncthing स्थिति दिखाएं"
+
+msgid "setting-button-title"
+msgstr "सेटिंग्स बटन"
+
+msgid "setting-button-subtitle"
+msgstr "एक्सटेंशन सेटिंग्स बटन दिखाएं"
+
+msgid "use-sysd-item"
+msgstr "SystemD समर्थन"
+
+msgid "use-sysd-item-subtitle"
+msgstr "SystemD का उपयोग करके Syncthing डेमन नियंत्रण सक्षम करें"
+
+msgid "auto-start-item"
+msgstr "ऑटोस्टार्ट स्विच"
+
+msgid "auto-start-item-subtitle"
+msgstr "एक्सटेंशन ऑटोस्टार्ट स्विच दिखाएं"
+
+msgid "auto-config-group-title"
+msgstr "स्वचालित और मैन्युअल कॉन्फ़िगरेशन"
+
+msgid "auto-config-group-description"
+msgstr "कनेक्शन 'syncthing paths' कमांड पार्स करके या डिफ़ॉल्ट स्थानों में खोजकर कॉन्फ़िगरेशन से निकाला जाएगा।\nयदि यह विफल होता है, तो आप API कुंजी और URI स्वयं बदल सकते हैं।"
+
+msgid "auto-config-title"
+msgstr "स्वचालित कॉन्फ़िगरेशन का उपयोग करें"
+
+msgid "auto-config-subtitle"
+msgstr "कॉन्फ़िगरेशन फ़ाइल खोजकर Syncthing कॉन्फ़िगरेशन से API कुंजी पढ़ें"
+
+msgid "config-file-title"
+msgstr "कॉन्फ़िगरेशन फ़ाइल स्थान"
+
+msgid "unknown"
+msgstr "अज्ञात"
+
+msgid "service-uri-title"
+msgstr "सेवा URI और पोर्ट"
+
+msgid "api-key-title"
+msgstr "API कुंजी"
+
+msgid "service-uri-tooltip"
+msgstr "Syncthing API से कनेक्ट करने के लिए उपयोग किया जाने वाला सेवा URI"
+
+msgid "api-key-tooltip"
+msgstr "Syncthing API में प्रमाणित करने के लिए उपयोग की जाने वाली API कुंजी"
+
+msgid "copyright"
+msgstr "कॉपीराइट"

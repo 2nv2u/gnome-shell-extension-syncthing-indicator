@@ -1,0 +1,136 @@
+msgid ""
+msgstr ""
+
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "unknown-error"
+msgstr "Rozszerzenie napotkało nieznany błąd, szczegóły w logu"
+
+msgid "daemon-error"
+msgstr "Demona Syncthing nie można znaleźć lub nie jest dostępny, szczegóły w logu"
+
+msgid "service-error"
+msgstr "Usługa Syncthing zgłosiła błąd, szczegóły w logu"
+
+msgid "decoding-error"
+msgstr "Błąd dekodowania połączenia Syncthing, szczegóły w logu"
+
+msgid "connection-error"
+msgstr "Błąd stanu połączenia Syncthing, szczegóły w logu"
+
+msgid "config-error"
+msgstr "Nie można znaleźć konfiguracji Syncthing, Syncthing może nie być zainstalowany, szczegóły w logu"
+
+msgid "syncthing-indicator"
+msgstr "Wskaźnik Syncthing"
+
+msgid "pending-request-notification"
+msgstr "Nowe oczekujące żądanie: %s"
+
+msgid "folders"
+msgstr "Foldery"
+
+msgid "this-device"
+msgstr "To urządzenie"
+
+msgid "devices"
+msgstr "Urządzenia zdalne"
+
+msgid "not-connected"
+msgstr "Nie połączono..."
+
+msgid "service"
+msgstr "Usługa"
+
+msgid "autostart"
+msgstr "Autostart"
+
+msgid "rescan"
+msgstr "Skanuj ponownie wszystkie foldery"
+
+msgid "web-interface"
+msgstr "Otwórz interfejs webowy"
+
+msgid "settings"
+msgstr "Ustawienia"
+
+msgid "syncthing"
+msgstr "Syncthing"
+
+msgid "settings-group-title"
+msgstr "Ustawienia wskaźnika Syncthing"
+
+msgid "settings-group-description"
+msgstr "Zmień lokalizację panelu i/lub ukryj przełączniki i przyciski."
+
+msgid "quick-settings"
+msgstr "Szybkie ustawienia"
+
+msgid "main-panel"
+msgstr "Główny panel"
+
+msgid "menu-type-title"
+msgstr "Typ menu"
+
+msgid "menu-type-subtitle"
+msgstr "Wybierz typ integracji menu"
+
+msgid "icon-state-title"
+msgstr "Stan ikony"
+
+msgid "icon-state-subtitle"
+msgstr "Pokaż stan Syncthing za pomocą różnych ikon"
+
+msgid "setting-button-title"
+msgstr "Przycisk ustawień"
+
+msgid "setting-button-subtitle"
+msgstr "Pokaż przycisk ustawień rozszerzenia"
+
+msgid "use-sysd-item"
+msgstr "Wsparcie SystemD"
+
+msgid "use-sysd-item-subtitle"
+msgstr "Włącz kontrolę demona Syncthing za pomocą SystemD"
+
+msgid "auto-start-item"
+msgstr "Przełącznik autostartu"
+
+msgid "auto-start-item-subtitle"
+msgstr "Pokaż przełącznik autostartu rozszerzenia"
+
+msgid "auto-config-group-title"
+msgstr "Konfiguracja automatyczna i ręczna"
+
+msgid "auto-config-group-description"
+msgstr "Połączenie zostanie wyodrębnione z konfiguracji przez analizę polecenia 'syncthing --paths' lub wyszukane w domyślnych lokalizacjach.\nJeśli to się nie powiedzie, możesz samodzielnie zmienić klucz API i URI."
+
+msgid "auto-config-title"
+msgstr "Użyj konfiguracji automatycznej"
+
+msgid "auto-config-subtitle"
+msgstr "Odczytaj klucz API z konfiguracji Syncthing wyszukując plik konfiguracyjny"
+
+msgid "config-file-title"
+msgstr "Lokalizacja pliku konfiguracyjnego"
+
+msgid "unknown"
+msgstr "Nieznany"
+
+msgid "service-uri-title"
+msgstr "URI i port usługi"
+
+msgid "api-key-title"
+msgstr "Klucz API"
+
+msgid "service-uri-tooltip"
+msgstr "URI usługi używane do połączenia z API Syncthing"
+
+msgid "api-key-tooltip"
+msgstr "Klucz API używany do uwierzytelniania w API Syncthing"
+
+msgid "copyright"
+msgstr "Prawa autorskie"
