@@ -1,49 +1,63 @@
 /* =============================================================================================================
-	SyncthingManager 0.49
+	SyncthingManager 0.50
 ================================================================================================================
 
 	GJS utilities - Timer, Emitter, XMLParser, and i18n fallback translations.
 
 	Copyright (c) 2019-2026, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
-============================================================================================================= */
+============================================================================================================ */
 
 import GLib from "gi://GLib";
-import {
-  gettext as _,
-  Extension,
-} from "resource:///org/gnome/shell/extensions/extension.js";
+import Gio from "gi://Gio";
 
 const Signals = imports.signals;
 
-// Fallback translations when gettext returns the key
-class I18NFallback {
-  constructor() {
-    if (I18NFallback._instance) return I18NFallback._instance;
-    I18NFallback._instance = this;
-    this._data = null;
-    const ext = Extension.getCurrentExtension();
-    const path = ext.path + "/locale/fallback.json";
-    const file = GLib.File.new_for_path(path);
-    const [ok, contents] = file.load_contents(null);
-    if (ok) {
-      this._data = JSON.parse(new TextDecoder().decode(contents));
+const LOG_PREFIX = "syncthing-indicator-utils:";
+
+// I18N class with fallback translations when gettext returns the key
+export class I18N {
+  #data;
+  #file;
+  #gettext;
+
+  constructor(extension, gettext) {
+    // Create a singleton of this class
+    if (I18N._instance) return I18N._instance;
+    I18N._instance = this;
+
+    this.#gettext = gettext;
+    this.#file = Gio.File.new_for_path(
+      extension.path + "/locale/fallback.json",
+    );
+  }
+
+  gettext(str) {
+    if (!this.#data) {
+      try {
+        const [ok, contents] = this.#file.load_contents(null);
+        if (ok) this.#data = JSON.parse(new TextDecoder().decode(contents));
+      } catch (e) {
+        console.error(
+          LOG_PREFIX,
+          "error loading fallback translations",
+          e.message,
+        );
+      }
+      this.#data = this.#data || {};
     }
-    this._data = this._data || {};
+    return this.#data[str] || str;
   }
 
-  lookup(str) {
-    return this._data[str] || null;
+  // Request key and supply key, values pairs to be replaced in the translation
+  _(str, ...args) {
+    let translated = this.#gettext(str);
+    if (translated === str) translated = this.gettext(str);
+    for (let i = 0; i < args.length; i += 2) {
+      translated = translated.replace(args[i], args[i + 1]);
+    }
+    return translated;
   }
-}
-
-// Translation utility method
-export function gettext(str) {
-  let translated = _(str);
-  if (translated === str) {
-    translated = new I18NFallback().lookup(str);
-  }
-  return translated;
 }
 
 // Timer utility class
