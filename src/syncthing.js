@@ -2,7 +2,7 @@
 	SyncthingManager 0.49
 ================================================================================================================
 
-	GJS syncthing (systemd) manager.
+	GJS Syncthing manager - API calls, systemd service control, and event processing.
 
 	Copyright (c) 2019-2026, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
@@ -118,7 +118,7 @@ export const EventType = {
   STATE_CHANGED: "StateChanged",
 };
 
-// Abstract item used for folders and devices
+// Base item class for folders and devices
 class Item extends Utils.Emitter {
   #name;
   #state;
@@ -182,7 +182,7 @@ class Item extends Utils.Emitter {
   }
 }
 
-// Abstract item collection used for folders and devices
+// Collection of items with add/remove functionality
 class ItemCollection extends Utils.Emitter {
   #collection = {};
 
@@ -231,7 +231,7 @@ class ItemCollection extends Utils.Emitter {
   }
 }
 
-// Device
+// Remote device item
 class Device extends Item {
   #determineTimer = new Utils.Timer(DEVICE_STATE_DELAY);
 
@@ -287,7 +287,7 @@ class Device extends Item {
   }
 }
 
-// Device host
+// Local host device
 class HostDevice extends Device {
   constructor(data, manager) {
     super(data, manager);
@@ -326,7 +326,7 @@ class HostDevice extends Device {
   }
 }
 
-// Folder
+// Sync folder item
 class Folder extends Item {
   constructor(data, manager) {
     super(data, manager);
@@ -339,7 +339,7 @@ class Folder extends Item {
   }
 }
 
-// Folder completion proxy per device
+// Folder completion proxy for per-device sync status
 class FolderCompletionProxy extends Folder {
   #folder;
   #device;
@@ -630,14 +630,13 @@ export class Manager extends Utils.Emitter {
       if (config.folders[i].paused) {
         this.folders.get(folderID).state = State.PAUSED;
       } else {
+        const folder = this.folders.get(folderID);
         this.#openConnection(
           "GET",
           "/rest/db/status?folder=" + folderID,
-          (function (folder) {
-            return (data) => {
-              folder.state = data.state;
-            };
-          })(this.folders.get(folderID)),
+          (data) => {
+            folder.state = data.state;
+          },
         );
       }
       for (let j = 0; j < config.folders[i].devices.length; j++) {
@@ -698,11 +697,9 @@ export class Manager extends Utils.Emitter {
                     proxy.id +
                     "&device=" +
                     device.id,
-                  (function (proxy) {
-                    return (data) => {
-                      proxy.setCompletion(data.completion);
-                    };
-                  })(proxy),
+                  (data) => {
+                    proxy.setCompletion(data.completion);
+                  },
                 );
               }
               folder = proxy;
@@ -805,7 +802,7 @@ export class Manager extends Utils.Emitter {
       error = false,
       command = "api";
     if (this.#extensionConfig.useSystemD) {
-      let command = await this.#serviceCommand(
+      const command = await this.#serviceCommand(
         "is-active",
         this.#serviceUserMode,
       );
@@ -1045,6 +1042,7 @@ export class Manager extends Utils.Emitter {
     }
   }
 
+  // Release all resources
   destroy() {
     this.#pollTimer.destroy();
     this.#extensionConfig.destroy();
@@ -1052,23 +1050,27 @@ export class Manager extends Utils.Emitter {
     this.devices.destroy();
   }
 
+  // Attach to Syncthing service
   attach() {
     this.#attach().catch((error) => {
       console.error(LOG_PREFIX, "attach manager error", error);
     });
   }
 
+  // Enable Syncthing service
   async enableService() {
     this.#setService(true);
     await this.#serviceCommand("enable");
     this.#isServiceEnabled();
   }
 
+  // Disable Syncthing service
   async disableService() {
     await this.#serviceCommand("disable");
     this.#isServiceEnabled();
   }
 
+  // Start Syncthing service
   async startService() {
     this.#setService();
     await this.#serviceCommand("start");
@@ -1076,6 +1078,7 @@ export class Manager extends Utils.Emitter {
     this.#isServiceActive();
   }
 
+  // Stop Syncthing service
   async stopService() {
     this.#httpAborting = true;
     this.#httpSession.abort();

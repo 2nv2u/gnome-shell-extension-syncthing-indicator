@@ -2,7 +2,7 @@
 	SyncthingIndicator 0.49
 ================================================================================================================
 
-	GJS syncthing gnome-shell panel indicator components.
+	UI components - menu items, buttons, switches, and panel containers.
 
 	Copyright (c) 2019-2026, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
@@ -20,7 +20,7 @@ import * as Syncthing from "./syncthing.js";
 
 const LOG_PREFIX = "syncthing-indicator-components:";
 
-// Syncthing indicator panel icon
+// Panel icon showing Syncthing state
 export const SyncthingPanelIcon = GObject.registerClass(
   class SyncthingPanelIcon extends St.Icon {
     _init(extension) {
@@ -105,7 +105,7 @@ export const SyncthingPanelIcon = GObject.registerClass(
   },
 );
 
-// Syncthing indicator menu
+// Main panel container
 export class SyncthingPanel {
   constructor(extension, menu) {
     this.menu = menu;
@@ -187,7 +187,7 @@ export class SyncthingPanel {
   }
 }
 
-// Syncthing suspendable switch menu item
+// Switch menu item with toggle support
 export const SwitchMenuItem = GObject.registerClass(
   class SwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
     _init(title, active, menu) {
@@ -216,7 +216,7 @@ export const SwitchMenuItem = GObject.registerClass(
   },
 );
 
-// Syncthing indicator section menu
+// Section menu with nested items
 export const SectionMenu = GObject.registerClass(
   class SectionMenu extends PopupMenu.PopupSubMenuMenuItem {
     _init(title, icon) {
@@ -241,7 +241,7 @@ export const SectionMenu = GObject.registerClass(
   },
 );
 
-// Syncthing indicator fodler menu
+// Folder menu showing sync folders
 export const FolderMenu = GObject.registerClass(
   class FolderMenu extends SectionMenu {
     _init(extension) {
@@ -276,7 +276,7 @@ export const FolderMenu = GObject.registerClass(
   },
 );
 
-// Syncthing indicator fodler menu item
+// Individual folder menu item
 export const FolderMenuItem = GObject.registerClass(
   class FolderMenuItem extends PopupMenu.PopupBaseMenuItem {
     _init(folder) {
@@ -336,7 +336,7 @@ export const FolderMenuItem = GObject.registerClass(
   },
 );
 
-// Syncthing indicator device menu
+// Device menu showing local and remote devices
 export const DeviceMenu = GObject.registerClass(
   class DeviceMenu extends SectionMenu {
     _init(extension) {
@@ -432,7 +432,7 @@ export const DeviceMenu = GObject.registerClass(
   },
 );
 
-// Syncthing indicator device menu item
+// Individual device menu item with pause/resume toggle
 export const DeviceMenuItem = GObject.registerClass(
   class DeviceMenuItem extends SwitchMenuItem {
     _init(device) {
@@ -491,7 +491,7 @@ export const DeviceMenuItem = GObject.registerClass(
   },
 );
 
-// Syncthing indicator device menu item
+// Separator between device sections
 export const DevicesMenuSeparator = GObject.registerClass(
   class DevicesMenuSeparator extends PopupMenu.PopupMenuItem {
     _init() {
@@ -513,7 +513,7 @@ export const DevicesMenuSeparator = GObject.registerClass(
   },
 );
 
-// Syncthing indicator no config item
+// Menu item shown when not connected to Syncthing
 export const NotConnectedItem = GObject.registerClass(
   class NotConnectedItem extends PopupMenu.PopupMenuItem {
     _init(extension) {
@@ -540,7 +540,7 @@ export const NotConnectedItem = GObject.registerClass(
   },
 );
 
-// Syncthing service switch menu item
+// Service toggle switch (start/stop)
 export const ServiceSwitchMenuItem = GObject.registerClass(
   class ServiceSwitchMenuItem extends SwitchMenuItem {
     _init(extension) {
@@ -598,7 +598,7 @@ export const ServiceSwitchMenuItem = GObject.registerClass(
   },
 );
 
-// Syncthing service switch menu item
+// Autostart toggle switch (enable/disable on login)
 export const AutoSwitchMenuItem = GObject.registerClass(
   class AutoSwitchMenuItem extends SwitchMenuItem {
     _init(extension) {
@@ -645,7 +645,7 @@ export const AutoSwitchMenuItem = GObject.registerClass(
   },
 );
 
-// Syncthing service rescan button
+// Rescan button to trigger folder scan
 export const RescanButton = GObject.registerClass(
   class RescanButton extends St.Button {
     _init(extension) {
@@ -681,7 +681,7 @@ export const RescanButton = GObject.registerClass(
   },
 );
 
-// Syncthing advanced service settings button (web interface)
+// Button to open Syncthing web interface
 export const AdvancedButton = GObject.registerClass(
   class AdvancedButton extends St.Button {
     _init(extension) {
@@ -720,7 +720,7 @@ export const AdvancedButton = GObject.registerClass(
   },
 );
 
-// Syncthing extension settings button
+// Button to open extension preferences
 export const SettingsButton = GObject.registerClass(
   class SettingsButton extends St.Button {
     _init(extension) {

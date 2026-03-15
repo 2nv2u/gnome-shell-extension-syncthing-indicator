@@ -2,7 +2,7 @@
 	SyncthingIndicator 0.49
 ================================================================================================================
 
-	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
+	Panel menu indicator for GNOME Shell (pre-45).
 
 	Copyright (c) 2019-2026, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
@@ -21,7 +21,7 @@ import * as Syncthing from "./syncthing.js";
 
 const LOG_PREFIX = "syncthing-indicator-panel-menu:";
 
-// Syncthing indicator controller panel
+// Panel menu indicator for GNOME Shell
 export const SyncthingIndicatorPanel = GObject.registerClass(
   class SyncthingIndicatorPanel extends PanelMenu.Button {
     _init(extension) {

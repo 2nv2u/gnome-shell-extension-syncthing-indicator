@@ -2,7 +2,7 @@
 	SyncthingIndicator 0.49
 ================================================================================================================
 
-	GJS syncthing gnome-shell quick setting indicator signalling the Syncthing deamon status.
+	Quick settings indicator for GNOME Shell 45+.
 
 	Copyright (c) 2019-2026, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
@@ -21,7 +21,7 @@ import * as Syncthing from "./syncthing.js";
 
 const LOG_PREFIX = "syncthing-indicator-quick-setting:";
 
-// Syncthing indicator controller toggle
+// Quick settings toggle for GNOME Shell
 export const SyncthingIndicatorToggle = GObject.registerClass(
   class SyncthingIndicatorToggle extends QuickSettings.QuickMenuToggle {
     _init(extension) {
@@ -129,6 +129,7 @@ export const SyncthingIndicatorToggle = GObject.registerClass(
   },
 );
 
+// System indicator for quick settings
 export const SyncthingIndicatorQuickSetting = GObject.registerClass(
   class SyncthingIndicatorQuickSetting extends QuickSettings.SystemIndicator {
     _init(extension) {

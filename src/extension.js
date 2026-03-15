@@ -2,7 +2,7 @@
 	SyncthingIndicator 0.49
 ================================================================================
 
-	GJS syncthing gnome-shell panel indicator signalling the Syncthing deamon status.
+	GNOME Shell extension entry point - enables/disables the extension.
 
 	Copyright (c) 2019-2026, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
@@ -22,7 +22,6 @@ const SETTINGS_DELAY = 500;
 
 // Syncthing indicator extension
 export default class SyncthingIndicatorExtension extends Extension {
-  // Syncthing indicator enabler
   enable() {
     this._settingTimer = new Utils.Timer(SETTINGS_DELAY);
     this.settings = this.getSettings();
@@ -52,7 +51,6 @@ export default class SyncthingIndicatorExtension extends Extension {
     this.manager.attach();
   }
 
-  // Syncthing indicator disabler
   disable() {
     Utils.Timer.destroy();
     this.settings = null;

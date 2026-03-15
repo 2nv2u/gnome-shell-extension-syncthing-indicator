@@ -2,7 +2,7 @@
 	SyncthingIndicator 0.49
 ================================================================================================================
 
-	GJS syncthing gnome-shell panel indicator preferences.
+	Preferences window - extension settings and configuration.
 
 	Copyright (c) 2019-2026, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
@@ -18,6 +18,7 @@ import { gettext as _ } from "./utils.js";
 import Config from "./config.js";
 
 export default class SyncthingIndicatorExtensionPreferences extends ExtensionPreferences {
+  // Fill preferences window with settings
   fillPreferencesWindow(window) {
     this._window = window;
 
@@ -38,6 +39,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
         icon_name: "help-about-symbolic",
       }),
     });
+    // Fragile Adw vfunc traversal - revisit when Adw provides proper API
+    // TODO: Revisit
     const pagesStack = page.get_parent(); // AdwViewStack
     const contentStack = pagesStack.get_parent().get_parent(); // GtkStack
     const preferences = contentStack.get_parent(); // GtkBox

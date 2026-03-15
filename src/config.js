@@ -2,7 +2,7 @@
 	SyncthingManager 0.49
 ================================================================================================================
 
-	GJS syncthing config.
+	GJS syncthing config - reads Syncthing config file and user preferences.
 
 	Copyright (c) 2019-2026, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
@@ -21,7 +21,7 @@ const SYNCTHING_COMMAND = "syncthing";
 const LOAD_RETRY_COUNT = 5;
 const LOAD_RETRY_DELAY = 500;
 
-class File {
+class ConfigFile {
   #paths = [];
   #index = 0;
 
@@ -84,6 +84,7 @@ export default class Config {
     this.#exists = false;
   }
 
+  // Load configuration from file and/or preferences
   async load() {
     this.clear();
     this.#autoConfig = this.settings.get_boolean("auto-config");
@@ -97,8 +98,9 @@ export default class Config {
     console.debug(LOG_PREFIX, "config loaded, exists:", this.#exists);
   }
 
+  // Load configuration from Syncthing config file
   async loadFromConfigFile() {
-    this.filePath = new File();
+    this.filePath = new ConfigFile();
     try {
       const proc = Gio.Subprocess.new(
         [SYNCTHING_COMMAND, "paths"],
@@ -158,6 +160,7 @@ export default class Config {
     }
   }
 
+  // Load configuration from user preferences
   loadFromPreferences() {
     const apiKey = this.settings.get_string("api-key");
     const serviceUri = this.settings.get_string("service-uri");

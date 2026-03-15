@@ -2,7 +2,7 @@
 	SyncthingManager 0.49
 ================================================================================================================
 
-	GJS utils.
+	GJS utilities - Timer, Emitter, XMLParser, and i18n fallback translations.
 
 	Copyright (c) 2019-2026, 2nv2u <info@2nv2u.com>
 	This work is distributed under GPLv3, see LICENSE for more information.
@@ -16,6 +16,7 @@ import {
 
 const Signals = imports.signals;
 
+// Fallback translations when gettext returns the key
 class I18NFallback {
   constructor() {
     if (I18NFallback._instance) return I18NFallback._instance;
@@ -36,6 +37,7 @@ class I18NFallback {
   }
 }
 
+// Translation utility method
 export function gettext(str) {
   let translated = _(str);
   if (translated === str) {
@@ -44,6 +46,7 @@ export function gettext(str) {
   return translated;
 }
 
+// Timer utility class
 export class Timer {
   static _timers = new Set();
 
@@ -119,13 +122,16 @@ export class Timer {
   }
 }
 
+// Sleep utility method
 export function sleep(ms) {
   return new Promise((resolve) => Timer.run(ms, resolve));
 }
 
+// Base emitter class
 export class Emitter {}
 Signals.addSignalMethods(Emitter.prototype);
 
+// XML parser class
 export class XMLParser {
   static ATTRIBUTE = "@attr";
   static BODY = "@body";
