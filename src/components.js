@@ -343,7 +343,6 @@ export const DeviceMenu = GObject.registerClass(
       super._init(_("this-device"), "computer-symbolic");
       this.label.style_class = "syncthing-state-label";
 
-      // TODO: hide on no devices
       this._deviceSeparator = new DevicesMenuSeparator();
       this.menu.addMenuItem(this._deviceSeparator, 0);
 
