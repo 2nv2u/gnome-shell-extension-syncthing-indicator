@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.49
+	SyncthingIndicator 0.50
 ================================================================================================================
 
 	Quick settings indicator for GNOME Shell 45+.
@@ -14,10 +14,11 @@ import St from "gi://St";
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as QuickSettings from "resource:///org/gnome/shell/ui/quickSettings.js";
+import { gettext } from "resource:///org/gnome/shell/extensions/extension.js";
 
-import { gettext as _ } from "./utils.js";
 import * as Components from "./components.js";
 import * as Syncthing from "./syncthing.js";
+import * as Utils from "./utils.js";
 
 const LOG_PREFIX = "syncthing-indicator-quick-setting:";
 
@@ -25,8 +26,10 @@ const LOG_PREFIX = "syncthing-indicator-quick-setting:";
 export const SyncthingIndicatorToggle = GObject.registerClass(
   class SyncthingIndicatorToggle extends QuickSettings.QuickMenuToggle {
     _init(extension) {
+      this._i18n = new Utils.I18N(extension, gettext);
+
       super._init({
-        title: _("syncthing"),
+        title: this._i18n._("syncthing"),
         toggleMode: true,
       });
 
@@ -38,7 +41,7 @@ export const SyncthingIndicatorToggle = GObject.registerClass(
 
       this.menu.box.add_style_class_name("syncthing-indicator");
       this.menu.box.add_style_class_name("toggle");
-      this.menu.setHeader(null, _("syncthing"));
+      this.menu.setHeader(null, this._i18n._("syncthing"));
 
       // Header action bar section
       // This is replicating the implementation of the QuickToggleMenu

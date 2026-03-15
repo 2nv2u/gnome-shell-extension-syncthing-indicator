@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.49
+	SyncthingIndicator 0.50
 ================================================================================================================
 
 	Panel menu indicator for GNOME Shell (pre-45).
@@ -12,12 +12,12 @@ import GObject from "gi://GObject";
 import Clutter from "gi://Clutter";
 import St from "gi://St";
 
-import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
+import { gettext } from "resource:///org/gnome/shell/extensions/extension.js";
 
-import { gettext as _ } from "./utils.js";
 import * as Components from "./components.js";
 import * as Syncthing from "./syncthing.js";
+import * as Utils from "./utils.js";
 
 const LOG_PREFIX = "syncthing-indicator-panel-menu:";
 
@@ -25,6 +25,9 @@ const LOG_PREFIX = "syncthing-indicator-panel-menu:";
 export const SyncthingIndicatorPanel = GObject.registerClass(
   class SyncthingIndicatorPanel extends PanelMenu.Button {
     _init(extension) {
+      // Initiate i18n translation module
+      this._i18n = new Utils.I18N(extension, gettext);
+
       super._init(0.0, "SyncthingIndicatorPanel");
 
       this.menu.box.add_style_class_name("syncthing-indicator");
@@ -70,7 +73,7 @@ export const SyncthingIndicatorPanel = GObject.registerClass(
         1,
         1,
       );
-      this._headerTitle.text = _("syncthing");
+      this._headerTitle.text = this._i18n._("syncthing");
       // Header action bar section
       const actionLayout = new Clutter.GridLayout();
       const actionBar = new St.Widget({

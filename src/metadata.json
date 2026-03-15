@@ -6,5 +6,5 @@
   "uuid": "syncthing@gnome.2nv2u.com",
   "gettext-domain": "syncthing@gnome.2nv2u.com",
   "settings-schema": "org.gnome.shell.extensions.syncthing",
-  "version": 49
+  "version": 50
 }

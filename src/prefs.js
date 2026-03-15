@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.49
+	SyncthingIndicator 0.50
 ================================================================================================================
 
 	Preferences window - extension settings and configuration.
@@ -12,15 +12,19 @@ import Adw from "gi://Adw";
 import Gio from "gi://Gio";
 import Gtk from "gi://Gtk";
 
-import { ExtensionPreferences } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
+import {
+  ExtensionPreferences,
+  gettext,
+} from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
-import { gettext as _ } from "./utils.js";
+import * as Utils from "./utils.js";
 import Config from "./config.js";
 
 export default class SyncthingIndicatorExtensionPreferences extends ExtensionPreferences {
   // Fill preferences window with settings
   fillPreferencesWindow(window) {
     this._window = window;
+    this._i18n = new Utils.I18N(this, gettext);
 
     const iconTheme = Gtk.IconTheme.get_for_display(window.get_display());
     const iconsDirectory = this.dir.get_child("icons").get_path();
@@ -60,20 +64,20 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
     // Settings group
     const settingsGroup = new Adw.PreferencesGroup({
-      title: _("settings-group-title"),
-      description: _("settings-group-description"),
+      title: this._i18n._("settings-group-title"),
+      description: this._i18n._("settings-group-description"),
     });
     page.add(settingsGroup);
 
     // Menu type model
     const menuTypesModel = new Gtk.StringList();
-    menuTypesModel.append(_("quick-settings"));
-    menuTypesModel.append(_("main-panel"));
+    menuTypesModel.append(this._i18n._("quick-settings"));
+    menuTypesModel.append(this._i18n._("main-panel"));
 
     // Menu type combo selector
     const typeCombo = new Adw.ComboRow({
-      title: _("menu-type-title", "Menu type"),
-      subtitle: _("menu-type-subtitle"),
+      title: this._i18n._("menu-type-title"),
+      subtitle: this._i18n._("menu-type-subtitle"),
       model: menuTypesModel,
     });
     settings.bind("menu", typeCombo, "selected", Gio.SettingsBindFlags.DEFAULT);
@@ -81,8 +85,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
     // Icon state switch
     const iconStateSwitch = new Adw.SwitchRow({
-      title: _("icon-state-title", "Icon state"),
-      subtitle: _("icon-state-subtitle"),
+      title: this._i18n._("icon-state-title"),
+      subtitle: this._i18n._("icon-state-subtitle"),
     });
     settings.bind(
       "icon-state",
@@ -94,8 +98,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
     // Settings button switch
     const settingsButtonSwitch = new Adw.SwitchRow({
-      title: _("setting-button-title"),
-      subtitle: _("setting-button-subtitle"),
+      title: this._i18n._("setting-button-title"),
+      subtitle: this._i18n._("setting-button-subtitle"),
     });
     settings.bind(
       "settings-button",
@@ -107,8 +111,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
     // Settings button switch
     const useSysDItemSwitch = new Adw.SwitchRow({
-      title: _("use-sysd-item"),
-      subtitle: _("use-sysd-item-subtitle"),
+      title: this._i18n._("use-sysd-item"),
+      subtitle: this._i18n._("use-sysd-item-subtitle"),
     });
     settings.bind(
       "use-systemd",
@@ -120,8 +124,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
     // Settings button switch
     const autoStartItemSwitch = new Adw.SwitchRow({
-      title: _("auto-start-item"),
-      subtitle: _("auto-start-item-subtitle"),
+      title: this._i18n._("auto-start-item"),
+      subtitle: this._i18n._("auto-start-item-subtitle"),
     });
     settings.bind(
       "use-systemd",
@@ -139,15 +143,15 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
     // Automatic configuration group
     const autoGroup = new Adw.PreferencesGroup({
-      title: _("auto-config-group-title", ""),
-      description: _("auto-config-group-description"),
+      title: this._i18n._("auto-config-group-title"),
+      description: this._i18n._("auto-config-group-description"),
     });
     page.add(autoGroup);
 
     // Automatic configuration switch
     const autoConfigSwitch = new Adw.SwitchRow({
-      title: _("auto-config-title"),
-      subtitle: _("auto-config-subtitle"),
+      title: this._i18n._("auto-config-title"),
+      subtitle: this._i18n._("auto-config-subtitle"),
     });
     settings.bind(
       "auto-config",
@@ -159,8 +163,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
     // Config file view
     const configFileView = new Adw.ActionRow({
-      title: _("config-file-title"),
-      subtitle: _("unknown"),
+      title: this._i18n._("config-file-title"),
+      subtitle: this._i18n._("unknown"),
     });
     settings.bind(
       "auto-config",
@@ -172,8 +176,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
     // Service URI & port view
     const serviceAddressView = new Adw.ActionRow({
-      title: _("service-uri-title"),
-      subtitle: _("unknown"),
+      title: this._i18n._("service-uri-title"),
+      subtitle: this._i18n._("unknown"),
     });
     settings.bind(
       "auto-config",
@@ -185,8 +189,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
     // API key view
     const apiKeyView = new Adw.ActionRow({
-      title: _("api-key-title"),
-      subtitle: _("unknown"),
+      title: this._i18n._("api-key-title"),
+      subtitle: this._i18n._("unknown"),
     });
     settings.bind(
       "auto-config",
@@ -201,11 +205,15 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       .load()
       .then(() => {
         configFileView.subtitle =
-          config.filePath != null ? config.filePath.path : _("unknown");
+          config.filePath != null
+            ? config.filePath.path
+            : this._i18n._("unknown");
         serviceAddressView.subtitle =
-          config.fileURI != null ? config.fileURI : _("unknown");
+          config.fileURI != null ? config.fileURI : this._i18n._("unknown");
         apiKeyView.subtitle =
-          config.fileApiKey != null ? config.fileApiKey : _("unknown");
+          config.fileApiKey != null
+            ? config.fileApiKey
+            : this._i18n._("unknown");
       })
       .catch((error) => {
         console.log(error);
@@ -213,8 +221,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
     // Service URI & port entry
     const serviceAddressEntry = new Adw.EntryRow({
-      title: _("service-uri-title"),
-      tooltip_text: _("service-uri-tooltip"),
+      title: this._i18n._("service-uri-title"),
+      tooltip_text: this._i18n._("service-uri-tooltip"),
       show_apply_button: true,
     });
     settings.bind(
@@ -233,8 +241,8 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
 
     // API key entry
     const apiKeyEntry = new Adw.EntryRow({
-      title: _("api-key-title"),
-      tooltip_text: _("api-key-tooltip"),
+      title: this._i18n._("api-key-title"),
+      tooltip_text: this._i18n._("api-key-tooltip"),
       show_apply_button: true,
     });
     settings.bind(
@@ -258,13 +266,13 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
       modal: true,
     });
     about_window.set_application_icon("syncthing-indicator");
-    about_window.set_application_name(_("syncthing-indicator"));
+    about_window.set_application_name(this._i18n._("syncthing-indicator"));
     about_window.set_version(`${this.metadata.version}`);
     about_window.set_developer_name("2nv2u");
     about_window.set_issue_url(this.metadata.url + "/issues");
     about_window.set_website(this.metadata.url);
     about_window.set_license_type(Gtk.License.GPL_3_0);
-    about_window.set_copyright(_("copyright") + " © 2026 2nv2u");
+    about_window.set_copyright(this._i18n._("copyright") + " © 2026 2nv2u");
     about_window.show();
   }
 }

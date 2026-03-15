@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.49
+	SyncthingIndicator 0.50
 ================================================================================
 
 	GNOME Shell extension entry point - enables/disables the extension.
@@ -11,7 +11,6 @@
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 
-import { gettext as _ } from "./utils.js";
 import * as Syncthing from "./syncthing.js";
 import * as PanelMenu from "./panelMenu.js";
 import * as QuickSetting from "./quickSetting.js";

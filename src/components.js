@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.49
+	SyncthingIndicator 0.50
 ================================================================================================================
 
 	UI components - menu items, buttons, switches, and panel containers.
@@ -14,9 +14,10 @@ import St from "gi://St";
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
+import { gettext } from "resource:///org/gnome/shell/extensions/extension.js";
 
-import { gettext as _ } from "./utils.js";
 import * as Syncthing from "./syncthing.js";
+import * as Utils from "./utils.js";
 
 const LOG_PREFIX = "syncthing-indicator-components:";
 
@@ -110,6 +111,7 @@ export class SyncthingPanel {
   constructor(extension, menu) {
     this.menu = menu;
     this.icon = new SyncthingPanelIcon(extension);
+    this._i18n = new Utils.I18N(extension, gettext);
 
     // No config item
     this._notConnectedItem = new NotConnectedItem(extension);
@@ -134,33 +136,33 @@ export class SyncthingPanel {
 
     extension.manager.connect(Syncthing.Signal.ERROR, (manager, error) => {
       // Use line based gettext function to be able to generate right text pot output
-      let errorText = _("unknown-error");
+      let errorText = this._i18n._("unknown-error");
       switch (error.type) {
         case Syncthing.Error.DAEMON:
-          errorText = _("daemon-error");
+          errorText = this._i18n._("daemon-error");
           break;
         case Syncthing.Error.SERVICE:
-          errorText = _("service-error");
+          errorText = this._i18n._("service-error");
           break;
         case Syncthing.Error.STREAM:
-          errorText = _("decoding-error");
+          errorText = this._i18n._("decoding-error");
           break;
         case Syncthing.Error.CONNECTION:
-          errorText = _("connection-error");
+          errorText = this._i18n._("connection-error");
           break;
         case Syncthing.Error.CONFIG:
-          errorText = _("config-error");
+          errorText = this._i18n._("config-error");
           break;
       }
-      Main.notifyError(_("syncthing-indicator"), errorText);
+      Main.notifyError(this._i18n._("syncthing-indicator"), errorText);
     });
 
     extension.manager.connect(
       Syncthing.Signal.PENDING_REQUEST,
       (manager, data) => {
         Main.notify(
-          _("syncthing-indicator"),
-          _("pending-request-notification").replace("%s", data.message),
+          this._i18n._("syncthing-indicator"),
+          this._i18n._("pending-request-notification", "%s", data.message),
         );
       },
     );
@@ -245,7 +247,8 @@ export const SectionMenu = GObject.registerClass(
 export const FolderMenu = GObject.registerClass(
   class FolderMenu extends SectionMenu {
     _init(extension) {
-      super._init(_("folders"), "system-file-manager-symbolic");
+      this._i18n = new Utils.I18N(extension, gettext);
+      super._init(this._i18n._("folders"), "system-file-manager-symbolic");
       this.setSensitive(false);
       this.visible = false;
 
@@ -340,10 +343,11 @@ export const FolderMenuItem = GObject.registerClass(
 export const DeviceMenu = GObject.registerClass(
   class DeviceMenu extends SectionMenu {
     _init(extension) {
-      super._init(_("this-device"), "computer-symbolic");
+      this._i18n = new Utils.I18N(extension, gettext);
+      super._init(this._i18n._("this-device"), "computer-symbolic");
       this.label.style_class = "syncthing-state-label";
 
-      this._deviceSeparator = new DevicesMenuSeparator();
+      this._deviceSeparator = new DevicesMenuSeparator(extension);
       this.menu.addMenuItem(this._deviceSeparator, 0);
 
       this._autoSwitch = new AutoSwitchMenuItem(extension);
@@ -493,8 +497,9 @@ export const DeviceMenuItem = GObject.registerClass(
 // Separator between device sections
 export const DevicesMenuSeparator = GObject.registerClass(
   class DevicesMenuSeparator extends PopupMenu.PopupMenuItem {
-    _init() {
-      super._init(_("devices"), {
+    _init(extension) {
+      this._i18n = new Utils.I18N(extension, gettext);
+      super._init(this._i18n._("devices"), {
         can_focus: false,
         hover: false,
         reactive: false,
@@ -516,7 +521,8 @@ export const DevicesMenuSeparator = GObject.registerClass(
 export const NotConnectedItem = GObject.registerClass(
   class NotConnectedItem extends PopupMenu.PopupMenuItem {
     _init(extension) {
-      super._init(_("not-connected"), {
+      this._i18n = new Utils.I18N(extension, gettext);
+      super._init(this._i18n._("not-connected"), {
         can_focus: false,
         hover: false,
         reactive: false,
@@ -543,7 +549,8 @@ export const NotConnectedItem = GObject.registerClass(
 export const ServiceSwitchMenuItem = GObject.registerClass(
   class ServiceSwitchMenuItem extends SwitchMenuItem {
     _init(extension) {
-      super._init(_("service"), false);
+      this._i18n = new Utils.I18N(extension, gettext);
+      super._init(this._i18n._("service"), false);
       this.extension = extension;
       this.visible = false;
 
@@ -601,7 +608,8 @@ export const ServiceSwitchMenuItem = GObject.registerClass(
 export const AutoSwitchMenuItem = GObject.registerClass(
   class AutoSwitchMenuItem extends SwitchMenuItem {
     _init(extension) {
-      super._init(_("autostart"), false);
+      this._i18n = new Utils.I18N(extension, gettext);
+      super._init(this._i18n._("autostart"), false);
       this.extension = extension;
       this.visible = false;
 
@@ -648,11 +656,12 @@ export const AutoSwitchMenuItem = GObject.registerClass(
 export const RescanButton = GObject.registerClass(
   class RescanButton extends St.Button {
     _init(extension) {
+      this._i18n = new Utils.I18N(extension, gettext);
       super._init({
         style_class: "icon-button",
         can_focus: true,
         icon_name: "view-refresh-symbolic",
-        accessible_name: _("rescan"),
+        accessible_name: this._i18n._("rescan"),
         reactive: false,
       });
 
@@ -684,11 +693,12 @@ export const RescanButton = GObject.registerClass(
 export const AdvancedButton = GObject.registerClass(
   class AdvancedButton extends St.Button {
     _init(extension) {
+      this._i18n = new Utils.I18N(extension, gettext);
       super._init({
         style_class: "icon-button",
         can_focus: true,
         icon_name: "system-run-symbolic",
-        accessible_name: _("web-interface"),
+        accessible_name: this._i18n._("web-interface"),
         reactive: false,
       });
 
@@ -723,11 +733,12 @@ export const AdvancedButton = GObject.registerClass(
 export const SettingsButton = GObject.registerClass(
   class SettingsButton extends St.Button {
     _init(extension) {
+      this._i18n = new Utils.I18N(extension, gettext);
       super._init({
         style_class: "icon-button",
         can_focus: true,
         icon_name: "org.gnome.Settings-symbolic",
-        accessible_name: _("settings"),
+        accessible_name: this._i18n._("settings"),
       });
 
       this.extension = extension;
