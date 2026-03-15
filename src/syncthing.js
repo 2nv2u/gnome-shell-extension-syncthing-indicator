@@ -120,14 +120,17 @@ export const EventType = {
 
 // Abstract item used for folders and devices
 class Item extends Utils.Emitter {
+  #name;
+  #state;
+  #stateEmitted = State.UNKNOWN;
+  #stateTimer = new Utils.Timer(ITEM_STATE_DELAY);
+  #destroyed = false;
+
   constructor(data, manager) {
     super();
-    this._state = State.UNKNOWN;
-    this._stateEmitted = State.UNKNOWN;
-    this._stateTimer = new Utils.Timer(ITEM_STATE_DELAY);
-    this._destroyed = false;
+    this.#state = State.UNKNOWN;
     this.id = data.id;
-    this._name = data.name;
+    this.#name = data.name;
     this._manager = manager;
   }
 
@@ -136,75 +139,76 @@ class Item extends Utils.Emitter {
   }
 
   set state(state) {
-    if (state.length > 0 && this._state !== state) {
-      this._stateTimer.cancel();
-      console.info(LOG_PREFIX, "state change", this._name, state);
-      this._state = state;
-      this._stateTimer.run(() => {
-        if (this._destroyed) return;
-        if (this._stateEmitted !== this._state) {
+    if (state.length > 0 && this.#state !== state) {
+      this.#stateTimer.cancel();
+      console.info(LOG_PREFIX, "state change", this.#name, state);
+      this.#state = state;
+      this.#stateTimer.run(() => {
+        if (this.#destroyed) return;
+        if (this.#stateEmitted !== this.#state) {
           console.debug(
             LOG_PREFIX,
             "emit state change",
-            this._name,
-            this._state,
+            this.#name,
+            this.#state,
           );
-          this._stateEmitted = this._state;
-          this.emit(Signal.STATE_CHANGE, this._state);
+          this.#stateEmitted = this.#state;
+          this.emit(Signal.STATE_CHANGE, this.#state);
         }
       });
     }
   }
 
   get state() {
-    return this._state;
+    return this.#state;
   }
 
   set name(name) {
-    if (name.length > 0 && this._name != name) {
-      console.info(LOG_PREFIX, "emit name change", this._name, name);
-      this._name = name;
-      this.emit(Signal.NAME_CHANGE, this._name);
+    if (name.length > 0 && this.#name != name) {
+      console.info(LOG_PREFIX, "emit name change", this.#name, name);
+      this.#name = name;
+      this.emit(Signal.NAME_CHANGE, this.#name);
     }
   }
 
   get name() {
-    return this._name;
+    return this.#name;
   }
 
   destroy() {
-    this._destroyed = true;
-    this._stateTimer.destroy();
+    this.#destroyed = true;
+    this.#stateTimer.destroy();
     this.emit(Signal.DESTROY);
   }
 }
 
 // Abstract item collection used for folders and devices
 class ItemCollection extends Utils.Emitter {
+  #collection = {};
+
   constructor() {
     super();
-    this._collection = {};
   }
 
   add(item) {
     if (item instanceof Item) {
       console.info(LOG_PREFIX, "add", item.constructor.name, item.name);
-      this._collection[item.id] = item;
+      this.#collection[item.id] = item;
       item.connect(Signal.DESTROY, (_item) => {
-        delete this._collection[_item.id];
+        delete this.#collection[_item.id];
       });
       this.emit(Signal.ADD, item);
     }
   }
 
   get ids() {
-    return Object.keys(this._collection);
+    return Object.keys(this.#collection);
   }
 
   destroy(id) {
     if (id) {
-      let item = this._collection[id];
-      delete this._collection[id];
+      let item = this.#collection[id];
+      delete this.#collection[id];
       item.destroy();
       this.emit(Signal.DESTROY, item);
     } else {
@@ -215,23 +219,24 @@ class ItemCollection extends Utils.Emitter {
   }
 
   get(id) {
-    return this._collection[id];
+    return this.#collection[id];
   }
 
   exists(id) {
-    return id in this._collection;
+    return id in this.#collection;
   }
 
   foreach(handler) {
-    Object.values(this._collection).forEach(handler);
+    Object.values(this.#collection).forEach(handler);
   }
 }
 
 // Device
 class Device extends Item {
+  #determineTimer = new Utils.Timer(DEVICE_STATE_DELAY);
+
   constructor(data, manager) {
     super(data, manager);
-    this._determineTimer = new Utils.Timer(DEVICE_STATE_DELAY);
     this.folders = new ItemCollection();
     this.folders.connect(Signal.ADD, (collection, folder) => {
       folder.connect(
@@ -247,7 +252,7 @@ class Device extends Item {
 
   determineStateDelayed() {
     // Stop items from excessive state change calculations by only emitting 1 state per stateDelay
-    this._determineTimer.run(this.determineState.bind(this));
+    this.#determineTimer.run(this.determineState.bind(this));
   }
 
   determineState() {
@@ -277,7 +282,7 @@ class Device extends Item {
   }
 
   destroy() {
-    this._determineTimer.destroy();
+    this.#determineTimer.destroy();
     super.destroy();
   }
 }
@@ -336,11 +341,13 @@ class Folder extends Item {
 
 // Folder completion proxy per device
 class FolderCompletionProxy extends Folder {
+  #folder;
+  #device;
+
   constructor(data) {
     super(data.folder);
-    this._name = data.folder.name + " (" + data.device.name + ")";
-    this._folder = data.folder;
-    this._device = data.device;
+    this.#folder = data.folder;
+    this.#device = data.device;
   }
 
   setCompletion(percentage) {
@@ -350,10 +357,31 @@ class FolderCompletionProxy extends Folder {
       this.state = State.IDLE;
     }
   }
+
+  get name() {
+    return this.#folder.name + " (" + this.#device.name + ")";
+  }
 }
 
 // Main system manager
 export class Manager extends Utils.Emitter {
+  #httpSession = new Soup.Session();
+  #httpAborting = false;
+  #httpErrorCount = 0;
+  #serviceRetries = 0;
+  #serviceActive = false;
+  #serviceEnabled = false;
+  #serviceUserMode = true;
+  #serviceConnected = false;
+  #pollTimer = new Utils.Timer(POLL_TIME, true);
+  #pollCount = 1; // Start at 1 to stop from cycling the hooks at init
+  #lastEventID = 1;
+  #hostID = "";
+  #lastErrorTime = Date.now();
+  #lastPendingCount = 0;
+  #extensionConfig;
+  #extensionPath;
+
   constructor(extensionConfig, extensionPath) {
     super();
     this.folders = new ItemCollection();
@@ -369,56 +397,50 @@ export class Manager extends Utils.Emitter {
         this.emit(Signal.DEVICE_ADD, device);
       }
     });
-    this._httpSession = new Soup.Session();
-    this._httpAborting = false;
-    this._httpErrorCount = 0;
-    this._extensionConfig = extensionConfig;
-    this._serviceRetries = 0;
-    this._serviceActive = false;
-    this._serviceEnabled = false;
-    this._serviceUserMode = true;
-    this._pollTimer = new Utils.Timer(POLL_TIME, true);
-    this._pollCount = 1; // Start at 1 to stop from cycling the hooks at init
-    this._lastEventID = 1;
-    this._hostID = "";
-    this._lastErrorTime = Date.now();
-    this._lastPendingCount = 0;
-    this._extensionPath = extensionPath;
+    this.#extensionConfig = extensionConfig;
+    this.#extensionPath = extensionPath;
     this.connect(Signal.SERVICE_CHANGE, async (manager, state) => {
-      switch (state) {
-        case ServiceState.USER_ACTIVE:
-        case ServiceState.SYSTEM_ACTIVE:
-          const status = await this._serviceCall("GET", "/rest/system/status");
-          this._hostID = status.myID;
-          await this._callConfig();
-          this._callEvents("limit=1");
-          this._pollTimer.run(this._pollState.bind(this));
-          await this._checkPendingRequests();
-          break;
-        case ServiceState.USER_STOPPED:
-        case ServiceState.SYSTEM_STOPPED:
-          this.destroy();
-          this._lastEventID = 1;
-          this._httpErrorCount = 0;
-          if (this._serviceConnected) {
-            this._serviceConnected = false;
-            this.emit(Signal.SERVICE_CHANGE, ServiceState.DISCONNECTED);
-          }
-          break;
+      try {
+        switch (state) {
+          case ServiceState.USER_ACTIVE:
+          case ServiceState.SYSTEM_ACTIVE:
+            const status = await this.#serviceCall(
+              "GET",
+              "/rest/system/status",
+            );
+            this.#hostID = status.myID;
+            await this.#callConfig();
+            this.#callEvents("limit=1");
+            this.#pollTimer.run(this.#pollState.bind(this));
+            await this.#checkPendingRequests();
+            break;
+          case ServiceState.USER_STOPPED:
+          case ServiceState.SYSTEM_STOPPED:
+            this.destroy();
+            this.#lastEventID = 1;
+            this.#httpErrorCount = 0;
+            if (this.#serviceConnected) {
+              this.#serviceConnected = false;
+              this.emit(Signal.SERVICE_CHANGE, ServiceState.DISCONNECTED);
+            }
+            break;
+        }
+      } catch (error) {
+        console.error(LOG_PREFIX, "service change error", error);
       }
     });
   }
 
-  async _callConfig() {
-    const config = await this._serviceCall("GET", "/rest/system/config");
-    await this._processConfig(config);
+  async #callConfig() {
+    const config = await this.#serviceCall("GET", "/rest/system/config");
+    await this.#processConfig(config);
     return config;
   }
 
-  _callEvents(options) {
-    this._openConnection("GET", "/rest/events?" + options, (events) => {
+  #callEvents(options) {
+    this.#openConnection("GET", "/rest/events?" + options, (events) => {
       for (let i = 0; i < events.length; i++) {
-        this._processEvent({
+        this.#processEvent({
           type: events[i].type,
           data: events[i].data,
           id: events[i].id,
@@ -426,20 +448,20 @@ export class Manager extends Utils.Emitter {
       }
       // Reschedule this event stream
       Utils.Timer.run(RESCHEDULE_EVENT_DELAY, () => {
-        this._callEvents("since=" + this._lastEventID);
+        this.#callEvents("since=" + this.#lastEventID);
       });
     });
   }
 
-  async _processEvent(event) {
+  async #processEvent(event) {
     console.debug(LOG_PREFIX, "processing event", event.type, event.data);
     try {
       switch (event.type) {
         case EventType.STARTUP_COMPLETE:
-          await this._callConfig();
+          await this.#callConfig();
           break;
         case EventType.CONFIG_SAVED:
-          await this._processConfig(event.data);
+          await this.#processConfig(event.data);
           break;
         case EventType.LOGIN_ATTEMPT:
           if (event.data.success) {
@@ -505,28 +527,28 @@ export class Manager extends Utils.Emitter {
           break;
         case EventType.PENDING_DEVICES_CHANGED:
           this.devices.destroy();
-          await this._callConfig();
-          await this._checkPendingRequests();
+          await this.#callConfig();
+          await this.#checkPendingRequests();
           break;
         case EventType.PENDING_FOLDERS_CHANGED:
           this.folders.destroy();
-          await this._callConfig();
-          await this._checkPendingRequests();
+          await this.#callConfig();
+          await this.#checkPendingRequests();
           break;
       }
       if (event.id) {
-        this._lastEventID = event.id;
+        this.#lastEventID = event.id;
       }
     } catch (error) {
       console.warn(LOG_PREFIX, "event processing failed", error.message);
     }
   }
 
-  async _callConnections() {
-    const data = await this._serviceCall("GET", "/rest/system/connections");
+  async #callConnections() {
+    const data = await this.#serviceCall("GET", "/rest/system/connections");
     const devices = data.connections;
     for (let deviceID in devices) {
-      if (this.devices.exists(deviceID) && deviceID != this._hostID) {
+      if (this.devices.exists(deviceID) && deviceID != this.#hostID) {
         if (devices[deviceID].connected) {
           this.devices.get(deviceID).state = State.IDLE;
         } else if (devices[deviceID].paused) {
@@ -538,20 +560,20 @@ export class Manager extends Utils.Emitter {
     }
   }
 
-  async _checkPendingRequests() {
+  async #checkPendingRequests() {
     try {
-      const devices = await this._serviceCall(
+      const devices = await this.#serviceCall(
         "GET",
         "/rest/cluster/pending/devices",
       );
-      const folders = await this._serviceCall(
+      const folders = await this.#serviceCall(
         "GET",
         "/rest/cluster/pending/folders",
       );
       const deviceCount = Object.keys(devices || {}).length;
       const folderCount = Object.keys(folders || {}).length;
       const totalPending = deviceCount + folderCount;
-      if (totalPending > 0 && totalPending > this._lastPendingCount) {
+      if (totalPending > 0 && totalPending > this.#lastPendingCount) {
         const messages = [];
         if (deviceCount > 0) {
           const deviceLabel = deviceCount === 1 ? "device" : "devices";
@@ -567,7 +589,7 @@ export class Manager extends Utils.Emitter {
           message: messages.join(", "),
         });
       }
-      this._lastPendingCount = totalPending;
+      this.#lastPendingCount = totalPending;
     } catch (error) {
       console.warn(
         LOG_PREFIX,
@@ -577,7 +599,7 @@ export class Manager extends Utils.Emitter {
     }
   }
 
-  async _processConfig(config) {
+  async #processConfig(config) {
     // Track existing items to remove old ones
     const existingFolderIDs = new Set(this.folders.ids);
     const existingDeviceIDs = new Set(this.devices.ids);
@@ -608,7 +630,7 @@ export class Manager extends Utils.Emitter {
       if (config.folders[i].paused) {
         this.folders.get(folderID).state = State.PAUSED;
       } else {
-        this._openConnection(
+        this.#openConnection(
           "GET",
           "/rest/db/status?folder=" + folderID,
           (function (folder) {
@@ -640,7 +662,7 @@ export class Manager extends Utils.Emitter {
       if (deviceID in usedDevices) {
         let device;
         if (!this.devices.exists(config.devices[i].deviceID)) {
-          if (this._hostID == config.devices[i].deviceID) {
+          if (this.#hostID == config.devices[i].deviceID) {
             device = new HostDevice(
               {
                 id: config.devices[i].deviceID,
@@ -670,7 +692,7 @@ export class Manager extends Utils.Emitter {
                 device: device,
               });
               if (folder.state != State.PAUSED) {
-                this._openConnection(
+                this.#openConnection(
                   "GET",
                   "/rest/db/completion?folder=" +
                     proxy.id +
@@ -699,37 +721,37 @@ export class Manager extends Utils.Emitter {
       this.devices.destroy(deviceID);
     }
 
-    await this._callConnections();
+    await this.#callConnections();
   }
 
-  async _pollState() {
+  async #pollState() {
     console.debug(
       LOG_PREFIX,
       "poll state",
-      this._pollCount,
-      this._pollCount % POLL_CONFIG_HOOK_COUNT,
-      this._pollCount % POLL_CONNECTION_HOOK_COUNT,
+      this.#pollCount,
+      this.#pollCount % POLL_CONFIG_HOOK_COUNT,
+      this.#pollCount % POLL_CONNECTION_HOOK_COUNT,
     );
     if (
-      (await this._extensionConfig.exists()) &&
-      (await this._isServiceActive())
+      (await this.#extensionConfig.exists()) &&
+      (await this.#isServiceActive())
     ) {
-      if (this._pollCount % POLL_CONFIG_HOOK_COUNT == 0) {
-        await this._callConfig();
-        await this._checkPendingRequests();
+      if (this.#pollCount % POLL_CONFIG_HOOK_COUNT == 0) {
+        await this.#callConfig();
+        await this.#checkPendingRequests();
       }
-      if (this._pollCount % POLL_CONNECTION_HOOK_COUNT == 0) {
-        await this._isServiceEnabled();
-        await this._callConnections();
+      if (this.#pollCount % POLL_CONNECTION_HOOK_COUNT == 0) {
+        await this.#isServiceEnabled();
+        await this.#callConnections();
       }
-      this._openConnection("GET", "/rest/system/error", (data) => {
+      this.#openConnection("GET", "/rest/system/error", (data) => {
         let errorTime;
         const errors = data.errors;
         if (errors != null) {
           for (let i = 0; i < errors.length; i++) {
             errorTime = new Date(errors[i].when);
-            if (errorTime > this._lastErrorTime) {
-              this._lastErrorTime = errorTime;
+            if (errorTime > this.#lastErrorTime) {
+              this.#lastErrorTime = errorTime;
               console.error(LOG_PREFIX, Error.SERVICE, errors[i]);
               this.emit(Signal.ERROR, {
                 type: Error.SERVICE,
@@ -740,12 +762,12 @@ export class Manager extends Utils.Emitter {
         }
       });
     } else {
-      await this._isServiceEnabled();
+      await this.#isServiceEnabled();
     }
-    this._pollCount++;
+    this.#pollCount++;
   }
 
-  _setService(force = false) {
+  #setService(force = false) {
     // (Force) Copy systemd config file to systemd's configuration directory (if it doesn't exist)
     let systemDConfigPath = GLib.get_user_config_dir() + "/systemd/user";
     let systemDConfigFile = Service.NAME + ".service";
@@ -754,7 +776,7 @@ export class Manager extends Utils.Emitter {
     );
     if (force || !systemDConfigFileTo.query_exists(null)) {
       let systemDConfigFileFrom = Gio.File.new_for_path(
-        this._extensionPath + "/" + systemDConfigFile,
+        this.#extensionPath + "/" + systemDConfigFile,
       );
       let systemdConfigDirectory = Gio.File.new_for_path(systemDConfigPath);
       if (!systemdConfigDirectory.query_exists(null)) {
@@ -778,14 +800,14 @@ export class Manager extends Utils.Emitter {
     }
   }
 
-  async _isServiceActive() {
+  async #isServiceActive() {
     let active = false,
       error = false,
       command = "api";
-    if (this._extensionConfig.useSystemD) {
-      let command = await this._serviceCommand(
+    if (this.#extensionConfig.useSystemD) {
+      let command = await this.#serviceCommand(
         "is-active",
-        this._serviceUserMode,
+        this.#serviceUserMode,
       );
       active = command == "active";
       error = command == "failed" || command == "error";
@@ -794,11 +816,11 @@ export class Manager extends Utils.Emitter {
           LOG_PREFIX,
           "systemd call failed, switching to API only mode",
         );
-        this._extensionConfig.useSystemD = !error;
+        this.#extensionConfig.useSystemD = !error;
       }
     }
-    if (!this._extensionConfig.useSystemD) {
-      const result = await this._serviceCall("GET", "/rest/system/ping");
+    if (!this.#extensionConfig.useSystemD) {
+      const result = await this.#serviceCall("GET", "/rest/system/ping");
       active = result["ping"] == "pong" ? "ping" in result : false;
       error = !active ? active : error;
     }
@@ -810,12 +832,12 @@ export class Manager extends Utils.Emitter {
       LOG_PREFIX,
       "service active",
       command,
-      this._serviceUserMode,
-      this._serviceActive,
+      this.#serviceUserMode,
+      this.#serviceActive,
     );
-    if (active != this._serviceActive) {
-      this._serviceActive = active;
-      if (this._serviceUserMode) {
+    if (active != this.#serviceActive) {
+      this.#serviceActive = active;
+      if (this.#serviceUserMode) {
         this.emit(
           Signal.SERVICE_CHANGE,
           active ? ServiceState.USER_ACTIVE : ServiceState.USER_STOPPED,
@@ -831,26 +853,26 @@ export class Manager extends Utils.Emitter {
     return active;
   }
 
-  async _isServiceEnabled(user = true) {
-    if (!this._extensionConfig.useSystemD)
-      return (this._serviceUserMode = this._serviceEnabled = false);
-    let command = await this._serviceCommand("is-enabled", user),
+  async #isServiceEnabled(user = true) {
+    if (!this.#extensionConfig.useSystemD)
+      return (this.#serviceUserMode = this.#serviceEnabled = false);
+    let command = await this.#serviceCommand("is-enabled", user),
       enabled = command == "enabled";
     if (!enabled && user) {
-      return await this._isServiceEnabled(false);
+      return await this.#isServiceEnabled(false);
     }
     console.debug(
       LOG_PREFIX,
       "service enabled",
       command,
       user,
-      this._serviceUserMode,
-      this._serviceEnabled,
+      this.#serviceUserMode,
+      this.#serviceEnabled,
     );
-    if (enabled != this._serviceEnabled) {
-      this._serviceUserMode = user;
-      this._serviceEnabled = enabled;
-      if (this._serviceUserMode) {
+    if (enabled != this.#serviceEnabled) {
+      this.#serviceUserMode = user;
+      this.#serviceEnabled = enabled;
+      if (this.#serviceUserMode) {
         this.emit(
           Signal.SERVICE_CHANGE,
           enabled ? ServiceState.USER_ENABLED : ServiceState.USER_DISABLED,
@@ -865,7 +887,7 @@ export class Manager extends Utils.Emitter {
     return enabled;
   }
 
-  async _serviceCommand(command, user = true) {
+  async #serviceCommand(command, user = true) {
     let args = [SYSTEMD_COMMAND, command];
     if (user) {
       args.push(Service.NAME);
@@ -890,37 +912,37 @@ export class Manager extends Utils.Emitter {
     return result;
   }
 
-  async _serviceCall(method, path) {
+  async #serviceCall(method, path) {
     return new Promise((resolve, reject) => {
       try {
-        this._openConnection(method, path, resolve);
+        this.#openConnection(method, path, resolve);
       } catch (error) {
         reject(error);
       }
     });
   }
 
-  async _openConnection(method, path, callback) {
-    if (await this._extensionConfig.exists()) {
-      let msg = Soup.Message.new(method, this._extensionConfig.URI + path);
+  async #openConnection(method, path, callback) {
+    if (await this.#extensionConfig.exists()) {
+      let msg = Soup.Message.new(method, this.#extensionConfig.URI + path);
       // Accept self signed certificates (for now)
       msg.connect("accept-certificate", () => {
         return true;
       });
-      msg.request_headers.append("X-API-Key", this._extensionConfig.APIKey);
-      this._openConnectionMessage(msg, callback);
+      msg.request_headers.append("X-API-Key", this.#extensionConfig.APIKey);
+      this.#openConnectionMessage(msg, callback);
     }
   }
 
-  async _openConnectionMessage(msg, callback) {
-    // if ((await this._extensionConfig.exists()) && this._serviceActive) {
-    if (await this._extensionConfig.exists()) {
+  async #openConnectionMessage(msg, callback) {
+    // if ((await this.#extensionConfig.exists()) && this.#serviceActive) {
+    if (await this.#extensionConfig.exists()) {
       console.debug(
         LOG_PREFIX,
         "opening connection",
         msg.method + ":" + msg.uri.get_path(),
       );
-      this._httpSession.send_and_read_async(
+      this.#httpSession.send_and_read_async(
         msg,
         GLib.PRIORITY_DEFAULT,
         null,
@@ -943,7 +965,7 @@ export class Manager extends Utils.Emitter {
                 );
                 // Retry this connection attempt
                 Utils.Timer.run(CONNECTION_RETRY_DELAY, () => {
-                  this._openConnectionMessage(msg, callback);
+                  this.#openConnectionMessage(msg, callback);
                 });
               }
             }
@@ -970,11 +992,11 @@ export class Manager extends Utils.Emitter {
                 message: msg.method + ":" + msg.uri.get_path(),
               });
             }
-          } else if (!this._httpAborting) {
-            this._httpErrorCount++;
-            if (this._httpErrorCount >= HTTP_ERROR_RETRIES) {
-              this._pollTimer.cancel();
-              this._httpErrorCount = 0;
+          } else if (!this.#httpAborting) {
+            this.#httpErrorCount++;
+            if (this.#httpErrorCount >= HTTP_ERROR_RETRIES) {
+              this.#pollTimer.cancel();
+              this.#httpErrorCount = 0;
               connected = false;
               this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
             }
@@ -984,7 +1006,7 @@ export class Manager extends Utils.Emitter {
               msg.reason_phrase,
               msg.method + ":" + msg.get_uri().get_path(),
               msg.status_code,
-              this._httpErrorCount,
+              this.#httpErrorCount,
             );
             this.emit(Signal.ERROR, {
               type: Error.CONNECTION,
@@ -996,8 +1018,8 @@ export class Manager extends Utils.Emitter {
                 msg.get_uri().get_path(),
             });
           }
-          if (!this._httpAborting && connected != this._serviceConnected) {
-            this._serviceConnected = connected;
+          if (!this.#httpAborting && connected != this.#serviceConnected) {
+            this.#serviceConnected = connected;
             this.emit(
               Signal.SERVICE_CHANGE,
               connected ? ServiceState.CONNECTED : ServiceState.DISCONNECTED,
@@ -1008,8 +1030,8 @@ export class Manager extends Utils.Emitter {
     }
   }
 
-  async _attach() {
-    if (!(await this._extensionConfig.exists())) {
+  async #attach() {
+    if (!(await this.#extensionConfig.exists())) {
       console.error(LOG_PREFIX, Error.CONFIG);
       this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
       this.emit(Signal.ERROR, { type: Error.CONFIG });
@@ -1017,72 +1039,72 @@ export class Manager extends Utils.Emitter {
       console.info(
         LOG_PREFIX,
         "attach manager",
-        await this._isServiceEnabled(),
-        await this._isServiceActive(),
+        await this.#isServiceEnabled(),
+        await this.#isServiceActive(),
       );
     }
   }
 
   destroy() {
-    this._pollTimer.destroy();
-    this._extensionConfig.destroy();
+    this.#pollTimer.destroy();
+    this.#extensionConfig.destroy();
     this.folders.destroy();
     this.devices.destroy();
   }
 
   attach() {
-    this._attach().catch((error) => {
+    this.#attach().catch((error) => {
       console.error(LOG_PREFIX, "attach manager error", error);
     });
   }
 
   async enableService() {
-    this._setService(true);
-    await this._serviceCommand("enable");
-    this._isServiceEnabled();
+    this.#setService(true);
+    await this.#serviceCommand("enable");
+    this.#isServiceEnabled();
   }
 
   async disableService() {
-    await this._serviceCommand("disable");
-    this._isServiceEnabled();
+    await this.#serviceCommand("disable");
+    this.#isServiceEnabled();
   }
 
   async startService() {
-    this._setService();
-    await this._serviceCommand("start");
+    this.#setService();
+    await this.#serviceCommand("start");
     await Utils.sleep(POLL_DELAY_TIME);
-    this._isServiceActive();
+    this.#isServiceActive();
   }
 
   async stopService() {
-    this._httpAborting = true;
-    this._httpSession.abort();
-    await this._serviceCommand("stop");
-    this._isServiceActive();
-    this._httpAborting = false;
+    this.#httpAborting = true;
+    this.#httpSession.abort();
+    await this.#serviceCommand("stop");
+    this.#isServiceActive();
+    this.#httpAborting = false;
   }
 
   get serviceURI() {
-    return this._extensionConfig.URI;
+    return this.#extensionConfig.URI;
   }
 
   rescan(folder) {
     if (folder) {
-      this._openConnection("POST", "/rest/db/scan?folder=" + folder.id);
+      this.#openConnection("POST", "/rest/db/scan?folder=" + folder.id);
     } else {
-      this._openConnection("POST", "/rest/db/scan");
+      this.#openConnection("POST", "/rest/db/scan");
     }
   }
 
   resume(device) {
     if (device) {
-      this._openConnection("POST", "/rest/system/resume?device=" + device.id);
+      this.#openConnection("POST", "/rest/system/resume?device=" + device.id);
     }
   }
 
   pause(device) {
     if (device) {
-      this._openConnection("POST", "/rest/system/pause?device=" + device.id);
+      this.#openConnection("POST", "/rest/system/pause?device=" + device.id);
     }
   }
 }

@@ -56,12 +56,17 @@ class File {
 
 // Synthing configuration
 export default class Config {
+  #parseAll;
+  #extensionPath;
+  #autoConfig = true;
+  #exists = false;
+
   CONFIG_PATH_KEY = "Configuration file";
 
   constructor(settings, parseAll, extensionPath = null) {
     this.settings = settings;
-    this._parseAll = parseAll;
-    this._extensionPath = extensionPath;
+    this.#parseAll = parseAll;
+    this.#extensionPath = extensionPath;
     this.clear();
   }
 
@@ -74,21 +79,21 @@ export default class Config {
     this.fileApiKey = null;
     this.prefURI = null;
     this.prefApiKey = null;
-    this._autoConfig = true;
-    this._exists = false;
+    this.#autoConfig = true;
+    this.#exists = false;
   }
 
   async load() {
     this.clear();
-    this._autoConfig = this.settings.get_boolean("auto-config");
-    console.debug(LOG_PREFIX, "loading config, auto-config:", this._autoConfig);
-    if (this._parseAll || this._autoConfig) {
+    this.#autoConfig = this.settings.get_boolean("auto-config");
+    console.debug(LOG_PREFIX, "loading config, auto-config:", this.#autoConfig);
+    if (this.#parseAll || this.#autoConfig) {
       await this.loadFromConfigFile();
     }
-    if (this._parseAll || !this._autoConfig) {
+    if (this.#parseAll || !this.#autoConfig) {
       this.loadFromPreferences();
     }
-    console.debug(LOG_PREFIX, "config loaded, exists:", this._exists);
+    console.debug(LOG_PREFIX, "config loaded, exists:", this.#exists);
   }
 
   async loadFromConfigFile() {
@@ -126,15 +131,15 @@ export default class Config {
       const configDataInputStream = Gio.DataInputStream.new(configInputStream);
       const config = configDataInputStream.read_until("", null).toString();
       configInputStream.close(null);
-      const parser = new Utils.XMLParser();
-      const gui = parser.parse(config)?.configuration?.gui;
+
+      const gui = new Utils.XMLParser().parse(config)?.configuration?.gui;
       const tls = gui?.tls;
       const address = gui?.address;
       const apiKey = gui?.apikey;
-      if (tls && address && apiKey) {
+      if (address && apiKey) {
         this.fileApiKey = apiKey;
         this.fileURI = "http" + (tls === "true" ? "s" : "") + "://" + address;
-        this._exists = true;
+        this.#exists = true;
         console.info(
           LOG_PREFIX,
           "found config from file",
@@ -161,7 +166,7 @@ export default class Config {
     ) {
       this.prefApiKey = apiKey;
       this.prefURI = serviceUri;
-      this._exists = true;
+      this.#exists = true;
       console.info(
         LOG_PREFIX,
         "found config from preferences",
@@ -180,10 +185,10 @@ export default class Config {
   }
 
   async exists() {
-    if (!this._exists) {
+    if (!this.#exists) {
       await this.load();
       let retries = 0;
-      while (!this._exists && retries < LOAD_RETRY_COUNT) {
+      while (!this.#exists && retries < LOAD_RETRY_COUNT) {
         console.warn(LOG_PREFIX, "config not found, retrying...", retries + 1);
         await new Promise((resolve) => {
           new Utils.Timer(LOAD_RETRY_DELAY).run(resolve);
@@ -192,11 +197,11 @@ export default class Config {
         retries++;
       }
     }
-    return this._exists;
+    return this.#exists;
   }
 
   get APIKey() {
-    if (this._autoConfig) {
+    if (this.#autoConfig) {
       return this.fileApiKey;
     } else {
       return this.prefApiKey;
@@ -204,7 +209,7 @@ export default class Config {
   }
 
   get URI() {
-    if (this._autoConfig) {
+    if (this.#autoConfig) {
       return this.fileURI;
     } else {
       return this.prefURI;
