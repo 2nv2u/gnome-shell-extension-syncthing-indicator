@@ -625,7 +625,7 @@ export class Manager extends Utils.Emitter {
         );
         this.folders.add(folder);
       } else {
-        this.folders.get(folderID).setName(name);
+        this.folders.get(folderID).name = name;
       }
       if (config.folders[i].paused) {
         this.folders.get(folderID).state = State.PAUSED;
@@ -708,7 +708,7 @@ export class Manager extends Utils.Emitter {
           }
         } else {
           device = this.devices.get(config.devices[i].deviceID);
-          device.setName(config.devices[i].name);
+          device.name = config.devices[i].name;
         }
       }
     }
@@ -722,46 +722,50 @@ export class Manager extends Utils.Emitter {
   }
 
   async #pollState() {
-    console.debug(
-      LOG_PREFIX,
-      "poll state",
-      this.#pollCount,
-      this.#pollCount % POLL_CONFIG_HOOK_COUNT,
-      this.#pollCount % POLL_CONNECTION_HOOK_COUNT,
-    );
-    if (
-      (await this.#extensionConfig.exists()) &&
-      (await this.#isServiceActive())
-    ) {
-      if (this.#pollCount % POLL_CONFIG_HOOK_COUNT == 0) {
-        await this.#callConfig();
-        await this.#checkPendingRequests();
-      }
-      if (this.#pollCount % POLL_CONNECTION_HOOK_COUNT == 0) {
-        await this.#isServiceEnabled();
-        await this.#callConnections();
-      }
-      this.#openConnection("GET", "/rest/system/error", (data) => {
-        let errorTime;
-        const errors = data.errors;
-        if (errors != null) {
-          for (let i = 0; i < errors.length; i++) {
-            errorTime = new Date(errors[i].when);
-            if (errorTime > this.#lastErrorTime) {
-              this.#lastErrorTime = errorTime;
-              console.error(LOG_PREFIX, Error.SERVICE, errors[i]);
-              this.emit(Signal.ERROR, {
-                type: Error.SERVICE,
-                message: errors[i].message,
-              });
+    try {
+      console.debug(
+        LOG_PREFIX,
+        "poll state",
+        this.#pollCount,
+        this.#pollCount % POLL_CONFIG_HOOK_COUNT,
+        this.#pollCount % POLL_CONNECTION_HOOK_COUNT,
+      );
+      if (
+        (await this.#extensionConfig.exists()) &&
+        (await this.#isServiceActive())
+      ) {
+        if (this.#pollCount % POLL_CONFIG_HOOK_COUNT == 0) {
+          await this.#callConfig();
+          await this.#checkPendingRequests();
+        }
+        if (this.#pollCount % POLL_CONNECTION_HOOK_COUNT == 0) {
+          await this.#isServiceEnabled();
+          await this.#callConnections();
+        }
+        this.#openConnection("GET", "/rest/system/error", (data) => {
+          let errorTime;
+          const errors = data.errors;
+          if (errors != null) {
+            for (let i = 0; i < errors.length; i++) {
+              errorTime = new Date(errors[i].when);
+              if (errorTime > this.#lastErrorTime) {
+                this.#lastErrorTime = errorTime;
+                console.error(LOG_PREFIX, Error.SERVICE, errors[i]);
+                this.emit(Signal.ERROR, {
+                  type: Error.SERVICE,
+                  message: errors[i].message,
+                });
+              }
             }
           }
-        }
-      });
-    } else {
-      await this.#isServiceEnabled();
+        });
+      } else {
+        await this.#isServiceEnabled();
+      }
+      this.#pollCount++;
+    } catch (error) {
+      console.warn(LOG_PREFIX, "poll state error", error.message);
     }
-    this.#pollCount++;
   }
 
   #setService(force = false) {
