@@ -625,7 +625,7 @@ export class Manager extends Utils.Emitter {
         );
         this.folders.add(folder);
       } else {
-        this.folders.get(folderID).setName(name);
+        this.folders.get(folderID).name = name;
       }
       if (config.folders[i].paused) {
         this.folders.get(folderID).state = State.PAUSED;
@@ -708,7 +708,7 @@ export class Manager extends Utils.Emitter {
           }
         } else {
           device = this.devices.get(config.devices[i].deviceID);
-          device.setName(config.devices[i].name);
+          device.name = config.devices[i].name;
         }
       }
     }
