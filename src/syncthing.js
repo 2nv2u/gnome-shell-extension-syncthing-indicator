@@ -901,10 +901,12 @@ export class Manager extends Utils.Emitter {
     for (let i = 1; i <= SYSTEMD_RETRIES; i++) {
       console.debug(LOG_PREFIX, "calling systemd", user, args.toString());
       try {
-        let proc = Gio.Subprocess.new(args, Gio.SubprocessFlags.STDOUT_PIPE);
-        result = (await proc.communicate_utf8_async(null, null))
-          .toString()
-          .replace(/[^a-z].?/, "");
+        let proc = Gio.Subprocess.new(
+          args,
+          Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE,
+        );
+        const [stdout] = await proc.communicate_utf8_async(null, null);
+        result = (stdout || "").trim();
         break;
       } catch (error) {
         result = "error";
