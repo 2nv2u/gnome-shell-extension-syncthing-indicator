@@ -101,14 +101,13 @@ export default class Config {
   // Load configuration from Syncthing config file
   async loadFromConfigFile() {
     this.filePath = new ConfigFile();
-    try {
-      const proc = Gio.Subprocess.new(
-        [SYNCTHING_COMMAND, "paths"],
-        Gio.SubprocessFlags.STDOUT_PIPE,
-      );
-      const pathArray = (await proc.communicate_utf8_async(null, null))
-        .toString()
-        .split("\n\n");
+    // Syncthing >=1.29 dropped the top-level "paths" command; use "serve --paths".
+    // Older versions still need bare "paths".
+    const stdout =
+      (await this.#runSyncthing(["serve", "--paths"])) ||
+      (await this.#runSyncthing(["paths"]));
+    if (stdout) {
+      const pathArray = stdout.split("\n\n");
       const cmdPaths = {};
       for (let i = 0; i < pathArray.length; i++) {
         const items = pathArray[i].split(":\n\t");
@@ -117,12 +116,6 @@ export default class Config {
       if (this.CONFIG_PATH_KEY in cmdPaths) {
         this.filePath.addPath(cmdPaths[this.CONFIG_PATH_KEY][0]);
       }
-    } catch (error) {
-      console.warn(
-        LOG_PREFIX,
-        "executing syncthing binary failed",
-        error.message,
-      );
     }
 
     this.filePath.addPath(GLib.get_user_config_dir() + "/syncthing/config.xml");
@@ -157,6 +150,35 @@ export default class Config {
           this.filePath.path,
         );
       }
+    }
+  }
+
+  // Run syncthing CLI silently, return stdout on success, null on failure
+  async #runSyncthing(args) {
+    try {
+      const proc = Gio.Subprocess.new(
+        [SYNCTHING_COMMAND, ...args],
+        Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE,
+      );
+      const [stdout] = await proc.communicate_utf8_async(null, null);
+      if (!proc.get_successful()) {
+        console.debug(
+          LOG_PREFIX,
+          "syncthing binary returned non-zero",
+          args.join(" "),
+          proc.get_exit_status(),
+        );
+        return null;
+      }
+      return stdout;
+    } catch (error) {
+      console.warn(
+        LOG_PREFIX,
+        "executing syncthing binary failed",
+        args.join(" "),
+        error.message,
+      );
+      return null;
     }
   }
 
