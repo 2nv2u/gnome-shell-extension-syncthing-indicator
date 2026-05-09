@@ -958,6 +958,10 @@ export class Manager extends Utils.Emitter {
           let errorReported = false;
           if (msg.status_code == Soup.Status.OK) {
             connected = true;
+            // Reset the strike counter so a single transient failure
+            // followed by a success doesn't accumulate toward an
+            // eventual ERROR emit.
+            this.#httpErrorCount = 0;
             let response;
             try {
               response = new TextDecoder("utf-8").decode(
