@@ -722,14 +722,14 @@ export class Manager extends Utils.Emitter {
   }
 
   async #pollState() {
-    console.debug(
-      LOG_PREFIX,
-      "poll state",
-      this.#pollCount,
-      this.#pollCount % POLL_CONFIG_HOOK_COUNT,
-      this.#pollCount % POLL_CONNECTION_HOOK_COUNT,
-    );
     try {
+      console.debug(
+        LOG_PREFIX,
+        "poll state",
+        this.#pollCount,
+        this.#pollCount % POLL_CONFIG_HOOK_COUNT,
+        this.#pollCount % POLL_CONNECTION_HOOK_COUNT,
+      );
       if (
         (await this.#extensionConfig.exists()) &&
         (await this.#isServiceActive())
@@ -742,7 +742,7 @@ export class Manager extends Utils.Emitter {
           await this.#isServiceEnabled();
           await this.#callConnections();
         }
-        await this.#openConnection("GET", "/rest/system/error", (data) => {
+        this.#openConnection("GET", "/rest/system/error", (data) => {
           let errorTime;
           const errors = data.errors;
           if (errors != null) {
@@ -762,10 +762,9 @@ export class Manager extends Utils.Emitter {
       } else {
         await this.#isServiceEnabled();
       }
-    } catch (error) {
-      console.error(LOG_PREFIX, "poll state error", error);
-    } finally {
       this.#pollCount++;
+    } catch (error) {
+      console.warn(LOG_PREFIX, "poll state error", error.message);
     }
   }
 
