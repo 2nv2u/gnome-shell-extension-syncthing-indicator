@@ -57,16 +57,14 @@ class ConfigFile {
 // Synthing configuration
 export default class Config {
   #parseAll;
-  #extensionPath;
   #autoConfig = true;
   #exists = false;
 
   CONFIG_PATH_KEY = "Configuration file";
 
-  constructor(settings, parseAll, extensionPath = null) {
+  constructor(settings, parseAll) {
     this.settings = settings;
     this.#parseAll = parseAll;
-    this.#extensionPath = extensionPath;
     this.clear();
   }
 
