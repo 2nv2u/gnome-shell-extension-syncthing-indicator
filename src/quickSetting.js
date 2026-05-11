@@ -12,7 +12,6 @@ import GObject from "gi://GObject";
 import Clutter from "gi://Clutter";
 import St from "gi://St";
 
-import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as QuickSettings from "resource:///org/gnome/shell/ui/quickSettings.js";
 import { gettext } from "resource:///org/gnome/shell/extensions/extension.js";
 
@@ -149,10 +148,6 @@ export const SyncthingIndicatorQuickSetting = GObject.registerClass(
       this.panel.icon.addActor(this._addIndicator());
       this.panel.icon.addActor(this.toggle);
       this.panel.icon.addActor(this.toggle.menu._headerIcon);
-
-      this.panel.menu.connect("open-state-changed", (menu, open) => {
-        if (!open) Main.panel.statusArea.quickSettings.menu.close();
-      });
     }
 
     destroy() {

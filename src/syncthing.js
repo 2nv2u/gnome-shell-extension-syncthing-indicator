@@ -900,10 +900,12 @@ export class Manager extends Utils.Emitter {
     for (let i = 1; i <= SYSTEMD_RETRIES; i++) {
       console.debug(LOG_PREFIX, "calling systemd", user, args.toString());
       try {
-        let proc = Gio.Subprocess.new(args, Gio.SubprocessFlags.STDOUT_PIPE);
-        result = (await proc.communicate_utf8_async(null, null))
-          .toString()
-          .replace(/[^a-z].?/, "");
+        let proc = Gio.Subprocess.new(
+          args,
+          Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE,
+        );
+        const [stdout] = await proc.communicate_utf8_async(null, null);
+        result = (stdout || "").trim();
         break;
       } catch (error) {
         result = "error";
@@ -915,29 +917,33 @@ export class Manager extends Utils.Emitter {
 
   async #serviceCall(method, path) {
     return new Promise((resolve, reject) => {
-      try {
-        this.#openConnection(method, path, resolve);
-      } catch (error) {
-        reject(error);
-      }
+      this.#openConnection(method, path, resolve, reject);
     });
   }
 
-  async #openConnection(method, path, callback) {
-    if (await this.#extensionConfig.exists()) {
-      let msg = Soup.Message.new(method, this.#extensionConfig.URI + path);
-      // Accept self signed certificates (for now)
-      msg.connect("accept-certificate", () => {
-        return true;
-      });
-      msg.request_headers.append("X-API-Key", this.#extensionConfig.APIKey);
-      this.#openConnectionMessage(msg, callback);
+  async #openConnection(method, path, callback, errorCallback) {
+    try {
+      if (await this.#extensionConfig.exists()) {
+        let msg = Soup.Message.new(method, this.#extensionConfig.URI + path);
+        // Accept self signed certificates (for now)
+        msg.connect("accept-certificate", () => {
+          return true;
+        });
+        msg.request_headers.append("X-API-Key", this.#extensionConfig.APIKey);
+        this.#openConnectionMessage(msg, callback, errorCallback);
+      } else if (errorCallback) {
+        errorCallback(new globalThis.Error(Error.CONFIG));
+      }
+    } catch (error) {
+      if (errorCallback) errorCallback(error);
+      else console.error(LOG_PREFIX, "open connection error", error);
     }
   }
 
-  async #openConnectionMessage(msg, callback) {
-    // if ((await this.#extensionConfig.exists()) && this.#serviceActive) {
-    if (await this.#extensionConfig.exists()) {
+  async #openConnectionMessage(msg, callback, errorCallback) {
+    try {
+      // if ((await this.#extensionConfig.exists()) && this.#serviceActive) {
+      if (await this.#extensionConfig.exists()) {
       console.debug(
         LOG_PREFIX,
         "opening connection",
@@ -949,6 +955,7 @@ export class Manager extends Utils.Emitter {
         null,
         (session, result) => {
           let connected = false;
+          let errorReported = false;
           if (msg.status_code == Soup.Status.OK) {
             connected = true;
             let response;
@@ -966,19 +973,28 @@ export class Manager extends Utils.Emitter {
                 );
                 // Retry this connection attempt
                 Utils.Timer.run(CONNECTION_RETRY_DELAY, () => {
-                  this.#openConnectionMessage(msg, callback);
+                  this.#openConnectionMessage(msg, callback, errorCallback);
                 });
+                return;
+              }
+              if (errorCallback) {
+                errorCallback(error);
+                errorReported = true;
               }
             }
             try {
-              if (callback && response && response.length > 0) {
+              if (response && response.length > 0) {
                 console.debug(
                   LOG_PREFIX,
                   "callback",
                   msg.method + ":" + msg.uri.get_path(),
                   response,
                 );
-                callback(JSON.parse(response));
+                const parsed = JSON.parse(response);
+                if (callback) callback(parsed);
+              } else if (errorCallback && !errorReported) {
+                errorCallback(new globalThis.Error("empty response"));
+                errorReported = true;
               }
             } catch (error) {
               console.error(
@@ -992,6 +1008,10 @@ export class Manager extends Utils.Emitter {
                 type: Error.STREAM,
                 message: msg.method + ":" + msg.uri.get_path(),
               });
+              if (errorCallback && !errorReported) {
+                errorCallback(error);
+                errorReported = true;
+              }
             }
           } else if (!this.#httpAborting) {
             this.#httpErrorCount++;
@@ -1018,6 +1038,23 @@ export class Manager extends Utils.Emitter {
                 ":" +
                 msg.get_uri().get_path(),
             });
+            if (errorCallback) {
+              errorCallback(
+                new globalThis.Error(
+                  Error.CONNECTION +
+                    " " +
+                    msg.status_code +
+                    " " +
+                    msg.method +
+                    ":" +
+                    msg.get_uri().get_path(),
+                ),
+              );
+              errorReported = true;
+            }
+          } else if (this.#httpAborting && errorCallback) {
+            errorCallback(new globalThis.Error("aborted"));
+            errorReported = true;
           }
           if (!this.#httpAborting && connected != this.#serviceConnected) {
             this.#serviceConnected = connected;
@@ -1028,6 +1065,12 @@ export class Manager extends Utils.Emitter {
           }
         },
       );
+      } else if (errorCallback) {
+        errorCallback(new globalThis.Error(Error.CONFIG));
+      }
+    } catch (error) {
+      if (errorCallback) errorCallback(error);
+      else console.error(LOG_PREFIX, "open connection message error", error);
     }
   }
 

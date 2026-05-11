@@ -111,7 +111,16 @@ export class Timer {
     this.#source = GLib.timeout_source_new(timeout);
     this.#source.set_priority(priority);
     this.#source.set_callback(() => {
-      callback();
+      try {
+        const ret = callback();
+        if (ret instanceof Promise) {
+          ret.catch((error) =>
+            console.error(LOG_PREFIX, "timer callback error", error),
+          );
+        }
+      } catch (error) {
+        console.error(LOG_PREFIX, "timer callback error", error);
+      }
       if (recurring) {
         this.#run(callback, timeout, recurring, priority);
       } else {
