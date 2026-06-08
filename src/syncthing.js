@@ -22,7 +22,7 @@ const POLL_CONFIG_HOOK_COUNT = 45; // Poll time * count =  every 15 minutes
 const CONNECTION_RETRY_DELAY = 1000;
 const DEVICE_STATE_DELAY = 600;
 const ITEM_STATE_DELAY = 200;
-const RESCHEDULE_EVENT_DELAY = 50;
+const RESCHEDULE_EVENT_DELAY = 500;
 const HTTP_ERROR_RETRIES = 3;
 const SYSTEMD_COMMAND = "systemctl";
 const SYSTEMD_RETRIES = 3;
