@@ -367,6 +367,8 @@ class FolderCompletionProxy extends Folder {
 export class Manager extends Utils.Emitter {
   #httpSession = new Soup.Session();
   #httpAborting = false;
+  #destroyed = false;
+  #eventsGeneration = 0;
   #httpErrorCount = 0;
   #serviceRetries = 0;
   #serviceActive = false;
@@ -416,7 +418,7 @@ export class Manager extends Utils.Emitter {
             break;
           case ServiceState.USER_STOPPED:
           case ServiceState.SYSTEM_STOPPED:
-            this.destroy();
+            this.#reset();
             this.#lastEventID = 1;
             this.#httpErrorCount = 0;
             if (this.#serviceConnected) {
@@ -437,8 +439,11 @@ export class Manager extends Utils.Emitter {
     return config;
   }
 
-  #callEvents(options) {
+  // Each event chain carries a generation: a service restart or destroy()
+  // bumps it, and a stale chain stops instead of rescheduling itself
+  #callEvents(options, generation = ++this.#eventsGeneration) {
     this.#openConnection("GET", "/rest/events?" + options, (events) => {
+      if (this.#destroyed || generation != this.#eventsGeneration) return;
       for (let i = 0; i < events.length; i++) {
         this.#processEvent({
           type: events[i].type,
@@ -448,7 +453,7 @@ export class Manager extends Utils.Emitter {
       }
       // Reschedule this event stream
       Utils.Timer.run(RESCHEDULE_EVENT_DELAY, () => {
-        this.#callEvents("since=" + this.#lastEventID);
+        this.#callEvents("since=" + this.#lastEventID, generation);
       });
     });
   }
@@ -722,6 +727,7 @@ export class Manager extends Utils.Emitter {
   }
 
   async #pollState() {
+    if (this.#destroyed) return;
     try {
       console.debug(
         LOG_PREFIX,
@@ -762,9 +768,11 @@ export class Manager extends Utils.Emitter {
       } else {
         await this.#isServiceEnabled();
       }
-      this.#pollCount++;
     } catch (error) {
       console.warn(LOG_PREFIX, "poll state error", error.message);
+    } finally {
+      // Advance even on failure, otherwise a failing hook repeats on every poll
+      this.#pollCount++;
     }
   }
 
@@ -922,6 +930,11 @@ export class Manager extends Utils.Emitter {
   }
 
   async #openConnection(method, path, callback, errorCallback) {
+    if (this.#destroyed) {
+      if (errorCallback)
+        errorCallback(new globalThis.Error("manager destroyed"));
+      return;
+    }
     try {
       if (await this.#extensionConfig.exists()) {
         let msg = Soup.Message.new(method, this.#extensionConfig.URI + path);
@@ -1089,12 +1102,23 @@ export class Manager extends Utils.Emitter {
     }
   }
 
-  // Release all resources
-  destroy() {
-    this.#pollTimer.destroy();
+  // Service stopped: drop state and loops, but stay usable for a later restart
+  #reset() {
+    this.#pollTimer.cancel();
+    this.#eventsGeneration++;
     this.#extensionConfig.destroy();
     this.folders.destroy();
     this.devices.destroy();
+  }
+
+  // Release all resources. Abort in-flight requests and retire the event
+  // chain, otherwise the /rest/events long-poll outlives disable()
+  destroy() {
+    this.#destroyed = true;
+    this.#reset();
+    this.#pollTimer.destroy();
+    this.#httpAborting = true;
+    this.#httpSession.abort();
   }
 
   // Attach to Syncthing service
