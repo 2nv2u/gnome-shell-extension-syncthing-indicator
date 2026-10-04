@@ -48,11 +48,13 @@ done < $SCRIPT_PATH/po/en.po
         echo "" >> $SCRIPT_PATH/src/locale/fallback.json
 echo "}" >> $SCRIPT_PATH/src/locale/fallback.json
 
-# Compile schemas
+# Compile schemas (used by the local install path; stripped from the
+# release zip below — extensions.gnome.org rejects bundles that
+# contain a pre-compiled `gschemas.compiled`).
 [ -f $CUR_PATH/src/schemas/gschemas.compiled ] && rm -f $CUR_PATH/src/schemas/gschemas.compiled
 glib-compile-schemas $SCRIPT_PATH/src/schemas/
 
 # Zip extensions files
 [ -f $CUR_PATH/$EXT_NAME.zip ] && rm -f $CUR_PATH/$EXT_NAME.zip
-(cd $SCRIPT_PATH/src && zip -r $CUR_PATH/$EXT_NAME.zip *)
+(cd $SCRIPT_PATH/src && zip -r --exclude='schemas/gschemas.compiled' $CUR_PATH/$EXT_NAME.zip *)
 zip -r $CUR_PATH/$EXT_NAME.zip -j $SCRIPT_PATH/LICENSE
