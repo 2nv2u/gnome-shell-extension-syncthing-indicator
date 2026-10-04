@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingIndicator 0.51
+	SyncthingIndicator
 ================================================================================
 
 	GNOME Shell extension entry point - enables/disables the extension.

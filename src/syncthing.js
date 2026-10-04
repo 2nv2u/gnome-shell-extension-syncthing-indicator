@@ -1,5 +1,5 @@
 /* =============================================================================================================
-	SyncthingManager 0.51
+	SyncthingManager
 ================================================================================================================
 
 	GJS Syncthing manager - API calls, systemd service control, and event processing.
@@ -521,7 +521,10 @@ export class Manager extends Utils.Emitter {
           ) {
             let device = this.devices.get(event.data.device);
             if (device.folders.exists(event.data.folder)) {
-              if (device.isOnline()) device.state = State.SCANNING;
+              if (device.isOnline()) {
+                device.state =
+                  event.data.completion < 100 ? State.SYNCING : State.IDLE;
+              }
               device.folders
                 .get(event.data.folder)
                 .setCompletion(event.data.completion);
