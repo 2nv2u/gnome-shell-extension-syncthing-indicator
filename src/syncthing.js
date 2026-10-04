@@ -15,14 +15,12 @@ import Soup from "gi://Soup";
 import * as Utils from "./utils.js";
 
 const LOG_PREFIX = "syncthing-indicator-manager:";
-const POLL_TIME = 20000;
-const POLL_DELAY_TIME = 2000;
-const POLL_CONNECTION_HOOK_COUNT = 6; // Poll time * count =  every 2 minutes
-const POLL_CONFIG_HOOK_COUNT = 45; // Poll time * count =  every 15 minutes
 const CONNECTION_RETRY_DELAY = 1000;
-const DEVICE_STATE_DELAY = 600;
-const ITEM_STATE_DELAY = 200;
-const RESCHEDULE_EVENT_DELAY = 50;
+const DEVICE_STATE_DELAY = 50;
+const ITEM_STATE_DELAY = 50;
+const REFRESH_INTERVAL = 10000;
+const REFRESH_RETRY_DELAY = 1000;
+const REFRESH_RETRY_COUNT = 3;
 const HTTP_ERROR_RETRIES = 3;
 const SYSTEMD_COMMAND = "systemctl";
 const SYSTEMD_RETRIES = 3;
@@ -84,6 +82,24 @@ export const ServiceState = {
   ERROR: "error",
 };
 
+// Syncthing state to extension state mapping
+const SYNCTHING_STATE_MAP = {
+  idle: State.IDLE,
+  syncing: State.SYNCING,
+  scanning: State.SCANNING,
+  paused: State.PAUSED,
+  outofsync: State.ERRONEOUS,
+  faileditems: State.ERRONEOUS,
+  unshared: State.PAUSED,
+  "sync-waiting": State.SYNCING,
+  "clean-waiting": State.SYNCING,
+};
+
+// Map Syncthing folder state to extension state
+function mapSyncthingState(state) {
+  return SYNCTHING_STATE_MAP[state] || state;
+}
+
 // Signal constants
 export const EventType = {
   CONFIG_SAVED: "ConfigSaved",
@@ -102,6 +118,7 @@ export const EventType = {
   FOLDER_RESUMED: "FolderResumed",
   FOLDER_SCAN_PROGRESS: "FolderScanProgress",
   FOLDER_SUMMARY: "FolderSummary",
+  FOLDER_WATCH_STATE_CHANGED: "FolderWatchStateChanged",
   ITEM_FINISHED: "ItemFinished",
   ITEM_STARTED: "ItemStarted",
   LISTEN_ADDRESSES_CHANGED: "ListenAddressesChanged",
@@ -375,12 +392,14 @@ export class Manager extends Utils.Emitter {
   #serviceEnabled = false;
   #serviceUserMode = true;
   #serviceConnected = false;
-  #pollTimer = new Utils.Timer(POLL_TIME, true);
-  #pollCount = 1; // Start at 1 to stop from cycling the hooks at init
+  #refreshTimer = null;
+  #refreshing = false;
   #lastEventID = 1;
   #hostID = "";
   #lastErrorTime = Date.now();
   #lastPendingCount = 0;
+  #pendingDevices = {};
+  #pendingFolders = {};
   #extensionConfig;
   #extensionPath;
 
@@ -413,7 +432,7 @@ export class Manager extends Utils.Emitter {
             this.#hostID = status.myID;
             await this.#callConfig();
             this.#callEvents("limit=1");
-            this.#pollTimer.run(this.#pollState.bind(this));
+            this.#scheduleRefresh();
             await this.#checkPendingRequests();
             break;
           case ServiceState.USER_STOPPED:
@@ -440,22 +459,37 @@ export class Manager extends Utils.Emitter {
   }
 
   // Each event chain carries a generation: a service restart or destroy()
-  // bumps it, and a stale chain stops instead of rescheduling itself
+  // bumps it, so a stale chain stops at its next response instead of
+  // rescheduling itself (prevents duplicate/leaking event chains)
   #callEvents(options, generation = ++this.#eventsGeneration) {
-    this.#openConnection("GET", "/rest/events?" + options, (events) => {
-      if (this.#destroyed || generation != this.#eventsGeneration) return;
-      for (let i = 0; i < events.length; i++) {
-        this.#processEvent({
-          type: events[i].type,
-          data: events[i].data,
-          id: events[i].id,
-        });
-      }
-      // Reschedule this event stream
-      Utils.Timer.run(RESCHEDULE_EVENT_DELAY, () => {
+    this.#openConnection(
+      "GET",
+      "/rest/events?" + options,
+      (events) => {
+        if (this.#destroyed || generation != this.#eventsGeneration) return;
+        for (let i = 0; i < events.length; i++) {
+          this.#processEvent({
+            type: events[i].type,
+            data: events[i].data,
+            id: events[i].id,
+          });
+        }
+        // Immediate reschedule - Syncthing's server-side long-poll timeout
+        // is what actually spaces out responses; no client-side delay needed
         this.#callEvents("since=" + this.#lastEventID, generation);
-      });
-    });
+      },
+      (error) => {
+        if (this.#destroyed || generation != this.#eventsGeneration) return;
+        console.debug(
+          LOG_PREFIX,
+          "events request failed, retrying in 1s",
+          error.message,
+        );
+        Utils.Timer.run(REFRESH_RETRY_DELAY, () => {
+          this.#callEvents("limit=1", generation);
+        });
+      },
+    );
   }
 
   async #processEvent(event) {
@@ -467,6 +501,7 @@ export class Manager extends Utils.Emitter {
           break;
         case EventType.CONFIG_SAVED:
           await this.#processConfig(event.data);
+          await this.#checkConfigSync();
           break;
         case EventType.LOGIN_ATTEMPT:
           if (event.data.success) {
@@ -496,8 +531,9 @@ export class Manager extends Utils.Emitter {
           break;
         case EventType.FOLDER_SUMMARY:
           if (this.folders.exists(event.data.folder)) {
-            this.folders.get(event.data.folder).state =
-              event.data.summary.state;
+            this.folders.get(event.data.folder).state = mapSyncthingState(
+              event.data.summary.state,
+            );
           }
           break;
         case EventType.FOLDER_PAUSED:
@@ -505,10 +541,41 @@ export class Manager extends Utils.Emitter {
             this.folders.get(event.data.id).state = State.PAUSED;
           }
           break;
+        case EventType.FOLDER_RESUMED:
+          if (this.folders.exists(event.data.id)) {
+            this.folders.get(event.data.id).state = State.IDLE;
+          }
+          break;
+        case EventType.FOLDER_WATCH_STATE_CHANGED:
+          if (this.folders.exists(event.data.folder)) {
+            const folder = this.folders.get(event.data.folder);
+            if (event.data.error) {
+              folder.state = State.ERRONEOUS;
+            } else if (folder.state === State.ERRONEOUS) {
+              this.#scheduleRefresh();
+            }
+          }
+          break;
+        case EventType.FOLDER_SCAN_PROGRESS:
+          if (this.folders.exists(event.data.folder)) {
+            this.folders.get(event.data.folder).state = State.SCANNING;
+          }
+          break;
         case EventType.STATE_CHANGED:
           if (this.folders.exists(event.data.folder)) {
-            this.folders.get(event.data.folder).state = event.data.to;
+            this.folders.get(event.data.folder).state = mapSyncthingState(
+              event.data.to,
+            );
           }
+          if (
+            event.data.from === "scanning" &&
+            mapSyncthingState(event.data.to) === State.IDLE
+          ) {
+            this.#scheduleRefresh();
+          }
+          break;
+        case EventType.LOCAL_INDEX_UPDATED:
+          this.#scheduleRefresh();
           break;
         case EventType.DEVICE_RESUMED:
           if (this.devices.exists(event.data.device)) {
@@ -524,21 +591,43 @@ export class Manager extends Utils.Emitter {
           if (this.devices.exists(event.data.id)) {
             this.devices.get(event.data.id).state = State.IDLE;
           }
+          this.#scheduleRefresh();
           break;
         case EventType.DEVICE_DISCONNECTED:
           if (this.devices.exists(event.data.id)) {
             this.devices.get(event.data.id).state = State.DISCONNECTED;
           }
+          this.#scheduleRefresh();
+          break;
+        case EventType.FAILURE:
+          console.error(
+            LOG_PREFIX,
+            Error.SERVICE,
+            event.data.error,
+            event.data.when,
+          );
+          this.emit(Signal.ERROR, {
+            type: Error.SERVICE,
+            message: event.data.error,
+          });
           break;
         case EventType.PENDING_DEVICES_CHANGED:
-          this.devices.destroy();
-          await this.#callConfig();
-          await this.#checkPendingRequests();
+          if (event.data.added || event.data.removed) {
+            this.#processPendingDevices(event.data);
+          } else {
+            this.devices.destroy();
+            await this.#callConfig();
+            await this.#checkPendingRequests();
+          }
           break;
         case EventType.PENDING_FOLDERS_CHANGED:
-          this.folders.destroy();
-          await this.#callConfig();
-          await this.#checkPendingRequests();
+          if (event.data.added || event.data.removed) {
+            this.#processPendingFolders(event.data);
+          } else {
+            this.folders.destroy();
+            await this.#callConfig();
+            await this.#checkPendingRequests();
+          }
           break;
       }
       if (event.id) {
@@ -549,10 +638,111 @@ export class Manager extends Utils.Emitter {
     }
   }
 
-  async #callConnections() {
+  #processPendingDevices(data) {
+    if (!this.#pendingDevices) this.#pendingDevices = {};
+    if (data.added) {
+      for (const device of data.added) {
+        this.#pendingDevices[device.deviceID] = {
+          time: new Date(device.time),
+          name: device.name,
+          address: device.address,
+        };
+        console.debug(LOG_PREFIX, "pending device added", device.deviceID);
+      }
+    }
+    if (data.removed) {
+      for (const dev of data.removed) {
+        delete this.#pendingDevices[dev.deviceID];
+        console.debug(LOG_PREFIX, "pending device removed", dev.deviceID);
+      }
+    }
+  }
+
+  #processPendingFolders(data) {
+    if (!this.#pendingFolders) this.#pendingFolders = {};
+    if (data.added) {
+      for (const folder of data.added) {
+        if (!this.#pendingFolders[folder.folderID]) {
+          this.#pendingFolders[folder.folderID] = { offeredBy: {} };
+        }
+        this.#pendingFolders[folder.folderID].offeredBy[folder.deviceID] = {
+          time: new Date(folder.time),
+          label: folder.folderLabel,
+          receiveEncrypted: folder.receiveEncrypted,
+        };
+        console.debug(
+          LOG_PREFIX,
+          "pending folder added",
+          folder.folderID,
+          "from",
+          folder.deviceID,
+        );
+      }
+    }
+    if (data.removed) {
+      for (const folderDev of data.removed) {
+        if (folderDev.deviceID === undefined) {
+          delete this.#pendingFolders[folderDev.folderID];
+        } else if (this.#pendingFolders[folderDev.folderID]) {
+          delete this.#pendingFolders[folderDev.folderID].offeredBy[
+            folderDev.deviceID
+          ];
+        }
+      }
+    }
+  }
+
+  async #checkConfigSync() {
+    try {
+      const data = await this.#serviceCall("GET", "/rest/config/insync");
+      console.debug(LOG_PREFIX, "config in sync:", data.configInSync);
+    } catch (error) {
+      console.debug(LOG_PREFIX, "config sync check failed", error.message);
+    }
+  }
+
+  #scheduleRefresh() {
+    if (this.#refreshTimer) {
+      this.#refreshTimer.cancel();
+    }
+    this.#refreshTimer = new Utils.Timer(REFRESH_INTERVAL, true);
+    this.#refreshTimer.run(this.#performRefresh.bind(this));
+  }
+
+  async #performRefresh() {
+    if (this.#refreshing) return;
+    this.#refreshing = true;
+    try {
+      await Promise.all([
+        this.#refreshSystem(),
+        this.#refreshConnectionStats(),
+        this.#refreshDiscoveryCache(),
+        this.#refreshErrors(),
+      ]);
+    } catch (error) {
+      console.warn(LOG_PREFIX, "refresh error", error.message);
+    }
+    this.#refreshing = false;
+  }
+
+  async #refreshSystem() {
+    const data = await this.#serviceCall("GET", "/rest/system/status");
+    this.#hostID = data.myID;
+    const connectionServiceStatus = data.connectionServiceStatus || {};
+    const discoveryStatus = data.discoveryStatus || {};
+    console.debug(
+      LOG_PREFIX,
+      "system status",
+      data.myID,
+      Object.keys(connectionServiceStatus).length,
+      "listeners",
+    );
+  }
+
+  async #refreshConnectionStats() {
     const data = await this.#serviceCall("GET", "/rest/system/connections");
     const devices = data.connections;
-    for (let deviceID in devices) {
+    for (const deviceID in devices) {
       if (this.devices.exists(deviceID) && deviceID != this.#hostID) {
         if (devices[deviceID].connected) {
           this.devices.get(deviceID).state = State.IDLE;
@@ -560,6 +750,37 @@ export class Manager extends Utils.Emitter {
           this.devices.get(deviceID).state = State.PAUSED;
         } else {
           this.devices.get(deviceID).state = State.DISCONNECTED;
+        }
+      }
+    }
+  }
+
+  async #refreshDiscoveryCache() {
+    const data = await this.#serviceCall("GET", "/rest/system/discovery");
+    for (const device in data) {
+      for (let i = 0; i < data[device].addresses.length; i++) {
+        data[device].addresses[i] = data[device].addresses[i].replace(
+          /\/\?.*/,
+          "",
+        );
+      }
+    }
+    console.debug(LOG_PREFIX, "discovery cache refreshed");
+  }
+
+  async #refreshErrors() {
+    const data = await this.#serviceCall("GET", "/rest/system/error");
+    const errors = data.errors;
+    if (errors) {
+      for (let i = 0; i < errors.length; i++) {
+        const errorTime = new Date(errors[i].when);
+        if (errorTime > this.#lastErrorTime) {
+          this.#lastErrorTime = errorTime;
+          console.error(LOG_PREFIX, Error.SERVICE, errors[i]);
+          this.emit(Signal.ERROR, {
+            type: Error.SERVICE,
+            message: errors[i].message,
+          });
         }
       }
     }
@@ -635,14 +856,18 @@ export class Manager extends Utils.Emitter {
       if (config.folders[i].paused) {
         this.folders.get(folderID).state = State.PAUSED;
       } else {
-        const folder = this.folders.get(folderID);
-        this.#openConnection(
-          "GET",
-          "/rest/db/status?folder=" + folderID,
-          (data) => {
-            folder.state = data.state;
-          },
-        );
+        Utils.Timer.run(i * 25, () => {
+          const folder = this.folders.get(folderID);
+          if (folder) {
+            this.#openConnection(
+              "GET",
+              "/rest/db/status?folder=" + folderID,
+              (data) => {
+                folder.state = mapSyncthingState(data.state);
+              },
+            );
+          }
+        });
       }
       for (let j = 0; j < config.folders[i].devices.length; j++) {
         let deviceID = config.folders[i].devices[j].deviceID;
@@ -695,18 +920,6 @@ export class Manager extends Utils.Emitter {
                 folder: folder,
                 device: device,
               });
-              if (folder.state != State.PAUSED) {
-                this.#openConnection(
-                  "GET",
-                  "/rest/db/completion?folder=" +
-                    proxy.id +
-                    "&device=" +
-                    device.id,
-                  (data) => {
-                    proxy.setCompletion(data.completion);
-                  },
-                );
-              }
               folder = proxy;
             }
             device.folders.add(folder);
@@ -723,57 +936,7 @@ export class Manager extends Utils.Emitter {
       this.devices.destroy(deviceID);
     }
 
-    await this.#callConnections();
-  }
-
-  async #pollState() {
-    if (this.#destroyed) return;
-    try {
-      console.debug(
-        LOG_PREFIX,
-        "poll state",
-        this.#pollCount,
-        this.#pollCount % POLL_CONFIG_HOOK_COUNT,
-        this.#pollCount % POLL_CONNECTION_HOOK_COUNT,
-      );
-      if (
-        (await this.#extensionConfig.exists()) &&
-        (await this.#isServiceActive())
-      ) {
-        if (this.#pollCount % POLL_CONFIG_HOOK_COUNT == 0) {
-          await this.#callConfig();
-          await this.#checkPendingRequests();
-        }
-        if (this.#pollCount % POLL_CONNECTION_HOOK_COUNT == 0) {
-          await this.#isServiceEnabled();
-          await this.#callConnections();
-        }
-        this.#openConnection("GET", "/rest/system/error", (data) => {
-          let errorTime;
-          const errors = data.errors;
-          if (errors != null) {
-            for (let i = 0; i < errors.length; i++) {
-              errorTime = new Date(errors[i].when);
-              if (errorTime > this.#lastErrorTime) {
-                this.#lastErrorTime = errorTime;
-                console.error(LOG_PREFIX, Error.SERVICE, errors[i]);
-                this.emit(Signal.ERROR, {
-                  type: Error.SERVICE,
-                  message: errors[i].message,
-                });
-              }
-            }
-          }
-        });
-      } else {
-        await this.#isServiceEnabled();
-      }
-    } catch (error) {
-      console.warn(LOG_PREFIX, "poll state error", error.message);
-    } finally {
-      // Advance even on failure, otherwise a failing hook repeats on every poll
-      this.#pollCount++;
-    }
+    await this.#refreshConnectionStats();
   }
 
   #setService(force = false) {
@@ -931,8 +1094,7 @@ export class Manager extends Utils.Emitter {
 
   async #openConnection(method, path, callback, errorCallback) {
     if (this.#destroyed) {
-      if (errorCallback)
-        errorCallback(new globalThis.Error("manager destroyed"));
+      if (errorCallback) errorCallback(new globalThis.Error("manager destroyed"));
       return;
     }
     try {
@@ -957,131 +1119,128 @@ export class Manager extends Utils.Emitter {
     try {
       // if ((await this.#extensionConfig.exists()) && this.#serviceActive) {
       if (await this.#extensionConfig.exists()) {
-      console.debug(
-        LOG_PREFIX,
-        "opening connection",
-        msg.method + ":" + msg.uri.get_path(),
-      );
-      this.#httpSession.send_and_read_async(
-        msg,
-        GLib.PRIORITY_DEFAULT,
-        null,
-        (session, result) => {
-          let connected = false;
-          let errorReported = false;
-          if (msg.status_code == Soup.Status.OK) {
-            connected = true;
-            // Reset the strike counter so a single transient failure
-            // followed by a success doesn't accumulate toward an
-            // eventual ERROR emit.
-            this.#httpErrorCount = 0;
-            let response;
-            try {
-              response = new TextDecoder("utf-8").decode(
-                session.send_and_read_finish(result).get_data(),
-              );
-            } catch (error) {
-              if (error.code == Gio.IOErrorEnum.TIMED_OUT) {
-                console.info(
-                  LOG_PREFIX,
-                  error.message,
-                  "will retry",
-                  msg.method + ":" + msg.uri.get_path(),
+        console.debug(
+          LOG_PREFIX,
+          "opening connection",
+          msg.method + ":" + msg.uri.get_path(),
+        );
+        this.#httpSession.send_and_read_async(
+          msg,
+          GLib.PRIORITY_DEFAULT,
+          null,
+          (session, result) => {
+            let connected = false;
+            let errorReported = false;
+            if (msg.status_code == Soup.Status.OK) {
+              connected = true;
+              // Track consecutive failures only; a success clears the count
+              this.#httpErrorCount = 0;
+              let response;
+              try {
+                response = new TextDecoder("utf-8").decode(
+                  session.send_and_read_finish(result).get_data(),
                 );
-                // Retry this connection attempt
-                Utils.Timer.run(CONNECTION_RETRY_DELAY, () => {
-                  this.#openConnectionMessage(msg, callback, errorCallback);
-                });
-                return;
+              } catch (error) {
+                if (error.code == Gio.IOErrorEnum.TIMED_OUT) {
+                  console.info(
+                    LOG_PREFIX,
+                    error.message,
+                    "will retry",
+                    msg.method + ":" + msg.uri.get_path(),
+                  );
+                  // Retry this connection attempt
+                  Utils.Timer.run(CONNECTION_RETRY_DELAY, () => {
+                    this.#openConnectionMessage(msg, callback, errorCallback);
+                  });
+                  return;
+                }
+                if (errorCallback) {
+                  errorCallback(error);
+                  errorReported = true;
+                }
               }
-              if (errorCallback) {
-                errorCallback(error);
-                errorReported = true;
-              }
-            }
-            try {
-              if (response && response.length > 0) {
-                console.debug(
+              try {
+                if (response && response.length > 0) {
+                  console.debug(
+                    LOG_PREFIX,
+                    "callback",
+                    msg.method + ":" + msg.uri.get_path(),
+                    response,
+                  );
+                  const parsed = JSON.parse(response);
+                  if (callback) callback(parsed);
+                } else if (errorCallback && !errorReported) {
+                  errorCallback(new globalThis.Error("empty response"));
+                  errorReported = true;
+                }
+              } catch (error) {
+                console.error(
                   LOG_PREFIX,
-                  "callback",
+                  Error.STREAM,
                   msg.method + ":" + msg.uri.get_path(),
+                  error.message,
                   response,
                 );
-                const parsed = JSON.parse(response);
-                if (callback) callback(parsed);
-              } else if (errorCallback && !errorReported) {
-                errorCallback(new globalThis.Error("empty response"));
-                errorReported = true;
+                this.emit(Signal.ERROR, {
+                  type: Error.STREAM,
+                  message: msg.method + ":" + msg.uri.get_path(),
+                });
+                if (errorCallback && !errorReported) {
+                  errorCallback(error);
+                  errorReported = true;
+                }
               }
-            } catch (error) {
+            } else if (!this.#httpAborting) {
+              this.#httpErrorCount++;
+              if (this.#httpErrorCount >= HTTP_ERROR_RETRIES) {
+                this.#httpErrorCount = 0;
+                connected = false;
+                this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
+              }
               console.error(
                 LOG_PREFIX,
-                Error.STREAM,
-                msg.method + ":" + msg.uri.get_path(),
-                error.message,
-                response,
+                Error.CONNECTION,
+                msg.reason_phrase,
+                msg.method + ":" + msg.get_uri().get_path(),
+                msg.status_code,
+                this.#httpErrorCount,
               );
               this.emit(Signal.ERROR, {
-                type: Error.STREAM,
-                message: msg.method + ":" + msg.uri.get_path(),
+                type: Error.CONNECTION,
+                message:
+                  msg.reason_phrase +
+                  " - " +
+                  msg.method +
+                  ":" +
+                  msg.get_uri().get_path(),
               });
-              if (errorCallback && !errorReported) {
-                errorCallback(error);
+              if (errorCallback) {
+                errorCallback(
+                  new globalThis.Error(
+                    Error.CONNECTION +
+                      " " +
+                      msg.status_code +
+                      " " +
+                      msg.method +
+                      ":" +
+                      msg.get_uri().get_path(),
+                  ),
+                );
                 errorReported = true;
               }
-            }
-          } else if (!this.#httpAborting) {
-            this.#httpErrorCount++;
-            if (this.#httpErrorCount >= HTTP_ERROR_RETRIES) {
-              this.#pollTimer.cancel();
-              this.#httpErrorCount = 0;
-              connected = false;
-              this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
-            }
-            console.error(
-              LOG_PREFIX,
-              Error.CONNECTION,
-              msg.reason_phrase,
-              msg.method + ":" + msg.get_uri().get_path(),
-              msg.status_code,
-              this.#httpErrorCount,
-            );
-            this.emit(Signal.ERROR, {
-              type: Error.CONNECTION,
-              message:
-                msg.reason_phrase +
-                " - " +
-                msg.method +
-                ":" +
-                msg.get_uri().get_path(),
-            });
-            if (errorCallback) {
-              errorCallback(
-                new globalThis.Error(
-                  Error.CONNECTION +
-                    " " +
-                    msg.status_code +
-                    " " +
-                    msg.method +
-                    ":" +
-                    msg.get_uri().get_path(),
-                ),
-              );
+            } else if (this.#httpAborting && errorCallback) {
+              errorCallback(new globalThis.Error("aborted"));
               errorReported = true;
             }
-          } else if (this.#httpAborting && errorCallback) {
-            errorCallback(new globalThis.Error("aborted"));
-            errorReported = true;
-          }
-          if (!this.#httpAborting && connected != this.#serviceConnected) {
-            this.#serviceConnected = connected;
-            this.emit(
-              Signal.SERVICE_CHANGE,
-              connected ? ServiceState.CONNECTED : ServiceState.DISCONNECTED,
-            );
-          }
-        },
-      );
+            if (!this.#httpAborting && connected != this.#serviceConnected) {
+              this.#serviceConnected = connected;
+              this.emit(
+                Signal.SERVICE_CHANGE,
+                connected ? ServiceState.CONNECTED : ServiceState.DISCONNECTED,
+              );
+            }
+          },
+        );
       } else if (errorCallback) {
         errorCallback(new globalThis.Error(Error.CONFIG));
       }
@@ -1106,9 +1265,10 @@ export class Manager extends Utils.Emitter {
     }
   }
 
-  // Service stopped: drop state and loops, but stay usable for a later restart
+  // Service stopped: drop state and stop loops, but stay usable for a later
+  // restart (does not abort in-flight requests or mark the manager destroyed)
   #reset() {
-    this.#pollTimer.cancel();
+    if (this.#refreshTimer) this.#refreshTimer.cancel();
     this.#eventsGeneration++;
     this.#extensionConfig.destroy();
     this.folders.destroy();
@@ -1120,7 +1280,7 @@ export class Manager extends Utils.Emitter {
   destroy() {
     this.#destroyed = true;
     this.#reset();
-    this.#pollTimer.destroy();
+    if (this.#refreshTimer) this.#refreshTimer.destroy();
     this.#httpAborting = true;
     this.#httpSession.abort();
   }
@@ -1149,7 +1309,7 @@ export class Manager extends Utils.Emitter {
   async startService() {
     this.#setService();
     await this.#serviceCommand("start");
-    await Utils.sleep(POLL_DELAY_TIME);
+    await Utils.sleep(CONNECTION_RETRY_DELAY);
     this.#isServiceActive();
   }
 
