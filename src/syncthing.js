@@ -20,7 +20,6 @@ const DEVICE_STATE_DELAY = 50;
 const ITEM_STATE_DELAY = 50;
 const REFRESH_INTERVAL = 10000;
 const REFRESH_RETRY_DELAY = 1000;
-const REFRESH_RETRY_COUNT = 3;
 const HTTP_ERROR_RETRIES = 3;
 const SYSTEMD_COMMAND = "systemctl";
 const SYSTEMD_RETRIES = 3;
@@ -939,8 +938,40 @@ export class Manager extends Utils.Emitter {
     await this.#refreshConnectionStats();
   }
 
-  #setService(force = false) {
-    // (Force) Copy systemd config file to systemd's configuration directory (if it doesn't exist)
+  // Resolve the Syncthing binary path so the generated unit works where the
+  // binary is not at /usr/bin/syncthing (e.g. NixOS, which uses
+  // /run/current-system/sw/bin or /nix/store/... locations).
+  async #resolveSyncthingBinary() {
+    // Ask `which` first: it honours the user's PATH, which is what #64 needs
+    // on NixOS.
+    try {
+      let proc = Gio.Subprocess.new(
+        ["which", "syncthing"],
+        Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE,
+      );
+      const [stdout] = await proc.communicate_utf8_async(null, null);
+      const path = (stdout || "").trim();
+      if (path.length > 0) return path;
+    } catch (error) {
+      console.warn(LOG_PREFIX, "which syncthing failed", error.message);
+    }
+    const candidates = [
+      GLib.get_bin_dir() + "/syncthing",
+      "/usr/bin/syncthing",
+      "/run/current-system/sw/bin/syncthing",
+    ];
+    for (const candidate of candidates) {
+      if (new Gio.File.new_for_path(candidate).query_exists(null)) {
+        return candidate;
+      }
+    }
+    return "/usr/bin/syncthing";
+  }
+
+  async #setService(force = false) {
+    // Write the systemd unit with the resolved Syncthing binary path (the
+    // shipped template hard-codes /usr/bin/syncthing, which breaks on NixOS).
+    const syncthingBinary = await this.#resolveSyncthingBinary();
     let systemDConfigPath = GLib.get_user_config_dir() + "/systemd/user";
     let systemDConfigFile = Service.NAME + ".service";
     let systemDConfigFileTo = Gio.File.new_for_path(
@@ -954,19 +985,44 @@ export class Manager extends Utils.Emitter {
       if (!systemdConfigDirectory.query_exists(null)) {
         systemdConfigDirectory.make_directory_with_parents(null);
       }
-      let copyFlag = Gio.FileCopyFlags.NONE;
-      if (force) copyFlag = Gio.FileCopyFlags.OVERWRITE;
-      if (
-        systemDConfigFileFrom.copy(systemDConfigFileTo, copyFlag, null, null)
-      ) {
-        console.info(
-          LOG_PREFIX,
-          "systemd configuration file copied to " + systemDConfigFileTo,
+      try {
+        let [, template] = systemDConfigFileFrom.load_contents(null);
+        let content = new TextDecoder().decode(template);
+        content = content.replace(
+          /^ExecStart=.*$/m,
+          "ExecStart=" +
+            syncthingBinary +
+            " serve --no-browser --no-restart --logflags=0",
         );
-      } else {
+        let written = systemDConfigFileTo.replace_data(
+          null,
+          new TextEncoder().encode(content),
+          Gio.FileCreateFlags.NONE,
+          null,
+          null,
+        );
+        if (written) {
+          console.info(
+            LOG_PREFIX,
+            "systemd configuration file written to " +
+              systemDConfigFileTo +
+              " (ExecStart " +
+              syncthingBinary +
+              ")",
+          );
+        } else {
+          console.warn(
+            LOG_PREFIX,
+            "couldn't write systemd configuration file to " +
+              systemDConfigFileTo,
+          );
+        }
+      } catch (error) {
         console.warn(
           LOG_PREFIX,
-          "couldn't copy systemd configuration file to " + systemDConfigFileTo,
+          "couldn't write systemd configuration file to " +
+            systemDConfigFileTo,
+          error.message,
         );
       }
     }
@@ -1294,7 +1350,7 @@ export class Manager extends Utils.Emitter {
 
   // Enable Syncthing service
   async enableService() {
-    this.#setService(true);
+    await this.#setService(true);
     await this.#serviceCommand("enable");
     this.#isServiceEnabled();
   }
@@ -1307,7 +1363,7 @@ export class Manager extends Utils.Emitter {
 
   // Start Syncthing service
   async startService() {
-    this.#setService();
+    await this.#setService();
     await this.#serviceCommand("start");
     await Utils.sleep(CONNECTION_RETRY_DELAY);
     this.#isServiceActive();
