@@ -35,8 +35,11 @@ export class I18N {
   gettext(str) {
     if (!this.#data) {
       try {
-        const [ok, contents] = this.#file.load_contents(null);
-        if (ok) this.#data = JSON.parse(new TextDecoder().decode(contents));
+        const stream = this.#file.read(null);
+        const dataStream = Gio.DataInputStream.new(stream);
+        const contents = dataStream.read_until("", null).toString();
+        stream.close(null);
+        this.#data = JSON.parse(contents);
       } catch (e) {
         console.error(
           LOG_PREFIX,
@@ -57,6 +60,13 @@ export class I18N {
       translated = translated.replace(args[i], args[i + 1]);
     }
     return translated;
+  }
+
+  // Release the singleton resources when the window that holds it closes
+  destroy() {
+    if (I18N._instance === this) I18N._instance = null;
+    this.#data = null;
+    this.#file = null;
   }
 }
 

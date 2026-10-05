@@ -24,7 +24,7 @@ export default class SyncthingIndicatorExtension extends Extension {
   enable() {
     this._settingTimer = new Utils.Timer(SETTINGS_DELAY);
     this.settings = this.getSettings();
-    this.settings.connect("changed", () => {
+    this._settingsSignalId = this.settings.connect("changed", () => {
       this._settingTimer.run(() => {
         this.indicator.close();
         this.disable();
@@ -52,7 +52,13 @@ export default class SyncthingIndicatorExtension extends Extension {
 
   disable() {
     Utils.Timer.destroy();
-    this.settings = null;
+    if (this.settings) {
+      if (this._settingsSignalId) {
+        this.settings.disconnect(this._settingsSignalId);
+        this._settingsSignalId = null;
+      }
+      this.settings = null;
+    }
     this.indicator.destroy();
     this.indicator = null;
     this.manager.destroy();

@@ -250,14 +250,19 @@ class ItemCollection extends Utils.Emitter {
 // Remote device item
 class Device extends Item {
   #determineTimer = new Utils.Timer(DEVICE_STATE_DELAY);
+  #folderAddSignal;
+  #folderStateSignals = new Map();
 
   constructor(data, manager) {
     super(data, manager);
     this.folders = new ItemCollection();
-    this.folders.connect(Signal.ADD, (collection, folder) => {
-      folder.connect(
-        Signal.STATE_CHANGE,
-        this.determineStateDelayed.bind(this),
+    this.#folderAddSignal = this.folders.connect(Signal.ADD, (collection, folder) => {
+      this.#folderStateSignals.set(
+        folder,
+        folder.connect(
+          Signal.STATE_CHANGE,
+          this.determineStateDelayed.bind(this),
+        ),
       );
     });
   }
@@ -298,6 +303,11 @@ class Device extends Item {
   }
 
   destroy() {
+    for (const [folder, id] of this.#folderStateSignals) {
+      folder.disconnect(id);
+    }
+    this.#folderStateSignals.clear();
+    this.folders.disconnect(this.#folderAddSignal);
     this.#determineTimer.destroy();
     super.destroy();
   }
@@ -305,21 +315,39 @@ class Device extends Item {
 
 // Local host device
 class HostDevice extends Device {
+  #deviceAddSignal;
+  #deviceStateSignals = new Map();
+
   constructor(data, manager) {
     super(data, manager);
-    this._manager.connect(Signal.DEVICE_ADD, (manager, device) => {
-      device.connect(
-        Signal.STATE_CHANGE,
-        this.determineStateDelayed.bind(this),
+    this.#deviceAddSignal = this._manager.connect(Signal.DEVICE_ADD, (manager, device) => {
+      this.#deviceStateSignals.set(
+        device,
+        device.connect(
+          Signal.STATE_CHANGE,
+          this.determineStateDelayed.bind(this),
+        ),
       );
     });
     this._manager.devices.foreach((device) => {
-      device.connect(
-        Signal.STATE_CHANGE,
-        this.determineStateDelayed.bind(this),
+      this.#deviceStateSignals.set(
+        device,
+        device.connect(
+          Signal.STATE_CHANGE,
+          this.determineStateDelayed.bind(this),
+        ),
       );
     });
     this.determineState();
+  }
+
+  destroy() {
+    for (const [device, id] of this.#deviceStateSignals) {
+      device.disconnect(id);
+    }
+    this.#deviceStateSignals.clear();
+    this._manager.disconnect(this.#deviceAddSignal);
+    super.destroy();
   }
 
   determineState() {
@@ -446,7 +474,7 @@ export class Manager extends Utils.Emitter {
             break;
         }
       } catch (error) {
-        console.error(LOG_PREFIX, "service change error", error);
+        console.debug(LOG_PREFIX, "service change error", error);
       }
     });
   }
@@ -636,7 +664,7 @@ export class Manager extends Utils.Emitter {
         this.#lastEventID = event.id;
       }
     } catch (error) {
-      console.warn(LOG_PREFIX, "event processing failed", error.message);
+      console.debug(LOG_PREFIX, "event processing failed", error.message);
     }
   }
 
@@ -722,7 +750,7 @@ export class Manager extends Utils.Emitter {
         this.#refreshErrors(),
       ]);
     } catch (error) {
-      console.warn(LOG_PREFIX, "refresh error", error.message);
+      console.debug(LOG_PREFIX, "refresh error", error.message);
     }
     this.#refreshing = false;
   }
@@ -778,7 +806,7 @@ export class Manager extends Utils.Emitter {
         const errorTime = new Date(errors[i].when);
         if (errorTime > this.#lastErrorTime) {
           this.#lastErrorTime = errorTime;
-          console.error(LOG_PREFIX, Error.SERVICE, errors[i]);
+          console.debug(LOG_PREFIX, Error.SERVICE, errors[i]);
           this.emit(Signal.ERROR, {
             type: Error.SERVICE,
             message: errors[i].message,
@@ -819,7 +847,7 @@ export class Manager extends Utils.Emitter {
       }
       this.#lastPendingCount = totalPending;
     } catch (error) {
-      console.warn(
+      console.debug(
         LOG_PREFIX,
         "failed to check pending requests",
         error.message,
@@ -956,7 +984,7 @@ export class Manager extends Utils.Emitter {
       const path = (stdout || "").trim();
       if (path.length > 0) return path;
     } catch (error) {
-      console.warn(LOG_PREFIX, "which syncthing failed", error.message);
+      console.debug(LOG_PREFIX, "which syncthing failed", error.message);
     }
     const candidates = [
       GLib.get_bin_dir() + "/syncthing",
@@ -989,7 +1017,15 @@ export class Manager extends Utils.Emitter {
         systemdConfigDirectory.make_directory_with_parents(null);
       }
       try {
-        let [, template] = systemDConfigFileFrom.load_contents(null);
+        let [, template] = await new Promise((resolve, reject) => {
+          systemDConfigFileFrom.load_contents_async(null, (file, result) => {
+            try {
+              resolve(file.load_contents_finish(result));
+            } catch (error) {
+              reject(error);
+            }
+          });
+        });
         let content = new TextDecoder().decode(template);
         content = content.replace(
           /^ExecStart=.*$/m,
@@ -1014,7 +1050,7 @@ export class Manager extends Utils.Emitter {
               ")",
           );
         } else {
-          console.warn(
+          console.debug(
             LOG_PREFIX,
             "couldn't write systemd configuration file to " +
               systemDConfigFileTo,
@@ -1043,7 +1079,7 @@ export class Manager extends Utils.Emitter {
       active = command == "active";
       error = command == "failed" || command == "error";
       if (error) {
-        console.warn(
+        console.info(
           LOG_PREFIX,
           "systemd call failed, switching to API only mode",
         );
@@ -1170,7 +1206,7 @@ export class Manager extends Utils.Emitter {
       }
     } catch (error) {
       if (errorCallback) errorCallback(error);
-      else console.error(LOG_PREFIX, "open connection error", error);
+      else console.debug(LOG_PREFIX, "open connection error", error);
     }
   }
 
@@ -1233,7 +1269,7 @@ export class Manager extends Utils.Emitter {
                   errorReported = true;
                 }
               } catch (error) {
-                console.error(
+                console.debug(
                   LOG_PREFIX,
                   Error.STREAM,
                   msg.method + ":" + msg.uri.get_path(),
@@ -1305,7 +1341,7 @@ export class Manager extends Utils.Emitter {
       }
     } catch (error) {
       if (errorCallback) errorCallback(error);
-      else console.error(LOG_PREFIX, "open connection message error", error);
+      else console.debug(LOG_PREFIX, "open connection message error", error);
     }
   }
 
@@ -1347,7 +1383,7 @@ export class Manager extends Utils.Emitter {
   // Attach to Syncthing service
   attach() {
     this.#attach().catch((error) => {
-      console.error(LOG_PREFIX, "attach manager error", error);
+      console.debug(LOG_PREFIX, "attach manager error", error);
     });
   }
 
