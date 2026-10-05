@@ -25,6 +25,11 @@ export default class SyncthingIndicatorExtensionPreferences extends ExtensionPre
   fillPreferencesWindow(window) {
     this._window = window;
     this._i18n = new Utils.I18N(this, gettext);
+    this._window.connect("close-request", () => {
+      this._i18n.destroy();
+      this._i18n = null;
+      this._window = null;
+    });
 
     const iconTheme = Gtk.IconTheme.get_for_display(window.get_display());
     const iconsDirectory = this.dir.get_child("icons").get_path();
