@@ -60,6 +60,20 @@ export const SyncthingPanelIcon = GObject.registerClass(
           });
         },
       );
+
+      // Host is destroyed on stop, so its state never reaches the icon; track SERVICE_CHANGE
+      extension.manager.connect(
+        Syncthing.Signal.SERVICE_CHANGE,
+        (manager, state) => {
+          switch (state) {
+            case Syncthing.ServiceState.USER_STOPPED:
+            case Syncthing.ServiceState.SYSTEM_STOPPED:
+            case Syncthing.ServiceState.ERROR:
+              this.setState(Syncthing.State.DISCONNECTED);
+              break;
+          }
+        },
+      );
     }
 
     setState(state) {
