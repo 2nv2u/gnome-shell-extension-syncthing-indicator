@@ -256,15 +256,18 @@ class Device extends Item {
   constructor(data, manager) {
     super(data, manager);
     this.folders = new ItemCollection();
-    this.#folderAddSignal = this.folders.connect(Signal.ADD, (collection, folder) => {
-      this.#folderStateSignals.set(
-        folder,
-        folder.connect(
-          Signal.STATE_CHANGE,
-          this.determineStateDelayed.bind(this),
-        ),
-      );
-    });
+    this.#folderAddSignal = this.folders.connect(
+      Signal.ADD,
+      (collection, folder) => {
+        this.#folderStateSignals.set(
+          folder,
+          folder.connect(
+            Signal.STATE_CHANGE,
+            this.determineStateDelayed.bind(this),
+          ),
+        );
+      },
+    );
   }
 
   isOnline() {
@@ -320,15 +323,18 @@ class HostDevice extends Device {
 
   constructor(data, manager) {
     super(data, manager);
-    this.#deviceAddSignal = this._manager.connect(Signal.DEVICE_ADD, (manager, device) => {
-      this.#deviceStateSignals.set(
-        device,
-        device.connect(
-          Signal.STATE_CHANGE,
-          this.determineStateDelayed.bind(this),
-        ),
-      );
-    });
+    this.#deviceAddSignal = this._manager.connect(
+      Signal.DEVICE_ADD,
+      (manager, device) => {
+        this.#deviceStateSignals.set(
+          device,
+          device.connect(
+            Signal.STATE_CHANGE,
+            this.determineStateDelayed.bind(this),
+          ),
+        );
+      },
+    );
     this._manager.devices.foreach((device) => {
       this.#deviceStateSignals.set(
         device,
@@ -485,10 +491,16 @@ export class Manager extends Utils.Emitter {
     return config;
   }
 
-  // Each event chain carries a generation: a service restart or destroy()
-  // bumps it, so a stale chain stops at its next response instead of
-  // rescheduling itself (prevents duplicate/leaking event chains)
   #callEvents(options, generation = ++this.#eventsGeneration) {
+    if (this.#destroyed || generation != this.#eventsGeneration) {
+      console.debug(
+        LOG_PREFIX,
+        "retiring stale event chain",
+        generation,
+        this.#eventsGeneration,
+      );
+      return;
+    }
     this.#openConnection(
       "GET",
       "/rest/events?" + options,
@@ -501,12 +513,11 @@ export class Manager extends Utils.Emitter {
             id: events[i].id,
           });
         }
-        // Immediate reschedule - Syncthing's server-side long-poll timeout
-        // is what actually spaces out responses; no client-side delay needed
         this.#callEvents("since=" + this.#lastEventID, generation);
       },
       (error) => {
         if (this.#destroyed || generation != this.#eventsGeneration) return;
+        if (!this.#serviceActive) return;
         console.debug(
           LOG_PREFIX,
           "events request failed, retrying in 1s",
@@ -1059,8 +1070,7 @@ export class Manager extends Utils.Emitter {
       } catch (error) {
         console.warn(
           LOG_PREFIX,
-          "couldn't write systemd configuration file to " +
-            systemDConfigFileTo,
+          "couldn't write systemd configuration file to " + systemDConfigFileTo,
           error.message,
         );
       }
@@ -1189,7 +1199,8 @@ export class Manager extends Utils.Emitter {
 
   async #openConnection(method, path, callback, errorCallback) {
     if (this.#destroyed) {
-      if (errorCallback) errorCallback(new globalThis.Error("manager destroyed"));
+      if (errorCallback)
+        errorCallback(new globalThis.Error("manager destroyed"));
       return;
     }
     try {
@@ -1291,6 +1302,8 @@ export class Manager extends Utils.Emitter {
                 this.#httpErrorCount = 0;
                 connected = false;
                 this.emit(Signal.SERVICE_CHANGE, ServiceState.ERROR);
+                // Re-check service state so a stopped service retires the loop instead of error spam
+                this.#isServiceActive();
               }
               console.error(
                 LOG_PREFIX,
@@ -1411,6 +1424,8 @@ export class Manager extends Utils.Emitter {
   // Stop Syncthing service
   async stopService() {
     this.#httpAborting = true;
+    // Retire the event chain so the aborted request does not retry against a stopped service
+    this.#eventsGeneration++;
     this.#httpSession.abort();
     await this.#serviceCommand("stop");
     this.#isServiceActive();
