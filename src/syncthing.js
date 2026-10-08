@@ -1211,7 +1211,7 @@ export class Manager extends Utils.Emitter {
           return true;
         });
         msg.request_headers.append("X-API-Key", this.#extensionConfig.APIKey);
-        this.#openConnectionMessage(msg, callback, errorCallback);
+        this.#openConnectionMessage(msg, path, callback, errorCallback);
       } else if (errorCallback) {
         errorCallback(new globalThis.Error(Error.CONFIG));
       }
@@ -1221,7 +1221,7 @@ export class Manager extends Utils.Emitter {
     }
   }
 
-  async #openConnectionMessage(msg, callback, errorCallback) {
+  async #openConnectionMessage(msg, path, callback, errorCallback) {
     try {
       // if ((await this.#extensionConfig.exists()) && this.#serviceActive) {
       if (await this.#extensionConfig.exists()) {
@@ -1256,7 +1256,12 @@ export class Manager extends Utils.Emitter {
                   );
                   // Retry this connection attempt
                   Utils.Timer.run(CONNECTION_RETRY_DELAY, () => {
-                    this.#openConnectionMessage(msg, callback, errorCallback);
+                    this.#openConnection(
+                      msg.method,
+                      path,
+                      callback,
+                      errorCallback,
+                    );
                   });
                   return;
                 }
