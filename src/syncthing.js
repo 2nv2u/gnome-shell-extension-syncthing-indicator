@@ -640,18 +640,20 @@ export class Manager extends Utils.Emitter {
           }
           this.#scheduleRefresh();
           break;
-        case EventType.FAILURE:
-          console.error(
-            LOG_PREFIX,
-            Error.SERVICE,
-            event.data.error,
-            event.data.when,
-          );
-          this.emit(Signal.ERROR, {
-            type: Error.SERVICE,
-            message: event.data.error,
-          });
+        case EventType.FAILURE: {
+          const message =
+            typeof event.data === "string"
+              ? event.data
+              : (event.data?.Description ?? JSON.stringify(event.data));
+          console.error(LOG_PREFIX, Error.SERVICE, message);
+          if (typeof event.data !== "string") {
+            this.emit(Signal.ERROR, {
+              type: Error.SERVICE,
+              message,
+            });
+          }
           break;
+        }
         case EventType.PENDING_DEVICES_CHANGED:
           if (event.data.added || event.data.removed) {
             this.#processPendingDevices(event.data);
@@ -1211,7 +1213,7 @@ export class Manager extends Utils.Emitter {
           return true;
         });
         msg.request_headers.append("X-API-Key", this.#extensionConfig.APIKey);
-        this.#openConnectionMessage(msg, callback, errorCallback);
+        this.#openConnectionMessage(msg, path, callback, errorCallback);
       } else if (errorCallback) {
         errorCallback(new globalThis.Error(Error.CONFIG));
       }
@@ -1221,7 +1223,7 @@ export class Manager extends Utils.Emitter {
     }
   }
 
-  async #openConnectionMessage(msg, callback, errorCallback) {
+  async #openConnectionMessage(msg, path, callback, errorCallback) {
     try {
       // if ((await this.#extensionConfig.exists()) && this.#serviceActive) {
       if (await this.#extensionConfig.exists()) {
@@ -1256,7 +1258,12 @@ export class Manager extends Utils.Emitter {
                   );
                   // Retry this connection attempt
                   Utils.Timer.run(CONNECTION_RETRY_DELAY, () => {
-                    this.#openConnectionMessage(msg, callback, errorCallback);
+                    this.#openConnection(
+                      msg.method,
+                      path,
+                      callback,
+                      errorCallback,
+                    );
                   });
                   return;
                 }
