@@ -98,7 +98,6 @@ export class Timer {
     recurring = false,
     priority = GLib.PRIORITY_DEFAULT_IDLE,
   ) {
-    Timer._timers.add(this);
     this.#timeout = timeout;
     this.#recurring = recurring;
     this.#priority = priority;
@@ -111,6 +110,9 @@ export class Timer {
     priority = this.#priority,
   ) {
     this.cancel();
+    // The registry holds the timers with a pending source, so that
+    // Timer.destroy() can cancel them; they leave it when done or cancelled.
+    Timer._timers.add(this);
     this.#run(callback, timeout, recurring, priority);
   }
 
@@ -118,7 +120,8 @@ export class Timer {
     if (this.#source) {
       this.#source.destroy();
     }
-    this.#source = GLib.timeout_source_new(timeout);
+    const source = GLib.timeout_source_new(timeout);
+    this.#source = source;
     this.#source.set_priority(priority);
     this.#source.set_callback(() => {
       try {
@@ -131,11 +134,22 @@ export class Timer {
       } catch (error) {
         console.error(LOG_PREFIX, "timer callback error", error);
       }
+      // The callback may have cancelled or re-armed this same timer: then
+      // there is nothing left to do here.
+      if (this.#source !== source) {
+        return GLib.SOURCE_REMOVE;
+      }
       if (recurring) {
         this.#run(callback, timeout, recurring, priority);
       } else {
-        return GLib.SOURCE_REMOVE;
+        // Done: drop the destroyed source and leave the registry. Holding the
+        // GLib.Source wrapper keeps the GSource attached to the main context,
+        // and Timer.run() creates a new Timer every time, so the main loop
+        // would iterate over an ever-growing list of dead sources.
+        this.#source = null;
+        Timer._timers.delete(this);
       }
+      return GLib.SOURCE_REMOVE;
     });
     this.#source.attach(null);
   }
@@ -145,13 +159,11 @@ export class Timer {
       this.#source.destroy();
       this.#source = null;
     }
+    Timer._timers.delete(this);
   }
 
   destroy() {
-    if (Timer._timers.has(this)) {
-      Timer._timers.delete(this);
-      this.cancel();
-    }
+    this.cancel();
   }
 }
 
