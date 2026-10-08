@@ -1254,9 +1254,33 @@ export class Manager extends Utils.Emitter {
                     "will retry",
                     msg.method + ":" + msg.uri.get_path(),
                   );
-                  // Retry this connection attempt
+                  // Retry with a fresh Soup.Message: reusing the old one
+                  // leaves its connection attached, causing
+                  // soup_message_queue_item_destroy warnings and leaks.
+                  // The API key is copied from the original message: the
+                  // config may have been reloaded meanwhile.
                   Utils.Timer.run(CONNECTION_RETRY_DELAY, () => {
-                    this.#openConnectionMessage(msg, callback, errorCallback);
+                    if (this.#destroyed) return;
+                    try {
+                      const retryMsg = Soup.Message.new(
+                        msg.method,
+                        msg.uri.to_string(),
+                      );
+                      retryMsg.connect("accept-certificate", () => {
+                        return true;
+                      });
+                      const apiKey = msg.request_headers.get_one("X-API-Key");
+                      if (apiKey)
+                        retryMsg.request_headers.append("X-API-Key", apiKey);
+                      this.#openConnectionMessage(
+                        retryMsg,
+                        callback,
+                        errorCallback,
+                      );
+                    } catch (retryError) {
+                      if (errorCallback) errorCallback(retryError);
+                      else console.error(LOG_PREFIX, "retry error", retryError);
+                    }
                   });
                   return;
                 }
