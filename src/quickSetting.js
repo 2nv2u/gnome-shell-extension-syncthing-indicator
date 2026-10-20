@@ -151,6 +151,13 @@ export const SyncthingIndicatorQuickSetting = GObject.registerClass(
     }
 
     destroy() {
+      // The shell moves the toggle menu's actor into the quick settings overlay
+      // and never destroys it with the toggle, so every disable left the whole
+      // menu behind, and through its items the old manager and Soup session
+      this.toggle.menu.destroy();
+      // Only used as an icon source here and never parented, so nothing else
+      // would destroy it
+      this.panel.icon.destroy();
       this.quickSettingsItems.forEach((item) => item.destroy());
       super.destroy();
     }
